@@ -225,12 +225,14 @@ const ProfileSetupScreen = () => {
             <Text style={styles.headerText}>{isLoginMode ? 'Login' : 'Sign Up'}</Text>
             <TextInput
               placeholder="Name"
+              placeholderTextColor="gray"
               value={name}
               onChangeText={setName}
               style={styles.input}
             />
             <TextInput
               placeholder="Username"
+              placeholderTextColor="gray"
               value={username}
               onChangeText={setUsername}
               style={styles.input}
@@ -238,6 +240,7 @@ const ProfileSetupScreen = () => {
             <View style={styles.passwordContainer}>
               <TextInput
                 placeholder="Password"
+                placeholderTextColor="gray"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword} // Toggles visibility
@@ -256,6 +259,7 @@ const ProfileSetupScreen = () => {
             </View>
             <TextInput
               placeholder="Email"
+              placeholderTextColor="gray"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -263,6 +267,7 @@ const ProfileSetupScreen = () => {
             />
             <TextInput
               placeholder="Phone Number"
+              placeholderTextColor="gray"
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
