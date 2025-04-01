@@ -1088,9 +1088,12 @@ const EventSignUpScreen = ({ route }: { route?: any }) => {
                     backgroundColor: modalTileColor,
                     color: modalFontColor,
                     padding: 10,
-                    borderRadius: 5,
+                    borderRadius: 25,
+                    overflow: 'hidden',
                     borderColor: 'gold',
                     borderWidth: 2,
+                    paddingVertical: 8,
+                    paddingHorizontal: 15,
                   }
                 ]}>
                   {typeof dateData.date === 'string' ? dateData.date : ''}
@@ -1286,10 +1289,12 @@ const styles = StyleSheet.create({
   },
   dateText: {
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 25,
     overflow: 'hidden',
     borderColor: 'gold',
     borderWidth: 2,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
   },
   slotsContainer: {
     flexDirection: 'row',

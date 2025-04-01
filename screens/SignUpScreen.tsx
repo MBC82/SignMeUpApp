@@ -1776,7 +1776,15 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSave, onSaveTheme }) => {
   return (
     <View style={styles.container}>
       <ImageBackground
-        source={backgroundImage}
+        source={
+          backgroundImage 
+            ? (typeof backgroundImage === 'string' 
+                ? { uri: backgroundImage } 
+                : backgroundImage && backgroundImage.uri 
+                  ? backgroundImage 
+                  : require('../ios/assets/navy.jpg'))
+            : require('../ios/assets/navy.jpg')
+        }
         style={styles.background}
         imageStyle={{ opacity: 0.8 }}
         resizeMode="cover"
@@ -2290,13 +2298,14 @@ const styles = StyleSheet.create({
     fontSize: 20,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     color: 'white',
-    padding: 3,
-    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 25,
     fontWeight: 'bold',
     textAlign: 'center',
     alignSelf: 'center',
     maxWidth: '70%',
-    marginBottom: 0, // Changed from 10 to 0
+    marginBottom: 0,
     borderColor: 'gold',
     borderWidth: 2,
   },

@@ -636,13 +636,17 @@ const styles = StyleSheet.create({
   },
   dateTab: {
     backgroundColor: '#F0F0F0',
-    borderRadius: 20,
+    borderRadius: 25,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    marginRight: 8
+    marginRight: 8,
+    borderColor: '#E0E0E0',
+    borderWidth: 1,
   },
   selectedDateTab: {
-    backgroundColor: '#007BFF'
+    backgroundColor: '#007BFF',
+    borderColor: 'gold',
+    borderWidth: 2,
   },
   dateTabText: {
     color: '#333333'
