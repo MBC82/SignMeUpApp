@@ -245,6 +245,8 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSave, onSaveTheme }) => {
       }));
     }
   });
+  const [customizeModalVisible, setCustomizeModalVisible] = useState(false);
+  const [showTileColorPicker, setShowTileColorPicker] = useState(false);
 
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -1774,40 +1776,51 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSave, onSaveTheme }) => {
     });
   };
 
-  // Add these state variables if they're missing
-  const [customizeModalVisible, setCustomizeModalVisible] = useState(false);
-
-  const openCustomizeModal = () => {
-    setCustomizeModalVisible(true);
-  };
-
-  const closeCustomizeModal = () => {
-    setCustomizeModalVisible(false);
-  };
-
-  // Add these state variables for the color pickers
-  const [showBackgroundColorPicker, setShowBackgroundColorPicker] = useState(false);
-  const [showFontColorPicker, setShowFontColorPicker] = useState(false);
-  const [showTileColorPicker, setShowTileColorPicker] = useState(false);
-
   return (
     <View style={styles.container}>
       <ImageBackground
-        source={require('../ios/assets/navy.jpg')}
+        source={backgroundImage}
         style={styles.background}
+        imageStyle={{ opacity: 0.8 }}
+        resizeMode="cover"
       >
-        <View style={styles.headerSpace}></View>
         <ScrollView 
+          style={{ flex: 1 }}
           contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false} // Hide the scroll indicator for a cleaner look
+          showsVerticalScrollIndicator={false}
         >
-          <View style={{ height: 50 }} />
-          <View style={[styles.header, { backgroundColor: headerTileColor || 'rgba(0, 0, 0, 0.7)' }]}>
-            <Text style={[styles.headerText, { color: headerFontColor || 'white' }]}>
-              {editedEventName || 'Event Name'}
-            </Text>
+          <View style={styles.headerSpace} />
+          
+          <View style={styles.header}>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerText}>Create Your Event</Text>
+              <TouchableOpacity
+                style={styles.headerEditButton}
+                onPress={() => setIsHeaderEditing(true)}
+              >
+                <MaterialIcons name="edit" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
           </View>
 
+          {/* Theme Selection Buttons */}
+          <View style={styles.themeButtonContainer}>
+            <TouchableOpacity
+              style={styles.themeButton}
+              onPress={openThemeModal}
+            >
+              <Text style={styles.themeButtonText}>Theme Choices</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.customizeButton}
+              onPress={() => setCustomizeModalVisible(true)}
+            >
+              <Text style={styles.customizeButtonText}>Customize Appearance</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {/* Event Information Form */}
           {dates.map((dateData, dateIndex) => (
             <View key={dateIndex} style={styles.dateTile}>
               <TouchableOpacity 
@@ -1959,7 +1972,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSave, onSaveTheme }) => {
         visible={customizeModalVisible}
         animationType="slide"
         transparent={true}
-        onRequestClose={closeCustomizeModal}
+        onRequestClose={() => setCustomizeModalVisible(false)}
       >
         <View style={styles.modalContainer}>
           <View style={[styles.modalContent, { backgroundColor: screenBgColor }]}>
@@ -2090,7 +2103,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSave, onSaveTheme }) => {
               </TouchableOpacity>
             )}
             
-            <TouchableOpacity style={styles.closeButton} onPress={closeCustomizeModal}>
+            <TouchableOpacity style={styles.closeButton} onPress={() => setCustomizeModalVisible(false)}>
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
@@ -2902,6 +2915,48 @@ const styles = StyleSheet.create({
   },
   dateEditIcon: {
     opacity: 0.8,
+  },
+  themeButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  themeButton: {
+    backgroundColor: '#007bff',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  themeButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  customizeButtonText: {
+    color: '#007bff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  fontButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  selectedFontButton: {
+    borderColor: '#007bff',
+    borderWidth: 2,
+  },
+  fontSectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
   },
 });
 

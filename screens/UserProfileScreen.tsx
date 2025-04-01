@@ -171,7 +171,7 @@ const UserProfileScreen = () => {
           updateProfile({ profileImage: null });
           
           // Then try to load the image specific to this username
-          const savedImage = await AsyncStorage.getItem(`profileImage_${String(username)}`);
+          const savedImage = await AsyncStorage.getItem(`profileImage_${username!}`);
           if (savedImage) {
             updateProfile({ profileImage: savedImage });
           }
@@ -248,7 +248,7 @@ const UserProfileScreen = () => {
           const username = await EncryptedStorage.getItem('username');
           if (username) {
             // Cast username to string to satisfy TypeScript type check
-            await AsyncStorage.setItem(`profileImage_${String(username)}`, selectedImage);
+            await AsyncStorage.setItem(`profileImage_${username!}`, selectedImage);
             console.log('Successfully saved profile image to AsyncStorage');
           } else {
             console.warn('Username is undefined, cannot save profile image');
@@ -489,8 +489,12 @@ const UserProfileScreen = () => {
                 />
               ) : (
                 <TouchableOpacity onPress={pickImage} style={styles.profileImagePlaceholder}>
-                  <MaterialIcons name="add-a-photo" size={30} color="navy" />
-                  <Text style={styles.placeholderText}>Choose Image</Text>
+                  <View style={styles.defaultProfileCircle}>
+                    <Text style={styles.profileInitials}>
+                      {profile.name ? profile.name.charAt(0).toUpperCase() : profile.username ? profile.username.charAt(0).toUpperCase() : '?'}
+                    </Text>
+                  </View>
+                  <MaterialIcons name="add-a-photo" size={24} color="navy" style={styles.placeholderIcon} />
                 </TouchableOpacity>
               )}
               <TouchableOpacity 
@@ -750,7 +754,7 @@ const UserProfileScreen = () => {
                               style={styles.searchResultImage}
                             />
                           ) : (
-                            <View style={[styles.searchResultImage, styles.defaultProfileContainer]}>
+                            <View style={styles.searchResultDefaultCircle}>
                               <MaterialIcons name="person" size={20} color="#666" />
                             </View>
                           )}
@@ -807,20 +811,36 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#eee',
+    backgroundColor: '#e1e1e1',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 5,
+    borderWidth: 3,
+    borderColor: 'white',
+    position: 'relative',
+    overflow: 'visible',
   },
-  placeholderText: {
-    fontSize: 12,
+  defaultProfileCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#c0d6f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileInitials: {
+    fontSize: 48,
+    fontWeight: 'bold',
     color: 'navy',
-    marginTop: 5,
   },
-  defaultProfileContainer: {
-    backgroundColor: '#ddd',
-    justifyContent: 'center',
-    alignItems: 'center',
+  placeholderIcon: {
+    position: 'absolute',
+    bottom: -8,
+    right: -8,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   userName: {
     fontSize: 24,
@@ -1167,6 +1187,14 @@ const styles = StyleSheet.create({
     color: '#444',
     marginBottom: 4,
     fontWeight: '600',
+  },
+  searchResultDefaultCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#c0d6f0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

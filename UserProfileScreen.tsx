@@ -9,92 +9,63 @@ const UserProfileScreen = () => {
 
   const pickImage = async () => {
     try {
-      // Launch the image library
       const result = await launchImageLibrary({
         mediaType: 'photo',
-        includeBase64: false,
-        maxHeight: 300,
-        maxWidth: 300,
+        quality: 0.8,
+        includeBase64: false, // Don't include base64 to reduce memory usage
       });
       
-      // Check if user cancelled
       if (result.didCancel) {
         console.log('User cancelled image picker');
         return;
       }
       
-      // Check for errors
       if (result.errorCode) {
-        console.log('Image picker error: ', result.errorMessage);
-        Alert.alert('Error', 'Failed to pick image. Please try again.');
-        return;
+        throw new Error(`Image picker error: ${result.errorMessage}`);
       }
       
-      // Get username from storage
-      try {
-        const storedUsername = await EncryptedStorage.getItem('username');
-        console.log('Retrieved username for image save:', storedUsername);
+      if (result.assets && result.assets.length > 0) {
+        const selectedImage = result.assets[0].uri;
+        console.log('Selected image URI:', selectedImage);
         
-        if (!storedUsername) {
-          console.log('No username found for image save');
-          Alert.alert('Error', 'Could not identify user. Please try again later.');
-          return;
-        }
-        
-        // Get image URI
-        const selectedImageUri = result.assets && result.assets[0] && result.assets[0].uri;
-        if (!selectedImageUri) {
-          console.log('No image URI found in picker result');
-          return;
-        }
-        
-        console.log('Selected image URI:', selectedImageUri);
-        
-        // Update profile image in context for immediate UI feedback
-        updateProfile({ profileImage: selectedImageUri });
-        setProfileImage(selectedImageUri);
-        
-        // Save image to AsyncStorage for persistence across logins
-        await AsyncStorage.setItem(`profileImage_${storedUsername}`, selectedImageUri);
-        console.log('Saved profile image to AsyncStorage with key:', `profileImage_${storedUsername}`);
-        
-        // Update user's profile in allUsers array
-        const allUsersString = await AsyncStorage.getItem('allUsers');
-        if (allUsersString) {
-          const allUsers = JSON.parse(allUsersString);
+        try {
+          // Update the profile image in state first
+          updateProfile({ profileImage: selectedImage });
           
-          // Find and update user in allUsers array
-          const updatedUsers = allUsers.map(user => {
-            if (user.username === storedUsername) {
-              console.log('Updating user profile image in allUsers array');
-              return {
-                ...user,
-                profileImage: selectedImageUri
-              };
-            }
-            return user;
-          });
-          
-          // Save updated allUsers back to AsyncStorage
-          await AsyncStorage.setItem('allUsers', JSON.stringify(updatedUsers));
-          console.log('Updated profile image in allUsers array');
-          
-          // Also update the user profile in EncryptedStorage
-          const userProfile = updatedUsers.find(user => user.username === storedUsername);
-          if (userProfile) {
-            await EncryptedStorage.setItem('userProfile', JSON.stringify(userProfile));
-            console.log('Updated profile image in EncryptedStorage userProfile');
+          // Get the username
+          const username = await EncryptedStorage.getItem('username');
+          if (username) {
+            // Cast username to string to satisfy TypeScript type check
+            await AsyncStorage.setItem(`profileImage_${username as string}`, selectedImage);
+            
+            // Also save to general profileImage for the bottom nav
+            await AsyncStorage.setItem('profileImage', selectedImage);
+            
+            console.log('Successfully saved profile image to AsyncStorage');
+          } else {
+            console.warn('Username is undefined, cannot save profile image');
           }
+          
+          // Also update the profile in the encrypted storage
+          const userProfileString = await EncryptedStorage.getItem('userProfile');
+          if (userProfileString) {
+            const userProfile = JSON.parse(userProfileString);
+            userProfile.profileImage = selectedImage;
+            await EncryptedStorage.setItem('userProfile', JSON.stringify(userProfile));
+          }
+        } catch (storageError) {
+          console.error('Error saving profile image:', storageError);
+          // Still keep the image in the UI even if storage fails
+          Alert.alert(
+            'Warning',
+            'Your profile image has been set, but might not persist after restarting the app.',
+            [{ text: 'OK' }]
+          );
         }
-        
-        Alert.alert('Success', 'Profile image updated successfully');
-      } catch (error) {
-        console.error('Error saving profile image:', error);
-        Alert.alert('Error', 'Failed to save profile image. Please try again.');
       }
     } catch (error) {
-      console.error('Image picker error:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to select image. Please try again.');
     }
   };
 

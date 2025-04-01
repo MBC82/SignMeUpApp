@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { NavigationContainer, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { createStackNavigator, StackNavigationProp, StackScreenProps } from '@react-navigation/stack';
 import HomeScreen from './screens/HomeScreen';
 import CreateEventScreen from './screens/CreateEventScreen';
@@ -7,7 +7,7 @@ import EventDetailsScreen from './screens/EventDetailsScreen';
 import ProfileSetupScreen from './screens/ProfileSetupScreen';
 import MyEventsScreen from './screens/MyEventsScreen';
 import UserProfileScreen from './screens/UserProfileScreen';
-import { ProfileProvider } from './ProfileContext';
+import { ProfileProvider, ProfileContext } from './ProfileContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { StyleSheet, View, ActivityIndicator, Text, StatusBar, TouchableOpacity, Image } from 'react-native';
@@ -15,6 +15,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import EnhancedSignUpScreen from './screens/EnhancedSignUpScreen';
 import SignUpScreen from './screens/SignUpScreen';
+import EncryptedStorage from 'react-native-encrypted-storage';
 
 type EventDate = {
   date: string;
@@ -100,6 +101,7 @@ const BottomNavBar = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const { profile } = React.useContext(ProfileContext);
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -115,9 +117,19 @@ const BottomNavBar = () => {
 
     const loadProfileImage = async () => {
       try {
-        const savedImage = await AsyncStorage.getItem('profileImage');
-        if (savedImage) {
-          setProfileImage(savedImage);
+        // First check if we have a profile image in context
+        if (profile.profileImage) {
+          setProfileImage(profile.profileImage);
+          return;
+        }
+
+        // If not in context, try to get from encrypted storage
+        const username = await EncryptedStorage.getItem('username');
+        if (username) {
+          const savedImage = await AsyncStorage.getItem(`profileImage_${username}`);
+          if (savedImage) {
+            setProfileImage(savedImage);
+          }
         }
       } catch (error) {
         console.log('Error loading profile image:', error);
@@ -127,19 +139,23 @@ const BottomNavBar = () => {
     checkLoginStatus();
     loadProfileImage();
 
-    // Set up event listener for profile image changes
-    const handleProfileImageChange = async () => {
-      await loadProfileImage();
-      await checkLoginStatus();
-    };
-
-    // Listen for profile image changes
-    const eventListener = navigation.addListener('focus', handleProfileImageChange);
+    // Set up event listener for profile changes
+    const eventListener = navigation.addListener('focus', () => {
+      checkLoginStatus();
+      loadProfileImage();
+    });
 
     return () => {
       eventListener();
     };
-  }, [navigation]);
+  }, [navigation, profile.profileImage]);
+
+  // Also update profile image when profile context changes
+  useEffect(() => {
+    if (profile.profileImage) {
+      setProfileImage(profile.profileImage);
+    }
+  }, [profile.profileImage]);
 
   const handleProfilePress = () => {
     if (isLoggedIn) {
