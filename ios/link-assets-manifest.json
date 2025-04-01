@@ -1,0 +1,265 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "ios/assets/Arial Rounded Bold.ttf",
+      "sha1": "8059e3541a420a5a2f60d99c46d8cc4a5bba3b8f"
+    },
+    {
+      "path": "ios/assets/Avenir Next.ttc",
+      "sha1": "74ab9470ea8c841acd3285575bc0cd1e85e91aad"
+    },
+    {
+      "path": "ios/assets/Baskerville.ttc",
+      "sha1": "38d777145c0f06779e546bab2515f50b01a4171c"
+    },
+    {
+      "path": "ios/assets/BomberBrush.otf",
+      "sha1": "a41859b8dad58cfe3818eb9a25efdc2f4dacabf8"
+    },
+    {
+      "path": "ios/assets/Chalkboard.ttc",
+      "sha1": "497015b6f873efaac9ce6e983d7f91f697c023de"
+    },
+    {
+      "path": "ios/assets/Futura.ttc",
+      "sha1": "337a1fff3bbcbf4bd8829b31a7c83feadf68afe5"
+    },
+    {
+      "path": "ios/assets/GillSans.ttc",
+      "sha1": "2217bd13e551ede9d80f224cce56a0a998c68873"
+    },
+    {
+      "path": "ios/assets/Helvetica.ttc",
+      "sha1": "72674ba8e77aa1e013f75a0b2241069fba539ba3"
+    },
+    {
+      "path": "ios/assets/Impact.ttf",
+      "sha1": "dea9d702c6d33a1d66b132f4c13541e6f97b7367"
+    },
+    {
+      "path": "ios/assets/KIdDOS-Regular.ttf",
+      "sha1": "f78b92a5d948ac00c126c73490762560b99226cf"
+    },
+    {
+      "path": "ios/assets/MarkerFelt.ttc",
+      "sha1": "b3af727c3b583137202a1994b87520c813a662b8"
+    },
+    {
+      "path": "ios/assets/Noteworthy.ttc",
+      "sha1": "9fb1b44b77e6552052561783cde559f5ef56b820"
+    },
+    {
+      "path": "ios/assets/Patriotic.jpg",
+      "sha1": "282ca594a6077e6afdebdd178f5d66879826fc36"
+    },
+    {
+      "path": "ios/assets/Pinky.jpg",
+      "sha1": "76d9770fd7528d277df785441ba6050bd47ac5da"
+    },
+    {
+      "path": "ios/assets/Rockwell.ttc",
+      "sha1": "9a71d3133f304c12406d7c8d58c95b4efb0d0f7b"
+    },
+    {
+      "path": "ios/assets/SF-Pro-Display-Black.otf",
+      "sha1": "89d9387a7ba9407ee3384f0b1e1ce312c4190f25"
+    },
+    {
+      "path": "ios/assets/SF-Pro-Italic.ttf",
+      "sha1": "7b0d645e093e4532eafdbd969e9ffae762c409a8"
+    },
+    {
+      "path": "ios/assets/SF-Pro-Rounded-Heavy.otf",
+      "sha1": "85e8f7b4b33e7f5b6065947ae4a7e885cdcc8d75"
+    },
+    {
+      "path": "ios/assets/SignPainter.ttc",
+      "sha1": "5b7f40617614c88520557079dce7a3223723ed16"
+    },
+    {
+      "path": "ios/assets/Signature.ttf",
+      "sha1": "2cf9b77c949a271683994bb79228d2566ea14e61"
+    },
+    {
+      "path": "ios/assets/Smart Teacher.otf",
+      "sha1": "5f36e632984746a0d099b361df70df513981251a"
+    },
+    {
+      "path": "ios/assets/Spacetime.jpg",
+      "sha1": "0e0102460328ba4426c3ac8d2f13732902782da2"
+    },
+    {
+      "path": "ios/assets/app.jpg",
+      "sha1": "594c169fb3c867994e7707c1e89432873e5a6399"
+    },
+    {
+      "path": "ios/assets/black.jpg",
+      "sha1": "25b47cc7d6fd1a3acafca9d689df61f540960b4b"
+    },
+    {
+      "path": "ios/assets/black2.jpg",
+      "sha1": "e05032dbc811af1ceea18a7ba36b765793aa29ff"
+    },
+    {
+      "path": "ios/assets/blue.jpg",
+      "sha1": "3d593b8da9a5a2b64c8eeb9d31a3f5f3c53f4073"
+    },
+    {
+      "path": "ios/assets/blue2.jpg",
+      "sha1": "2b016c4bb55cb8d0d2aaae56a52f66c3416310fa"
+    },
+    {
+      "path": "ios/assets/candyflowers.jpg",
+      "sha1": "f81e49667d0df755821f7db7c043d4275b1614e5"
+    },
+    {
+      "path": "ios/assets/classic.jpg",
+      "sha1": "66a66062ed870135181568398f85f43d9c1f49d7"
+    },
+    {
+      "path": "ios/assets/classic2.jpg",
+      "sha1": "e37f914a77c91af05d98de74c556bf6230cc2bdc"
+    },
+    {
+      "path": "ios/assets/classicteacher.jpg",
+      "sha1": "6108baceb97897efdec21fa108e272dd6f3640a8"
+    },
+    {
+      "path": "ios/assets/classygirl.jpg",
+      "sha1": "4d8d82de20ea1495e8cf6e747ef6a3672cfe6b95"
+    },
+    {
+      "path": "ios/assets/colorful.jpg",
+      "sha1": "eaf326c5fe956d2a8dd072b0924c5da144ade969"
+    },
+    {
+      "path": "ios/assets/colors.jpg",
+      "sha1": "841e7358bfe8d05887188098022f56eb6b31a5da"
+    },
+    {
+      "path": "ios/assets/confetti.jpg",
+      "sha1": "8e8c0cf716a701f86de8c814b6adbf5402b185f1"
+    },
+    {
+      "path": "ios/assets/darkmode.jpg",
+      "sha1": "0c18d50e0913f06f090068f24bd91962f6cf217c"
+    },
+    {
+      "path": "ios/assets/dreamy.jpg",
+      "sha1": "727bf24e4f10f4698fe49d707bf9a1deaf51b3d3"
+    },
+    {
+      "path": "ios/assets/elegant.jpg",
+      "sha1": "dc67f116462fd231a89f77d8ea70d913c6bf85f2"
+    },
+    {
+      "path": "ios/assets/elegant2.jpg",
+      "sha1": "3e149ef379d5fbcb7d0d433467ac6df56038bc53"
+    },
+    {
+      "path": "ios/assets/fun.jpg",
+      "sha1": "3e6d1e0f0438043022611751350299be835a926e"
+    },
+    {
+      "path": "ios/assets/funcamo.jpg",
+      "sha1": "3e1061bd3ca86b026b63fa58e32a663a4bbb36b5"
+    },
+    {
+      "path": "ios/assets/girly.jpg",
+      "sha1": "d95a0757ee010d74c9aa232ac333484fca65fca8"
+    },
+    {
+      "path": "ios/assets/home.jpg",
+      "sha1": "ed24b345de77af0a5f9eeddfd0ea4f30b7dccd14"
+    },
+    {
+      "path": "ios/assets/logo.jpg",
+      "sha1": "2c9dc3447882298164840ee5c498f4e81fe5cfb6"
+    },
+    {
+      "path": "ios/assets/mainbackground.jpg",
+      "sha1": "665d98d202c2f3a12d37540ea851b7e1b04c8afb"
+    },
+    {
+      "path": "ios/assets/modern2.jpg",
+      "sha1": "3e149ef379d5fbcb7d0d433467ac6df56038bc53"
+    },
+    {
+      "path": "ios/assets/navy.jpg",
+      "sha1": "e5ddc07e119cf5b31164c9ba8277043f841a7cf9"
+    },
+    {
+      "path": "ios/assets/navy2.jpg",
+      "sha1": "9db8d7ed22cc4702dca1c0bc5c5aa1ebe759f972"
+    },
+    {
+      "path": "ios/assets/pink.jpg",
+      "sha1": "e153963fc623830f7e1f73f172f053b7008433e8"
+    },
+    {
+      "path": "ios/assets/pink1.jpg",
+      "sha1": "47eb1a9400508480f4d7167b44366394dd7e6452"
+    },
+    {
+      "path": "ios/assets/pink2.jpg",
+      "sha1": "55c3a95557d4b2980985879f27017843cdf9beb4"
+    },
+    {
+      "path": "ios/assets/pinkclouds.jpg",
+      "sha1": "5256d9177d7beea5c3ff73a209a78c1e43a07300"
+    },
+    {
+      "path": "ios/assets/pinkgold.jpg",
+      "sha1": "542caf3dc40b36e4945e8a22cd941c2844c02da9"
+    },
+    {
+      "path": "ios/assets/pinkteacher.jpg",
+      "sha1": "389868b28a92e2571afa8a4bd56d020710043d2b"
+    },
+    {
+      "path": "ios/assets/playful.jpg",
+      "sha1": "36f5574d01bc641e263715d190ea3dc315fbc646"
+    },
+    {
+      "path": "ios/assets/purple.jpg",
+      "sha1": "16e8865d018b313a0b6e82ed044c13c947fe77f4"
+    },
+    {
+      "path": "ios/assets/sporty.jpg",
+      "sha1": "ac7ae8a9389b60af8955a689e43f164a64cd3446"
+    },
+    {
+      "path": "ios/assets/sporty2.jpg",
+      "sha1": "e6b12e3b8b4f4746bbbe0429fd3c728112192011"
+    },
+    {
+      "path": "ios/assets/sporty3.jpg",
+      "sha1": "02e5b8dddf7b625e4c044426116f950a4030dde0"
+    },
+    {
+      "path": "ios/assets/stars.jpg",
+      "sha1": "8e7ed929b0c83bcba1ebb7512ee6991b1084cba3"
+    },
+    {
+      "path": "ios/assets/teacher.jpg",
+      "sha1": "f6ce8abfe5ad3ebe1231a430fcaf8b1125cb25ba"
+    },
+    {
+      "path": "ios/assets/teacher1.jpg",
+      "sha1": "f6ce8abfe5ad3ebe1231a430fcaf8b1125cb25ba"
+    },
+    {
+      "path": "ios/assets/teacher2.jpg",
+      "sha1": "f80beb36f03744dea9c34df82b83d046fba72480"
+    },
+    {
+      "path": "ios/assets/teaching.jpg",
+      "sha1": "5595cc315b17177efde128a9e959abb83f5c3d2f"
+    },
+    {
+      "path": "ios/assets/unicorns.jpg",
+      "sha1": "65a6451796b96f3d6f5239ed5f18861c63c65286"
+    }
+  ]
+}

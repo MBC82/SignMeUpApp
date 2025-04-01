@@ -8,13 +8,79 @@
 
 /* Begin PBXBuildFile section */
 		00E356F31AD99517003FC87E /* SignMeUpTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E356F21AD99517003FC87E /* SignMeUpTests.m */; };
-		0C80B921A6F3F58F76C31292 /* libPods-SignMeUp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-SignMeUp.a */; };
+		02CBD8A58D7142DAAE691D68 /* GillSans.ttc in Resources */ = {isa = PBXBuildFile; fileRef = 70AD8EEB03934F8E82688B85 /* GillSans.ttc */; };
+		046A8FE298A8428BA29A39B5 /* elegant2.jpg in Resources */ = {isa = PBXBuildFile; fileRef = C969297C59F647C89C3B0277 /* elegant2.jpg */; };
+		05565141BFBA45C89E8E239E /* teacher.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2C410BC60F93400E8211E352 /* teacher.jpg */; };
+		080992FF29B54DC78FF2207B /* teacher1.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6445D3F245904F0A827343B7 /* teacher1.jpg */; };
+		0B018D8669154C4D978E9B6B /* dreamy.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 47E62CBCD3394473A9FCD18B /* dreamy.jpg */; };
+		0BF8F48496BA42E99A54D334 /* black.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 5FE0F13F903E4E368545D88B /* black.jpg */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
-		7699B88040F8A987B510C191 /* libPods-SignMeUp-SignMeUpTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 19F6CBCC0A4E27FBF8BF4A61 /* libPods-SignMeUp-SignMeUpTests.a */; };
+		193AC0A1FA044C0D853C41ED /* playful.jpg in Resources */ = {isa = PBXBuildFile; fileRef = EBC5E83659EC4ED5A9EE8157 /* playful.jpg */; };
+		1ADCEBF5DEE34BD28F388C6B /* Spacetime.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6D02BD32F5D247938C3CE6CA /* Spacetime.jpg */; };
+		1CF97D49A5A84EFDBF180884 /* modern2.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 91C8FCBA387941D388FCFA13 /* modern2.jpg */; };
+		24826BC2BAFD441BB4729ACD /* candyflowers.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 02425B1C7BE54B838255C66C /* candyflowers.jpg */; };
+		26EDE84413014E808C9B9C4B /* mainbackground.jpg in Resources */ = {isa = PBXBuildFile; fileRef = DF0DC918847A410185BEF92A /* mainbackground.jpg */; };
+		287F7061FC984F04A2ED86FF /* elegant.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B13E25F41AE44CCE923D2BED /* elegant.jpg */; };
+		2C7637337D6F468A8D4C2045 /* pink1.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 7EDC9DA1C2634CBCA7981D4D /* pink1.jpg */; };
+		31FECCC5C8184D4FAB29CDDC /* confetti.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 15AEC0E9F3FC492C959C2757 /* confetti.jpg */; };
+		3A486C4E874B43EF90024F31 /* Smart Teacher.otf in Resources */ = {isa = PBXBuildFile; fileRef = 037D4FB86AFE4C4D88D9FCFD /* Smart Teacher.otf */; };
+		41959BD2C7234F6B80BC09D8 /* fun.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B4CB99C96F91427EA2BF9A31 /* fun.jpg */; };
+		4248C58311C24E15A36A6990 /* pinkclouds.jpg in Resources */ = {isa = PBXBuildFile; fileRef = AA9F2FAA2760432891F773FA /* pinkclouds.jpg */; };
+		42EAEBACDD974DCB8DC67242 /* Patriotic.jpg in Resources */ = {isa = PBXBuildFile; fileRef = DB75886223434E68A08D8CD2 /* Patriotic.jpg */; };
+		45DE4E49043F43BEBCA89615 /* BomberBrush.otf in Resources */ = {isa = PBXBuildFile; fileRef = A5B67604FA0944569253BCE1 /* BomberBrush.otf */; };
+		4840F190E8DD40AAA3A092AD /* Rockwell.ttc in Resources */ = {isa = PBXBuildFile; fileRef = 290018185E8B43D1A26D8EAF /* Rockwell.ttc */; };
+		495C1AB94F30467BBE1AA294 /* black2.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 068DB9F06D3C470AB4F9DA22 /* black2.jpg */; };
+		4D88AEE777FC42FE97C0309E /* classic.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 43595987EF484D629941C7A8 /* classic.jpg */; };
+		4F575403D0484CFEBFEB140E /* classygirl.jpg in Resources */ = {isa = PBXBuildFile; fileRef = EE47FDBE600743468A5BC807 /* classygirl.jpg */; };
+		5163AEB01E764F3DB54F2601 /* blue2.jpg in Resources */ = {isa = PBXBuildFile; fileRef = C1EF869CC6704321926F0B60 /* blue2.jpg */; };
+		5C4737189D6943C59172A479 /* Chalkboard.ttc in Resources */ = {isa = PBXBuildFile; fileRef = 45EF49F7F67E4464834C5A84 /* Chalkboard.ttc */; };
+		5EE3C1D6CF38477792972371 /* Arial Rounded Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F857F76827224FBCA3EF0DBE /* Arial Rounded Bold.ttf */; };
+		5F231B815181433A9D36BD32 /* darkmode.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A7BAADFE0D82491D8C394892 /* darkmode.jpg */; };
+		5FAE6EC688E643C890290B46 /* Avenir Next.ttc in Resources */ = {isa = PBXBuildFile; fileRef = D7C3EB577F514DA0B2AB20E4 /* Avenir Next.ttc */; };
+		625759A3CB3A49EE91476305 /* purple.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6F5B2DEFE6CB45259DC28A85 /* purple.jpg */; };
+		62AC0EB3C2624148A566C6C3 /* teaching.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 71E8DBA8566A4CB88C0B4E6A /* teaching.jpg */; };
+		62E6BE95B8C44CAC99013DAE /* blue.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 4E19208E0F56487A97C906E2 /* blue.jpg */; };
+		63034F73E8C444D8B24584F5 /* pink2.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 206D0C18D71F4B77920BB5BC /* pink2.jpg */; };
+		644CFC897DD441ABB058FD27 /* sporty2.jpg in Resources */ = {isa = PBXBuildFile; fileRef = D155F33A92AF41AEAD976404 /* sporty2.jpg */; };
+		65D04603C25E4D0285634E1B /* classic2.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F44DA52ED78D447A823692A3 /* classic2.jpg */; };
+		69EDD43903D14BF4BD8B4DB8 /* unicorns.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 8D76582A96064C3D918F4FF3 /* unicorns.jpg */; };
+		6F91ABA1E66B4A87A8CFAD9B /* libPods-SignMeUp-SignMeUpTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 058A6E3E2BD7D68CF1462638 /* libPods-SignMeUp-SignMeUpTests.a */; };
+		6FA7844A75A648F8B10AED6B /* Signature.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9CE0E05C2973478C8D92B645 /* Signature.ttf */; };
+		75F4B821BDC341759244C7E3 /* Noteworthy.ttc in Resources */ = {isa = PBXBuildFile; fileRef = AC0D2A7C4BED4CA6941EA11C /* Noteworthy.ttc */; };
+		77380B73206D465CAE1F00BF /* navy2.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 41D99AE8BFBC4FB98B41C56E /* navy2.jpg */; };
+		7A73571657904AD99B7C510C /* home.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 3D7B035611744C41940CD1FF /* home.jpg */; };
+		7B16E01ABFC048FCB0C868FD /* sporty.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A3F94DD45F3241C78E97381B /* sporty.jpg */; };
+		7CEEA17273F34315804AAF94 /* SignPainter.ttc in Resources */ = {isa = PBXBuildFile; fileRef = 62244115E7C74F2AB7E2A284 /* SignPainter.ttc */; };
+		7FBB6CA885684BF4A4285A61 /* Pinky.jpg in Resources */ = {isa = PBXBuildFile; fileRef = AC343450D88741A08ECAF9BA /* Pinky.jpg */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		851EBEB7525748C39416F2FF /* stars.jpg in Resources */ = {isa = PBXBuildFile; fileRef = E4A42C9C406A443EB5EC2715 /* stars.jpg */; };
+		857D5B25D1B84F1DA9AD829A /* KIdDOS-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A6136AAE7A5D4830B8A2BD76 /* KIdDOS-Regular.ttf */; };
+		85D4E7B6AD0D446EB814CF41 /* Futura.ttc in Resources */ = {isa = PBXBuildFile; fileRef = 8B22532F3E2348878D2DAA03 /* Futura.ttc */; };
+		8775494CA37C49ED8B6E2AEA /* funcamo.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 129003B8A1BD4F8AA2F3F4A4 /* funcamo.jpg */; };
+		8FC81E6D24B743298D615DC0 /* girly.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6B9EDC5C15BB488BA605C636 /* girly.jpg */; };
+		930558BF26F84CDB8F6A0582 /* navy.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 9870C22FDBA547DB8C5C8FF0 /* navy.jpg */; };
+		96013BFFF7ED4DB99DB7D78D /* logo.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 8938612ABF7E4833B3488ABB /* logo.jpg */; };
+		A3391F8EDC834132B14BF6DD /* classicteacher.jpg in Resources */ = {isa = PBXBuildFile; fileRef = C99FF854BBD241A2B14212C5 /* classicteacher.jpg */; };
+		A7F7CD57BCC34189A69AB5F8 /* MarkerFelt.ttc in Resources */ = {isa = PBXBuildFile; fileRef = E0DF7FD04DBE4BE6B1C0F19C /* MarkerFelt.ttc */; };
+		AB04CA6BD72940419C9D8B2A /* sporty3.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6558F50671C84CAB9ED46920 /* sporty3.jpg */; };
+		AED07065BEE4493696858F58 /* Impact.ttf in Resources */ = {isa = PBXBuildFile; fileRef = ED05748D9DA64E619DC17265 /* Impact.ttf */; };
+		B43DDE80365E4FB0AD14C12E /* colors.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B334FBE8167D4CEDAB080E91 /* colors.jpg */; };
+		B62D68285EDB421AAFF411F5 /* SF-Pro-Display-Black.otf in Resources */ = {isa = PBXBuildFile; fileRef = B157C6A7934C4EB69D4A3CB7 /* SF-Pro-Display-Black.otf */; };
+		B6B138931B9645DE99E51919 /* colorful.jpg in Resources */ = {isa = PBXBuildFile; fileRef = AA2BAB2D4FC44E338B3F3F41 /* colorful.jpg */; };
+		BADFAA917A958CFA3BBCF7DB /* libPods-SignMeUp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9CCB968AD125FADEDC9BFD47 /* libPods-SignMeUp.a */; };
+		BB331C0100FD4D4B9CA45314 /* Baskerville.ttc in Resources */ = {isa = PBXBuildFile; fileRef = D66BB8158BB844D198916300 /* Baskerville.ttc */; };
+		BBC0A646BA9B410292D337D3 /* pinkgold.jpg in Resources */ = {isa = PBXBuildFile; fileRef = ADF216F2F70440D4A3F88EB3 /* pinkgold.jpg */; };
 		C855869F2D173670006737C1 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C818C2EF2D164D05005B6284 /* Images.xcassets */; };
+		C9CBCE5A48584FA7B3CFF824 /* pink.jpg in Resources */ = {isa = PBXBuildFile; fileRef = C7CBC1E694954F489D989316 /* pink.jpg */; };
+		D242C2BEB5A6445A9B3A8E71 /* SF-Pro-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 414CC7B82DE743B3A59BF352 /* SF-Pro-Italic.ttf */; };
+		DB09ADDD40B44541BC468B51 /* app.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 5B3694D291164E868ECC0EFF /* app.jpg */; };
+		E0595031D69B4FBF8BDC7DF4 /* Helvetica.ttc in Resources */ = {isa = PBXBuildFile; fileRef = 2DBAEFA0C7ED42389ED5D371 /* Helvetica.ttc */; };
+		E3BA67AFE4FB459380412262 /* teacher2.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A6E2620C790243EE93E558B2 /* teacher2.jpg */; };
+		E7C9F75390FB4D45BD153B2A /* BuildFile in Resources */ = {isa = PBXBuildFile; };
+		F644B4AE83C54FB8B84C07ED /* SF-Pro-Rounded-Heavy.otf in Resources */ = {isa = PBXBuildFile; fileRef = 03824A51D56C4C489485ADC0 /* SF-Pro-Rounded-Heavy.otf */; };
 		FC22B554162154117CC59111 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		FCFAAAB6E7844713B874D74C /* pinkteacher.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6A7A4D4FA5374142A7C8CE55 /* pinkteacher.jpg */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,23 +97,88 @@
 		00E356EE1AD99517003FC87E /* SignMeUpTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SignMeUpTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00E356F21AD99517003FC87E /* SignMeUpTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SignMeUpTests.m; sourceTree = "<group>"; };
+		02425B1C7BE54B838255C66C /* candyflowers.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = candyflowers.jpg; path = assets/candyflowers.jpg; sourceTree = "<group>"; };
+		037D4FB86AFE4C4D88D9FCFD /* Smart Teacher.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Smart Teacher.otf"; path = "assets/Smart Teacher.otf"; sourceTree = "<group>"; };
+		03824A51D56C4C489485ADC0 /* SF-Pro-Rounded-Heavy.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "SF-Pro-Rounded-Heavy.otf"; path = "assets/SF-Pro-Rounded-Heavy.otf"; sourceTree = "<group>"; };
+		058A6E3E2BD7D68CF1462638 /* libPods-SignMeUp-SignMeUpTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SignMeUp-SignMeUpTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		068DB9F06D3C470AB4F9DA22 /* black2.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = black2.jpg; path = assets/black2.jpg; sourceTree = "<group>"; };
+		0A434200654301E23BD293FD /* Pods-SignMeUp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SignMeUp.debug.xcconfig"; path = "Target Support Files/Pods-SignMeUp/Pods-SignMeUp.debug.xcconfig"; sourceTree = "<group>"; };
+		129003B8A1BD4F8AA2F3F4A4 /* funcamo.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = funcamo.jpg; path = assets/funcamo.jpg; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* SignMeUp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SignMeUp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = SignMeUp/AppDelegate.h; sourceTree = "<group>"; };
 		13B07FB01A68108700A75B9A /* AppDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegate.mm; path = SignMeUp/AppDelegate.mm; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = SignMeUp/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = SignMeUp/main.m; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = SignMeUp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		19F6CBCC0A4E27FBF8BF4A61 /* libPods-SignMeUp-SignMeUpTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SignMeUp-SignMeUpTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		3B4392A12AC88292D35C810B /* Pods-SignMeUp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SignMeUp.debug.xcconfig"; path = "Target Support Files/Pods-SignMeUp/Pods-SignMeUp.debug.xcconfig"; sourceTree = "<group>"; };
-		5709B34CF0A7D63546082F79 /* Pods-SignMeUp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SignMeUp.release.xcconfig"; path = "Target Support Files/Pods-SignMeUp/Pods-SignMeUp.release.xcconfig"; sourceTree = "<group>"; };
-		5B7EB9410499542E8C5724F5 /* Pods-SignMeUp-SignMeUpTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SignMeUp-SignMeUpTests.debug.xcconfig"; path = "Target Support Files/Pods-SignMeUp-SignMeUpTests/Pods-SignMeUp-SignMeUpTests.debug.xcconfig"; sourceTree = "<group>"; };
-		5DCACB8F33CDC322A6C60F78 /* libPods-SignMeUp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SignMeUp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		15AEC0E9F3FC492C959C2757 /* confetti.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = confetti.jpg; path = assets/confetti.jpg; sourceTree = "<group>"; };
+		206D0C18D71F4B77920BB5BC /* pink2.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = pink2.jpg; path = assets/pink2.jpg; sourceTree = "<group>"; };
+		290018185E8B43D1A26D8EAF /* Rockwell.ttc */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Rockwell.ttc; path = assets/Rockwell.ttc; sourceTree = "<group>"; };
+		2C410BC60F93400E8211E352 /* teacher.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = teacher.jpg; path = assets/teacher.jpg; sourceTree = "<group>"; };
+		2DBAEFA0C7ED42389ED5D371 /* Helvetica.ttc */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Helvetica.ttc; path = assets/Helvetica.ttc; sourceTree = "<group>"; };
+		381FE632E024EFA9966472A2 /* Pods-SignMeUp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SignMeUp.release.xcconfig"; path = "Target Support Files/Pods-SignMeUp/Pods-SignMeUp.release.xcconfig"; sourceTree = "<group>"; };
+		3D7B035611744C41940CD1FF /* home.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = home.jpg; path = assets/home.jpg; sourceTree = "<group>"; };
+		414CC7B82DE743B3A59BF352 /* SF-Pro-Italic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "SF-Pro-Italic.ttf"; path = "assets/SF-Pro-Italic.ttf"; sourceTree = "<group>"; };
+		41D99AE8BFBC4FB98B41C56E /* navy2.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = navy2.jpg; path = assets/navy2.jpg; sourceTree = "<group>"; };
+		43595987EF484D629941C7A8 /* classic.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = classic.jpg; path = assets/classic.jpg; sourceTree = "<group>"; };
+		45EF49F7F67E4464834C5A84 /* Chalkboard.ttc */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Chalkboard.ttc; path = assets/Chalkboard.ttc; sourceTree = "<group>"; };
+		47E62CBCD3394473A9FCD18B /* dreamy.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = dreamy.jpg; path = assets/dreamy.jpg; sourceTree = "<group>"; };
+		4E19208E0F56487A97C906E2 /* blue.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = blue.jpg; path = assets/blue.jpg; sourceTree = "<group>"; };
+		5211D3421B7232CB5AFED4BA /* Pods-SignMeUp-SignMeUpTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SignMeUp-SignMeUpTests.debug.xcconfig"; path = "Target Support Files/Pods-SignMeUp-SignMeUpTests/Pods-SignMeUp-SignMeUpTests.debug.xcconfig"; sourceTree = "<group>"; };
+		5B3694D291164E868ECC0EFF /* app.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = app.jpg; path = assets/app.jpg; sourceTree = "<group>"; };
+		5FE0F13F903E4E368545D88B /* black.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = black.jpg; path = assets/black.jpg; sourceTree = "<group>"; };
+		62244115E7C74F2AB7E2A284 /* SignPainter.ttc */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = SignPainter.ttc; path = assets/SignPainter.ttc; sourceTree = "<group>"; };
+		6445D3F245904F0A827343B7 /* teacher1.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = teacher1.jpg; path = assets/teacher1.jpg; sourceTree = "<group>"; };
+		6558F50671C84CAB9ED46920 /* sporty3.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = sporty3.jpg; path = assets/sporty3.jpg; sourceTree = "<group>"; };
+		6A7A4D4FA5374142A7C8CE55 /* pinkteacher.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = pinkteacher.jpg; path = assets/pinkteacher.jpg; sourceTree = "<group>"; };
+		6B9EDC5C15BB488BA605C636 /* girly.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = girly.jpg; path = assets/girly.jpg; sourceTree = "<group>"; };
+		6D02BD32F5D247938C3CE6CA /* Spacetime.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Spacetime.jpg; path = assets/Spacetime.jpg; sourceTree = "<group>"; };
+		6F5B2DEFE6CB45259DC28A85 /* purple.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = purple.jpg; path = assets/purple.jpg; sourceTree = "<group>"; };
+		70AD8EEB03934F8E82688B85 /* GillSans.ttc */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = GillSans.ttc; path = assets/GillSans.ttc; sourceTree = "<group>"; };
+		71E8DBA8566A4CB88C0B4E6A /* teaching.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = teaching.jpg; path = assets/teaching.jpg; sourceTree = "<group>"; };
+		7EDC9DA1C2634CBCA7981D4D /* pink1.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = pink1.jpg; path = assets/pink1.jpg; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = SignMeUp/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		89C6BE57DB24E9ADA2F236DE /* Pods-SignMeUp-SignMeUpTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SignMeUp-SignMeUpTests.release.xcconfig"; path = "Target Support Files/Pods-SignMeUp-SignMeUpTests/Pods-SignMeUp-SignMeUpTests.release.xcconfig"; sourceTree = "<group>"; };
+		8938612ABF7E4833B3488ABB /* logo.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = logo.jpg; path = assets/logo.jpg; sourceTree = "<group>"; };
+		8B22532F3E2348878D2DAA03 /* Futura.ttc */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Futura.ttc; path = assets/Futura.ttc; sourceTree = "<group>"; };
+		8D76582A96064C3D918F4FF3 /* unicorns.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = unicorns.jpg; path = assets/unicorns.jpg; sourceTree = "<group>"; };
+		91C8FCBA387941D388FCFA13 /* modern2.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = modern2.jpg; path = assets/modern2.jpg; sourceTree = "<group>"; };
+		9870C22FDBA547DB8C5C8FF0 /* navy.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = navy.jpg; path = assets/navy.jpg; sourceTree = "<group>"; };
+		9CCB968AD125FADEDC9BFD47 /* libPods-SignMeUp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SignMeUp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		9CE0E05C2973478C8D92B645 /* Signature.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Signature.ttf; path = assets/Signature.ttf; sourceTree = "<group>"; };
+		A3F94DD45F3241C78E97381B /* sporty.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = sporty.jpg; path = assets/sporty.jpg; sourceTree = "<group>"; };
+		A5B67604FA0944569253BCE1 /* BomberBrush.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = BomberBrush.otf; path = assets/BomberBrush.otf; sourceTree = "<group>"; };
+		A6136AAE7A5D4830B8A2BD76 /* KIdDOS-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "KIdDOS-Regular.ttf"; path = "assets/KIdDOS-Regular.ttf"; sourceTree = "<group>"; };
+		A6E2620C790243EE93E558B2 /* teacher2.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = teacher2.jpg; path = assets/teacher2.jpg; sourceTree = "<group>"; };
+		A7BAADFE0D82491D8C394892 /* darkmode.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = darkmode.jpg; path = assets/darkmode.jpg; sourceTree = "<group>"; };
+		AA2BAB2D4FC44E338B3F3F41 /* colorful.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = colorful.jpg; path = assets/colorful.jpg; sourceTree = "<group>"; };
+		AA9F2FAA2760432891F773FA /* pinkclouds.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = pinkclouds.jpg; path = assets/pinkclouds.jpg; sourceTree = "<group>"; };
+		AC0D2A7C4BED4CA6941EA11C /* Noteworthy.ttc */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Noteworthy.ttc; path = assets/Noteworthy.ttc; sourceTree = "<group>"; };
+		AC343450D88741A08ECAF9BA /* Pinky.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Pinky.jpg; path = assets/Pinky.jpg; sourceTree = "<group>"; };
+		ADF216F2F70440D4A3F88EB3 /* pinkgold.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = pinkgold.jpg; path = assets/pinkgold.jpg; sourceTree = "<group>"; };
+		B13E25F41AE44CCE923D2BED /* elegant.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = elegant.jpg; path = assets/elegant.jpg; sourceTree = "<group>"; };
+		B157C6A7934C4EB69D4A3CB7 /* SF-Pro-Display-Black.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "SF-Pro-Display-Black.otf"; path = "assets/SF-Pro-Display-Black.otf"; sourceTree = "<group>"; };
+		B334FBE8167D4CEDAB080E91 /* colors.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = colors.jpg; path = assets/colors.jpg; sourceTree = "<group>"; };
+		B4CB99C96F91427EA2BF9A31 /* fun.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = fun.jpg; path = assets/fun.jpg; sourceTree = "<group>"; };
+		C1EF869CC6704321926F0B60 /* blue2.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = blue2.jpg; path = assets/blue2.jpg; sourceTree = "<group>"; };
+		C7CBC1E694954F489D989316 /* pink.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = pink.jpg; path = assets/pink.jpg; sourceTree = "<group>"; };
 		C818C2EF2D164D05005B6284 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		C818C2F02D164D05005B6284 /* Launchscreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Launchscreen.storyboard; sourceTree = "<group>"; };
 		C818C2F72D164D05005B6284 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		C969297C59F647C89C3B0277 /* elegant2.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = elegant2.jpg; path = assets/elegant2.jpg; sourceTree = "<group>"; };
+		C99FF854BBD241A2B14212C5 /* classicteacher.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = classicteacher.jpg; path = assets/classicteacher.jpg; sourceTree = "<group>"; };
+		D04D3ECABBC1227657974075 /* Pods-SignMeUp-SignMeUpTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SignMeUp-SignMeUpTests.release.xcconfig"; path = "Target Support Files/Pods-SignMeUp-SignMeUpTests/Pods-SignMeUp-SignMeUpTests.release.xcconfig"; sourceTree = "<group>"; };
+		D155F33A92AF41AEAD976404 /* sporty2.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = sporty2.jpg; path = assets/sporty2.jpg; sourceTree = "<group>"; };
+		D66BB8158BB844D198916300 /* Baskerville.ttc */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Baskerville.ttc; path = assets/Baskerville.ttc; sourceTree = "<group>"; };
+		D7C3EB577F514DA0B2AB20E4 /* Avenir Next.ttc */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Avenir Next.ttc"; path = "assets/Avenir Next.ttc"; sourceTree = "<group>"; };
+		DB75886223434E68A08D8CD2 /* Patriotic.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Patriotic.jpg; path = assets/Patriotic.jpg; sourceTree = "<group>"; };
+		DF0DC918847A410185BEF92A /* mainbackground.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = mainbackground.jpg; path = assets/mainbackground.jpg; sourceTree = "<group>"; };
+		E0DF7FD04DBE4BE6B1C0F19C /* MarkerFelt.ttc */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = MarkerFelt.ttc; path = assets/MarkerFelt.ttc; sourceTree = "<group>"; };
+		E4A42C9C406A443EB5EC2715 /* stars.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = stars.jpg; path = assets/stars.jpg; sourceTree = "<group>"; };
+		EBC5E83659EC4ED5A9EE8157 /* playful.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = playful.jpg; path = assets/playful.jpg; sourceTree = "<group>"; };
+		ED05748D9DA64E619DC17265 /* Impact.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Impact.ttf; path = assets/Impact.ttf; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		EE47FDBE600743468A5BC807 /* classygirl.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = classygirl.jpg; path = assets/classygirl.jpg; sourceTree = "<group>"; };
+		F44DA52ED78D447A823692A3 /* classic2.jpg */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = classic2.jpg; path = assets/classic2.jpg; sourceTree = "<group>"; };
+		F857F76827224FBCA3EF0DBE /* Arial Rounded Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Arial Rounded Bold.ttf"; path = "assets/Arial Rounded Bold.ttf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,7 +186,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7699B88040F8A987B510C191 /* libPods-SignMeUp-SignMeUpTests.a in Frameworks */,
+				6F91ABA1E66B4A87A8CFAD9B /* libPods-SignMeUp-SignMeUpTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -63,7 +194,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0C80B921A6F3F58F76C31292 /* libPods-SignMeUp.a in Frameworks */,
+				BADFAA917A958CFA3BBCF7DB /* libPods-SignMeUp.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -105,8 +236,8 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				5DCACB8F33CDC322A6C60F78 /* libPods-SignMeUp.a */,
-				19F6CBCC0A4E27FBF8BF4A61 /* libPods-SignMeUp-SignMeUpTests.a */,
+				9CCB968AD125FADEDC9BFD47 /* libPods-SignMeUp.a */,
+				058A6E3E2BD7D68CF1462638 /* libPods-SignMeUp-SignMeUpTests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -130,6 +261,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				BBF84D3A474B4781AC79FA26 /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -148,12 +280,85 @@
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				3B4392A12AC88292D35C810B /* Pods-SignMeUp.debug.xcconfig */,
-				5709B34CF0A7D63546082F79 /* Pods-SignMeUp.release.xcconfig */,
-				5B7EB9410499542E8C5724F5 /* Pods-SignMeUp-SignMeUpTests.debug.xcconfig */,
-				89C6BE57DB24E9ADA2F236DE /* Pods-SignMeUp-SignMeUpTests.release.xcconfig */,
+				0A434200654301E23BD293FD /* Pods-SignMeUp.debug.xcconfig */,
+				381FE632E024EFA9966472A2 /* Pods-SignMeUp.release.xcconfig */,
+				5211D3421B7232CB5AFED4BA /* Pods-SignMeUp-SignMeUpTests.debug.xcconfig */,
+				D04D3ECABBC1227657974075 /* Pods-SignMeUp-SignMeUpTests.release.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		BBF84D3A474B4781AC79FA26 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A5B67604FA0944569253BCE1 /* BomberBrush.otf */,
+				B157C6A7934C4EB69D4A3CB7 /* SF-Pro-Display-Black.otf */,
+				03824A51D56C4C489485ADC0 /* SF-Pro-Rounded-Heavy.otf */,
+				037D4FB86AFE4C4D88D9FCFD /* Smart Teacher.otf */,
+				F857F76827224FBCA3EF0DBE /* Arial Rounded Bold.ttf */,
+				ED05748D9DA64E619DC17265 /* Impact.ttf */,
+				A6136AAE7A5D4830B8A2BD76 /* KIdDOS-Regular.ttf */,
+				414CC7B82DE743B3A59BF352 /* SF-Pro-Italic.ttf */,
+				9CE0E05C2973478C8D92B645 /* Signature.ttf */,
+				D7C3EB577F514DA0B2AB20E4 /* Avenir Next.ttc */,
+				D66BB8158BB844D198916300 /* Baskerville.ttc */,
+				45EF49F7F67E4464834C5A84 /* Chalkboard.ttc */,
+				8B22532F3E2348878D2DAA03 /* Futura.ttc */,
+				70AD8EEB03934F8E82688B85 /* GillSans.ttc */,
+				2DBAEFA0C7ED42389ED5D371 /* Helvetica.ttc */,
+				E0DF7FD04DBE4BE6B1C0F19C /* MarkerFelt.ttc */,
+				AC0D2A7C4BED4CA6941EA11C /* Noteworthy.ttc */,
+				DB75886223434E68A08D8CD2 /* Patriotic.jpg */,
+				AC343450D88741A08ECAF9BA /* Pinky.jpg */,
+				290018185E8B43D1A26D8EAF /* Rockwell.ttc */,
+				62244115E7C74F2AB7E2A284 /* SignPainter.ttc */,
+				6D02BD32F5D247938C3CE6CA /* Spacetime.jpg */,
+				5B3694D291164E868ECC0EFF /* app.jpg */,
+				5FE0F13F903E4E368545D88B /* black.jpg */,
+				068DB9F06D3C470AB4F9DA22 /* black2.jpg */,
+				4E19208E0F56487A97C906E2 /* blue.jpg */,
+				C1EF869CC6704321926F0B60 /* blue2.jpg */,
+				02425B1C7BE54B838255C66C /* candyflowers.jpg */,
+				43595987EF484D629941C7A8 /* classic.jpg */,
+				F44DA52ED78D447A823692A3 /* classic2.jpg */,
+				C99FF854BBD241A2B14212C5 /* classicteacher.jpg */,
+				EE47FDBE600743468A5BC807 /* classygirl.jpg */,
+				AA2BAB2D4FC44E338B3F3F41 /* colorful.jpg */,
+				B334FBE8167D4CEDAB080E91 /* colors.jpg */,
+				15AEC0E9F3FC492C959C2757 /* confetti.jpg */,
+				A7BAADFE0D82491D8C394892 /* darkmode.jpg */,
+				47E62CBCD3394473A9FCD18B /* dreamy.jpg */,
+				B13E25F41AE44CCE923D2BED /* elegant.jpg */,
+				C969297C59F647C89C3B0277 /* elegant2.jpg */,
+				B4CB99C96F91427EA2BF9A31 /* fun.jpg */,
+				129003B8A1BD4F8AA2F3F4A4 /* funcamo.jpg */,
+				6B9EDC5C15BB488BA605C636 /* girly.jpg */,
+				3D7B035611744C41940CD1FF /* home.jpg */,
+				8938612ABF7E4833B3488ABB /* logo.jpg */,
+				DF0DC918847A410185BEF92A /* mainbackground.jpg */,
+				91C8FCBA387941D388FCFA13 /* modern2.jpg */,
+				9870C22FDBA547DB8C5C8FF0 /* navy.jpg */,
+				41D99AE8BFBC4FB98B41C56E /* navy2.jpg */,
+				C7CBC1E694954F489D989316 /* pink.jpg */,
+				7EDC9DA1C2634CBCA7981D4D /* pink1.jpg */,
+				206D0C18D71F4B77920BB5BC /* pink2.jpg */,
+				AA9F2FAA2760432891F773FA /* pinkclouds.jpg */,
+				ADF216F2F70440D4A3F88EB3 /* pinkgold.jpg */,
+				6A7A4D4FA5374142A7C8CE55 /* pinkteacher.jpg */,
+				EBC5E83659EC4ED5A9EE8157 /* playful.jpg */,
+				6F5B2DEFE6CB45259DC28A85 /* purple.jpg */,
+				A3F94DD45F3241C78E97381B /* sporty.jpg */,
+				D155F33A92AF41AEAD976404 /* sporty2.jpg */,
+				6558F50671C84CAB9ED46920 /* sporty3.jpg */,
+				E4A42C9C406A443EB5EC2715 /* stars.jpg */,
+				2C410BC60F93400E8211E352 /* teacher.jpg */,
+				6445D3F245904F0A827343B7 /* teacher1.jpg */,
+				A6E2620C790243EE93E558B2 /* teacher2.jpg */,
+				71E8DBA8566A4CB88C0B4E6A /* teaching.jpg */,
+				8D76582A96064C3D918F4FF3 /* unicorns.jpg */,
+			);
+			name = Resources;
+			path = "";
 			sourceTree = "<group>";
 		};
 		C85586D02D17BEB5006737C1 /* Fonts */ = {
@@ -171,12 +376,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 00E357021AD99517003FC87E /* Build configuration list for PBXNativeTarget "SignMeUpTests" */;
 			buildPhases = (
-				A55EABD7B0C7F3A422A6CC61 /* [CP] Check Pods Manifest.lock */,
+				47F5A6D5444C6535C9CB217A /* [CP] Check Pods Manifest.lock */,
 				00E356EA1AD99517003FC87E /* Sources */,
 				00E356EB1AD99517003FC87E /* Frameworks */,
 				00E356EC1AD99517003FC87E /* Resources */,
-				C59DA0FBD6956966B86A3779 /* [CP] Embed Pods Frameworks */,
-				F6A41C54EA430FDDC6A6ED99 /* [CP] Copy Pods Resources */,
+				F2E0BC5FD5BFF9FFB8A9F39A /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -192,13 +396,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "SignMeUp" */;
 			buildPhases = (
-				C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */,
+				80C3F8E106657BB8FE87E6DA /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
-				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
+				2230FBC0BA43102C323061F2 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -260,6 +463,72 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				FC22B554162154117CC59111 /* PrivacyInfo.xcprivacy in Resources */,
 				C855869F2D173670006737C1 /* Images.xcassets in Resources */,
+				E7C9F75390FB4D45BD153B2A /* BuildFile in Resources */,
+				45DE4E49043F43BEBCA89615 /* BomberBrush.otf in Resources */,
+				B62D68285EDB421AAFF411F5 /* SF-Pro-Display-Black.otf in Resources */,
+				F644B4AE83C54FB8B84C07ED /* SF-Pro-Rounded-Heavy.otf in Resources */,
+				3A486C4E874B43EF90024F31 /* Smart Teacher.otf in Resources */,
+				5EE3C1D6CF38477792972371 /* Arial Rounded Bold.ttf in Resources */,
+				AED07065BEE4493696858F58 /* Impact.ttf in Resources */,
+				857D5B25D1B84F1DA9AD829A /* KIdDOS-Regular.ttf in Resources */,
+				D242C2BEB5A6445A9B3A8E71 /* SF-Pro-Italic.ttf in Resources */,
+				6FA7844A75A648F8B10AED6B /* Signature.ttf in Resources */,
+				5FAE6EC688E643C890290B46 /* Avenir Next.ttc in Resources */,
+				BB331C0100FD4D4B9CA45314 /* Baskerville.ttc in Resources */,
+				5C4737189D6943C59172A479 /* Chalkboard.ttc in Resources */,
+				85D4E7B6AD0D446EB814CF41 /* Futura.ttc in Resources */,
+				02CBD8A58D7142DAAE691D68 /* GillSans.ttc in Resources */,
+				E0595031D69B4FBF8BDC7DF4 /* Helvetica.ttc in Resources */,
+				A7F7CD57BCC34189A69AB5F8 /* MarkerFelt.ttc in Resources */,
+				75F4B821BDC341759244C7E3 /* Noteworthy.ttc in Resources */,
+				42EAEBACDD974DCB8DC67242 /* Patriotic.jpg in Resources */,
+				7FBB6CA885684BF4A4285A61 /* Pinky.jpg in Resources */,
+				4840F190E8DD40AAA3A092AD /* Rockwell.ttc in Resources */,
+				7CEEA17273F34315804AAF94 /* SignPainter.ttc in Resources */,
+				1ADCEBF5DEE34BD28F388C6B /* Spacetime.jpg in Resources */,
+				DB09ADDD40B44541BC468B51 /* app.jpg in Resources */,
+				0BF8F48496BA42E99A54D334 /* black.jpg in Resources */,
+				495C1AB94F30467BBE1AA294 /* black2.jpg in Resources */,
+				62E6BE95B8C44CAC99013DAE /* blue.jpg in Resources */,
+				5163AEB01E764F3DB54F2601 /* blue2.jpg in Resources */,
+				24826BC2BAFD441BB4729ACD /* candyflowers.jpg in Resources */,
+				4D88AEE777FC42FE97C0309E /* classic.jpg in Resources */,
+				65D04603C25E4D0285634E1B /* classic2.jpg in Resources */,
+				A3391F8EDC834132B14BF6DD /* classicteacher.jpg in Resources */,
+				4F575403D0484CFEBFEB140E /* classygirl.jpg in Resources */,
+				B6B138931B9645DE99E51919 /* colorful.jpg in Resources */,
+				B43DDE80365E4FB0AD14C12E /* colors.jpg in Resources */,
+				31FECCC5C8184D4FAB29CDDC /* confetti.jpg in Resources */,
+				5F231B815181433A9D36BD32 /* darkmode.jpg in Resources */,
+				0B018D8669154C4D978E9B6B /* dreamy.jpg in Resources */,
+				287F7061FC984F04A2ED86FF /* elegant.jpg in Resources */,
+				046A8FE298A8428BA29A39B5 /* elegant2.jpg in Resources */,
+				41959BD2C7234F6B80BC09D8 /* fun.jpg in Resources */,
+				8775494CA37C49ED8B6E2AEA /* funcamo.jpg in Resources */,
+				8FC81E6D24B743298D615DC0 /* girly.jpg in Resources */,
+				7A73571657904AD99B7C510C /* home.jpg in Resources */,
+				96013BFFF7ED4DB99DB7D78D /* logo.jpg in Resources */,
+				26EDE84413014E808C9B9C4B /* mainbackground.jpg in Resources */,
+				1CF97D49A5A84EFDBF180884 /* modern2.jpg in Resources */,
+				930558BF26F84CDB8F6A0582 /* navy.jpg in Resources */,
+				77380B73206D465CAE1F00BF /* navy2.jpg in Resources */,
+				C9CBCE5A48584FA7B3CFF824 /* pink.jpg in Resources */,
+				2C7637337D6F468A8D4C2045 /* pink1.jpg in Resources */,
+				63034F73E8C444D8B24584F5 /* pink2.jpg in Resources */,
+				4248C58311C24E15A36A6990 /* pinkclouds.jpg in Resources */,
+				BBC0A646BA9B410292D337D3 /* pinkgold.jpg in Resources */,
+				FCFAAAB6E7844713B874D74C /* pinkteacher.jpg in Resources */,
+				193AC0A1FA044C0D853C41ED /* playful.jpg in Resources */,
+				625759A3CB3A49EE91476305 /* purple.jpg in Resources */,
+				7B16E01ABFC048FCB0C868FD /* sporty.jpg in Resources */,
+				644CFC897DD441ABB058FD27 /* sporty2.jpg in Resources */,
+				AB04CA6BD72940419C9D8B2A /* sporty3.jpg in Resources */,
+				851EBEB7525748C39416F2FF /* stars.jpg in Resources */,
+				05565141BFBA45C89E8E239E /* teacher.jpg in Resources */,
+				080992FF29B54DC78FF2207B /* teacher1.jpg in Resources */,
+				E3BA67AFE4FB459380412262 /* teacher2.jpg in Resources */,
+				62AC0EB3C2624148A566C6C3 /* teaching.jpg in Resources */,
+				69EDD43903D14BF4BD8B4DB8 /* unicorns.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -282,24 +551,24 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
 		};
-		00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */ = {
+		2230FBC0BA43102C323061F2 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SignMeUp/Pods-SignMeUp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-SignMeUp/Pods-SignMeUp-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			name = "[CP] Embed Pods Frameworks";
+			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SignMeUp/Pods-SignMeUp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-SignMeUp/Pods-SignMeUp-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SignMeUp/Pods-SignMeUp-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SignMeUp/Pods-SignMeUp-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		A55EABD7B0C7F3A422A6CC61 /* [CP] Check Pods Manifest.lock */ = {
+		47F5A6D5444C6535C9CB217A /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -321,7 +590,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */ = {
+		80C3F8E106657BB8FE87E6DA /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -343,41 +612,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		C59DA0FBD6956966B86A3779 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SignMeUp-SignMeUpTests/Pods-SignMeUp-SignMeUpTests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SignMeUp-SignMeUpTests/Pods-SignMeUp-SignMeUpTests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SignMeUp-SignMeUpTests/Pods-SignMeUp-SignMeUpTests-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		E235C05ADACE081382539298 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SignMeUp/Pods-SignMeUp-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SignMeUp/Pods-SignMeUp-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SignMeUp/Pods-SignMeUp-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		F6A41C54EA430FDDC6A6ED99 /* [CP] Copy Pods Resources */ = {
+		F2E0BC5FD5BFF9FFB8A9F39A /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -427,7 +662,7 @@
 /* Begin XCBuildConfiguration section */
 		00E356F61AD99517003FC87E /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5B7EB9410499542E8C5724F5 /* Pods-SignMeUp-SignMeUpTests.debug.xcconfig */;
+			baseConfigurationReference = 5211D3421B7232CB5AFED4BA /* Pods-SignMeUp-SignMeUpTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -454,7 +689,7 @@
 		};
 		00E356F71AD99517003FC87E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 89C6BE57DB24E9ADA2F236DE /* Pods-SignMeUp-SignMeUpTests.release.xcconfig */;
+			baseConfigurationReference = D04D3ECABBC1227657974075 /* Pods-SignMeUp-SignMeUpTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
@@ -478,7 +713,7 @@
 		};
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3B4392A12AC88292D35C810B /* Pods-SignMeUp.debug.xcconfig */;
+			baseConfigurationReference = 0A434200654301E23BD293FD /* Pods-SignMeUp.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -506,7 +741,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5709B34CF0A7D63546082F79 /* Pods-SignMeUp.release.xcconfig */;
+			baseConfigurationReference = 381FE632E024EFA9966472A2 /* Pods-SignMeUp.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -563,7 +798,7 @@
 				COPY_PHASE_STRIP = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "";
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = i386;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -591,6 +826,7 @@
 				);
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CFLAGS = "$(inherited)";
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-DFOLLY_NO_CONFIG",
@@ -601,12 +837,13 @@
 				);
 				OTHER_LDFLAGS = (
 					"$(inherited)",
-					" ",
+					"-Wl",
+					"-ld_classic",
 				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
-				USE_HERMES = true;
+				USE_HERMES = false;
 			};
 			name = Debug;
 		};
@@ -643,7 +880,7 @@
 				COPY_PHASE_STRIP = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "";
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = i386;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -663,6 +900,7 @@
 					"\"$(inherited)\"",
 				);
 				MTL_ENABLE_DEBUG_INFO = NO;
+				OTHER_CFLAGS = "$(inherited)";
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-DFOLLY_NO_CONFIG",
@@ -673,11 +911,12 @@
 				);
 				OTHER_LDFLAGS = (
 					"$(inherited)",
-					" ",
+					"-Wl",
+					"-ld_classic",
 				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
-				USE_HERMES = true;
+				USE_HERMES = false;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;

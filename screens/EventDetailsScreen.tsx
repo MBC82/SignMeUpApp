@@ -1,47 +1,167 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ImageBackground } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ImageBackground,
+  Modal,
+  TouchableWithoutFeedback,
+  Switch,
+} from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import { useNavigation } from '@react-navigation/native';
 import { launchImageLibrary } from 'react-native-image-picker';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { RouteProp, useNavigation as useNavigationType } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-const EventDetailsScreen = ({ route }) => {
+interface RouteParams {
+  eventId?: string;
+  id?: string;
+  username?: string;
+  eventName?: string;
+  location?: string;
+  organizer?: string;
+  address?: string;
+  eventTime?: string;
+  neededItems?: any[];
+  dates?: any[];
+  timeSlots?: any[][];
+  bgColor?: string;
+  fontColor?: string;
+  fontSize?: number;
+  fontType?: string;
+  tileColor?: string;
+  textNotificationsEnabled?: boolean;
+  organizerPhone?: string;
+  emailNotificationsEnabled?: boolean;
+  organizerEmail?: string;
+  globalNote?: string;
+  slotLabels?: Record<string, any>;
+  backgroundImage?: string | null;
+  textShadowEnabled?: boolean;
+  isTimeSlot?: boolean;
+  isPreview?: boolean;
+  isNewEvent?: boolean;
+  showThemes?: boolean;
+}
+
+type RootStackParamList = {
+  EnhancedSignUp: RouteParams;
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+interface Props {
+  route: RouteProp<Record<string, RouteParams>, string>;
+}
+
+const EventDetailsScreen: React.FC<Props> = ({ route }) => {
+  console.log('EventDetailsScreen rendered with params:', route.params);
+
   const {
     eventName,
     location,
+    organizer,
     dates,
-    timeSlots = [[]],  // Ensures timeSlots is always defined as an array of arrays
-    eventTime = "TBD",  // Adds a default value for eventTime if undefined
-    backgroundColor,
+    timeSlots = [[]],
+    eventTime = "TBD",
+    bgColor: initialBgColor,
     fontColor: initialFontColor,
     fontSize: initialFontSize,
     fontType: initialFontType,
     tileColor: initialTileColor,
+    isPreview = false,
   } = route.params;
 
   const [selectedSlot] = useState(timeSlots[0]?.[0] || "Not set");
-  const [bgColor, setBgColor] = useState(backgroundColor || 'white');
+  const [bgColor, setBgColor] = useState(initialBgColor || 'white');
   const [fontColor, setFontColor] = useState(initialFontColor || 'black');
   const [fontSize, setFontSize] = useState(initialFontSize || 16);
   const [fontType, setFontType] = useState(initialFontType || 'sans-serif');
   const [tileColor, setTileColor] = useState(initialTileColor || '#f0f0f0');
-  const [backgroundImage, setBackgroundImage] = useState(null);
+  const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
+  const [openFontSizePicker, setOpenFontSizePicker] = useState(false);
+  const [openTileColorPicker, setOpenTileColorPicker] = useState(false);
+  const [openFontColorPicker, setOpenFontColorPicker] = useState(false);
+  const [openBgColorPicker, setOpenBgColorPicker] = useState(false);
+  const [openFontTypePicker, setOpenFontTypePicker] = useState(false);
+  const [textShadowEnabled, setTextShadowEnabled] = useState(true);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [isThemesModalVisible, setThemesModalVisible] = useState(false);
 
-  const navigation = useNavigation();
+  const navigation = useNavigationType<NavigationProp>();
+
+  // Function to render slots or attendees
+  const renderSlotsOrAttendees = (dateIndex: number) => {
+    if (!dates || !dates[dateIndex]) return null;
+    
+    if (dates[dateIndex].isTimeSlot && timeSlots && timeSlots[dateIndex]) {
+      return (
+        <View style={styles.slotsContainer}>
+          {timeSlots[dateIndex].map((slot: any, slotIndex: number) => (
+            <TouchableOpacity
+              key={slotIndex}
+              style={[styles.slot, { backgroundColor: tileColor }]}
+            >
+              <Text style={[styles.slotText, { color: fontColor, fontFamily: fontType }]}>
+                {slot.start} - {slot.end}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      );
+    } else {
+      return (
+        <View style={styles.slotsContainer}>
+          {Array.from({ length: dates[dateIndex].signups || 1 }).map((_, slotIndex: number) => (
+            <TouchableOpacity
+              key={slotIndex}
+              style={[styles.slot, { backgroundColor: tileColor }]}
+            >
+              <Text style={[styles.slotText, { color: fontColor, fontFamily: fontType }]}>
+                Attendee {slotIndex + 1}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      );
+    }
+  };
 
   const handleConfirmCustomization = () => {
-    console.log("Navigating to SignUpScreen with timeSlots:", timeSlots);
-    navigation.navigate('SignUpScreen', {
-      eventName,
-      location,
-      eventTime,  // This is now ensured to be passed as a defined value
-      dates,
-      timeSlots,
-      bgColor,
-      fontColor,
-      fontSize,
-      fontType,
-      tileColor,
-      backgroundImage,
+    console.log("Navigating to EnhancedSignUp with timeSlots:", timeSlots);
+    navigation.navigate('EnhancedSignUp', {
+      eventId: route.params.eventId || '',
+      id: route.params.id || '',
+      username: route.params.username || '',
+      eventName: eventName || '',
+      location: location || '',
+      organizer: organizer || '',
+      address: route.params.address || '',
+      eventTime: eventTime || '',
+      neededItems: route.params.neededItems || [],
+      dates: dates || [],
+      timeSlots: timeSlots || [],
+      bgColor: bgColor || '#FFFFFF',
+      fontColor: fontColor || '#000000',
+      fontSize: fontSize || 16,
+      fontType: fontType || 'Arial',
+      tileColor: tileColor || '#F0F0F0',
+      textNotificationsEnabled: route.params.textNotificationsEnabled || false,
+      organizerPhone: route.params.organizerPhone || '',
+      emailNotificationsEnabled: route.params.emailNotificationsEnabled || false,
+      organizerEmail: route.params.organizerEmail || '',
+      globalNote: route.params.globalNote || '',
+      slotLabels: route.params.slotLabels || {},
+      backgroundImage: backgroundImage || null,
+      textShadowEnabled: textShadowEnabled || false,
+      isTimeSlot: route.params.isTimeSlot !== undefined ? route.params.isTimeSlot : true,
+      isNewEvent: false,
+      isPreview: false,
+      showThemes: false
     });
   };
 
@@ -51,40 +171,50 @@ const EventDetailsScreen = ({ route }) => {
       if (response.errorMessage) {
         console.log('ImagePicker Error: ', response.errorMessage);
       } else if (response.assets && response.assets.length > 0) {
-        setBackgroundImage(response.assets[0].uri);
+        setBackgroundImage(response.assets[0].uri || null);
       }
     });
   };
 
-  const ArrowRight = ({ onPress }) => (
+  interface ArrowRightProps {
+    onPress: () => void;
+  }
+
+  const ArrowRight: React.FC<ArrowRightProps> = ({ onPress }) => (
     <TouchableOpacity onPress={onPress}>
       <Text style={styles.arrow}>&gt;</Text>
     </TouchableOpacity>
   );
 
+  const pickerStyle = {
+    inputAndroid: {
+      color: fontColor,
+      textAlign: 'left' as const,
+      fontSize: fontSize,
+      padding: 10,
+      backgroundColor: tileColor,
+      borderRadius: 5,
+    },
+    inputIOS: {
+      color: fontColor,
+      textAlign: 'left' as const,
+      fontSize: fontSize,
+      padding: 10,
+      backgroundColor: tileColor,
+      borderRadius: 5,
+    },
+  };
+
   return (
     <View style={{ flex: 1 }}>
       {/* Header with Background Image */}
-      <ImageBackground source={backgroundImage ? { uri: backgroundImage } : null} style={[styles.headerContainer, { backgroundColor: bgColor }]}>
+      <ImageBackground 
+        source={backgroundImage ? { uri: backgroundImage } : undefined} 
+        style={[styles.headerContainer, { backgroundColor: bgColor }]}
+      >
         <Text style={[styles.headerText, { fontSize: fontSize + 6, color: fontColor, fontFamily: fontType }]}>
           Customize Your Event Page
         </Text>
-
-        <View style={styles.timeslotContainer}>
-          <TouchableOpacity
-            style={{
-              padding: 15,
-              backgroundColor: tileColor,
-              borderRadius: 20,
-              alignItems: 'center',
-              marginTop: 10,
-            }}
-          >
-            <Text style={{ fontSize: fontSize, color: fontColor, fontFamily: fontType }}>
-              Time Slot: {selectedSlot}
-            </Text>
-          </TouchableOpacity>
-        </View>
       </ImageBackground>
 
       <ScrollView contentContainerStyle={styles.customizationContainer}>
@@ -95,7 +225,7 @@ const EventDetailsScreen = ({ route }) => {
             <TouchableOpacity onPress={handleImageUpload}>
               <Text style={styles.selectButtonText}>Select Heading Image</Text>
             </TouchableOpacity>
-            <ArrowRight />
+            <ArrowRight onPress={handleImageUpload} />
           </View>
         </View>
 
@@ -117,11 +247,11 @@ const EventDetailsScreen = ({ route }) => {
                   { label: 'Orange', value: 'orange' },
                   { label: 'Yellow', value: 'yellow' }
                 ]}
-                style={pickerStyles}
+                style={pickerStyle}
                 placeholder={{ label: "Select Background", value: null }}
                 useNativeAndroidPickerStyle={false}
               />
-              <ArrowRight />
+              <ArrowRight onPress={() => setOpenBgColorPicker(true)} />
             </View>
           </View>
         </View>
@@ -136,19 +266,13 @@ const EventDetailsScreen = ({ route }) => {
                 items={[
                   { label: 'Black', value: 'black' },
                   { label: 'White', value: 'white' },
-                  { label: 'Red', value: 'red' },
-                  { label: 'Blue', value: 'blue' },
-                  { label: 'Green', value: 'green' },
-                  { label: 'Pink', value: 'hotpink' },
-                  { label: 'Purple', value: 'purple' },
-                  { label: 'Brown', value: 'brown' },
-                  { label: 'Orange', value: 'orange' }
+                  { label: 'Gray', value: 'gray' },
                 ]}
-                style={pickerStyles}
+                style={pickerStyle}
                 placeholder={{ label: "Select Font Color", value: null }}
                 useNativeAndroidPickerStyle={false}
               />
-              <ArrowRight />
+              <ArrowRight onPress={() => setOpenFontColorPicker(true)} />
             </View>
           </View>
         </View>
@@ -159,17 +283,21 @@ const EventDetailsScreen = ({ route }) => {
             <Text style={styles.selectLabel}>Font Size</Text>
             <View style={styles.arrowContainer}>
               <RNPickerSelect
-                onValueChange={(itemValue) => setFontSize(parseInt(itemValue))}
+                onValueChange={(itemValue) => setFontSize(itemValue)}
                 items={[
-                  { label: 'Small', value: '14' },
-                  { label: 'Medium', value: '16' },
-                  { label: 'Large', value: '20' }
+                  { label: '12', value: 12 },
+                  { label: '14', value: 14 },
+                  { label: '16', value: 16 },
+                  { label: '18', value: 18 },
+                  { label: '20', value: 20 },
+                  { label: '24', value: 24 },
+                  { label: '30', value: 30 }
                 ]}
-                style={pickerStyles}
+                style={pickerStyle}
                 placeholder={{ label: "Select Font Size", value: null }}
                 useNativeAndroidPickerStyle={false}
               />
-              <ArrowRight />
+              <ArrowRight onPress={() => setOpenFontSizePicker(true)} />
             </View>
           </View>
         </View>
@@ -182,20 +310,15 @@ const EventDetailsScreen = ({ route }) => {
               <RNPickerSelect
                 onValueChange={(itemValue) => setFontType(itemValue)}
                 items={[
-                  { label: 'Noteworthy', value: 'Noteworthy' },
-                  { label: 'Futura', value: 'Futura' },
-                  { label: 'Rockwell', value: 'Rockwell' },
-                  { label: 'Sans-Serif', value: 'sans-serif' },
-                  { label: 'SignPainter', value: 'SignPainter' },
-                  { label: 'Marker Felt', value: 'Marker Felt' },
+                  { label: 'Arial', value: 'Arial' },
                   { label: 'Times New Roman', value: 'Times New Roman' },
-                  { label: 'Arial', value: 'Arial' }
+                  { label: 'Verdana', value: 'Verdana' }
                 ]}
-                style={pickerStyles}
+                style={pickerStyle}
                 placeholder={{ label: "Select Font Type", value: null }}
                 useNativeAndroidPickerStyle={false}
               />
-              <ArrowRight />
+              <ArrowRight onPress={() => setOpenFontTypePicker(true)} />
             </View>
           </View>
         </View>
@@ -208,24 +331,16 @@ const EventDetailsScreen = ({ route }) => {
               <RNPickerSelect
                 onValueChange={(itemValue) => setTileColor(itemValue)}
                 items={[
-                  { label: 'Light Gray', value: '#f0f0f0' },
-                  { label: 'Black', value: 'black' },
-                  { label: 'Light Blue', value: 'lightblue' },
-                  { label: 'Pink', value: 'pink' },
-                  { label: 'Purple', value: 'purple' },
-                  { label: 'Red', value: 'red' },
-                  { label: 'Blue', value: 'blue' },
-                  { label: 'Yellow', value: 'yellow' },
-                  { label: 'Orange', value: 'orange' },
-                  { label: 'Brown', value: 'brown' },
-                  { label: 'Green', value: 'green' },
+                  { label: 'White', value: '#FFFFFF' },
+                  { label: 'Light Gray', value: '#F0F0F0' },
+                  { label: 'Light Blue', value: '#E6F3FF' },
                   { label: 'Light Green', value: '#90ee90' }
                 ]}
-                style={pickerStyles}
+                style={pickerStyle}
                 placeholder={{ label: "Select Tile Color", value: null }}
                 useNativeAndroidPickerStyle={false}
               />
-              <ArrowRight />
+              <ArrowRight onPress={() => setOpenTileColorPicker(true)} />
             </View>
           </View>
         </View>
@@ -322,26 +437,41 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  slotsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    marginTop: 10,
+  },
+  slot: {
+    width: '45%',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  slotText: {
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  dateTile: {
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 10,
+    padding: 15,
+    marginHorizontal: 10,
+    marginBottom: 15,
+  },
+  dateText: {
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
 });
-
-// Picker styles function to adjust styles based on color and size
-const pickerStyles = {
-  inputAndroid: {
-    color: 'black',
-    textAlign: 'right',
-    fontSize: 14,
-    padding: 10,
-    backgroundColor: 'white',
-    borderRadius: 10,
-  },
-  inputIOS: {
-    color: 'black',
-    textAlign: 'right',
-    fontSize: 14,
-    padding: 10,
-    backgroundColor: 'white',
-    borderRadius: 10,
-  },
-};
 
 export default EventDetailsScreen;

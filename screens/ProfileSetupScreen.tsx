@@ -8,21 +8,47 @@ import {
   ImageBackground,
   StyleSheet,
   Alert,
+  ScrollView,
+  FlatList,
+  Linking,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import EncryptedStorage from 'react-native-encrypted-storage'; // For secure password storage
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { ProfileContext } from '../ProfileContext'; // Import Profile Context
+import { StackNavigationProp } from '@react-navigation/stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import StatBox from '../components/StatBox';
+import ToggleOption from '../components/ToggleOption';
+import DropDownPicker from 'react-native-dropdown-picker';
+import { useLanguage } from '../contexts/LanguageContext';
+import ImagePicker from 'react-native-image-picker';
+import { safeGetItem, safeSetItem, setLoginStatus, clearLoginStatus } from '../utils/StorageUtils';
+
+// Define the type for the navigation parameters
+type RootStackParamList = {
+  Home: undefined;
+  MyEvents: undefined;
+  CreateEvent: undefined;
+  ProfileSetup: undefined;
+  UserProfile: undefined;
+};
+
+type ProfileSetupScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ProfileSetup'>;
 
 const ProfileSetupScreen = () => {
-  const navigation = useNavigation();
-  const { profile, updateProfile } = useContext(ProfileContext); // Access ProfileContext
+  const navigation = useNavigation<ProfileSetupScreenNavigationProp>();
+  const { profile, updateProfile, signOut } = useContext(ProfileContext); // Access ProfileContext
+  const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
-    navigation.setOptions({ headerShown: false });
     loadProfile();
   }, [navigation]);
+
+  useEffect(() => {
+    console.log('Current language:', language);
+  }, [language]);
 
   const [name, setName] = useState(profile.name || '');
   const [username, setUsername] = useState(profile.username || '');
@@ -32,45 +58,85 @@ const ProfileSetupScreen = () => {
   const [phone, setPhone] = useState(profile.phone || '');
   const [profileImage, setProfileImage] = useState(profile.profileImage || '');
   const [isSignedIn, setIsSignedIn] = useState(false);
-  const [isLoginMode, setIsLoginMode] = useState(false);
+  const [isLoginMode, setIsLoginMode] = useState(true);
+  const [showLandingPage, setShowLandingPage] = useState(true);
+  const [userStats, setUserStats] = useState({
+    eventsCreated: 0,
+    eventsAttended: 0,
+    upcomingEvents: 0
+  });
+  const [preferences, setPreferences] = useState({
+    language: 'English',
+    notificationsEnabled: true,
+    privacySettings: {
+      profileVisibility: 'public',
+      showEmail: false,
+      showPhone: false
+    },
+    paymentMethods: [],
+    subscription: 'free' // or 'premium'
+  });
+  const [connections, setConnections] = useState({
+    friends: [],
+    pendingRequests: []
+  });
+  const [contactInfo, setContactInfo] = useState({
+    alternateEmail: '',
+    address: '',
+    emergencyContact: ''
+  });
+  const [openLanguagePicker, setOpenLanguagePicker] = useState(false);
+  const [languages] = useState([
+    { label: 'English', value: 'en' },
+    { label: 'Español', value: 'es' },
+    { label: 'Français', value: 'fr' }
+  ]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showConnectionSearch, setShowConnectionSearch] = useState(false);
 
   const loadProfile = async () => {
     try {
       const storedUsername = await EncryptedStorage.getItem('username');
       const storedPassword = await EncryptedStorage.getItem('password');
       const userProfile = await EncryptedStorage.getItem('userProfile');
+      
       if (storedUsername && storedPassword && userProfile) {
-        setIsLoginMode(true);
-        const parsedProfile = JSON.parse(userProfile);
-        setName(parsedProfile.name);
-        setEmail(parsedProfile.email);
-        setPhone(parsedProfile.phone);
-        setProfileImage(parsedProfile.profileImage);
-        updateProfile(parsedProfile); // Update context
+        setIsLoginMode(true); // Just set login mode, don't auto-populate data
       }
     } catch (error) {
       console.log('Error loading profile:', error);
     }
   };
 
-  const pickImage = () => {
-    launchImageLibrary(
-      {
-        mediaType: 'photo',
-        maxWidth: 300,
-        maxHeight: 300,
-        quality: 0.5,
-      },
-      (response) => {
-        if (response.didCancel) {
-          console.log('User cancelled image picker');
-        } else if (response.errorCode) {
-          Alert.alert('Error', response.errorMessage);
-        } else if (response.assets && response.assets.length > 0) {
-          setProfileImage(response.assets[0].uri);
-        }
+  const handleImagePicker = () => {
+    const options = {
+      mediaType: 'photo' as const,
+      includeBase64: true,
+      maxHeight: 300,
+      maxWidth: 300,
+    };
+
+    launchImageLibrary(options, (response) => {
+      console.log('Image picker response:', response);
+      
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.errorCode) {
+        console.log('ImagePicker Error: ', response.errorMessage);
+        Alert.alert('Error', 'Failed to pick image');
+      } else if (response.assets && response.assets.length > 0) {
+        const source = { uri: response.assets[0].uri };
+        console.log('Selected image URI:', source.uri);
+        
+        // Set the profile image with the full URI
+        setProfileImage(source.uri || '');
+        
+        // Log to verify the image was set
+        console.log('Profile image set to:', source.uri);
       }
-    );
+    });
   };
 
   const handleSaveProfile = async () => {
@@ -80,42 +146,126 @@ const ProfileSetupScreen = () => {
     }
 
     try {
-      const newProfile = { name, username, email, phone, profileImage };
-      await EncryptedStorage.setItem('username', username);
-      await EncryptedStorage.setItem('password', password);
-      await EncryptedStorage.setItem('userProfile', JSON.stringify(newProfile));
-      setIsSignedIn(true);
-      setIsLoginMode(false);
-      updateProfile(newProfile); // Update context
-      Alert.alert('Profile Saved', 'Your profile has been successfully updated.');
+      console.log('Saving profile with image:', profileImage);
+      const lowerUsername = username.toLowerCase();
+
+      // Get all users
+      const allUsersString = await safeGetItem('allUsers');
+      let allUsers = allUsersString ? JSON.parse(allUsersString) : [];
+
+      // Check if username already exists
+      if (allUsers.some((user: any) => user.username === lowerUsername)) {
+        Alert.alert('Username Taken', 'This username is already registered. Please choose another.');
+        return;
+      }
+
+      const newProfile = { 
+        name, 
+        username: lowerUsername,
+        email, 
+        phone, 
+        profileImage, // Include the profile image
+        password, // Ensure password is stored
+        memberSince: new Date().toISOString()
+      };
+
+      console.log('New profile to save:', JSON.stringify(newProfile));
+
+      // Store user profile and password
+      allUsers.push(newProfile);
+      await safeSetItem('allUsers', JSON.stringify(allUsers));
+      await safeSetItem(`password_${lowerUsername}`, password);
+
+      // Set login status
+      await setLoginStatus(true, lowerUsername);
+
+      // Update profile context with the full profile including image
+      updateProfile(newProfile);
+
+      // Navigate to MyEventsScreen
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MyEvents' }],
+      });
     } catch (error) {
-      console.log('Error saving profile data:', error);
-      Alert.alert('Error', 'Failed to save profile data.');
+      console.error('Error saving profile:', error);
+      Alert.alert('Error', 'Failed to save profile. Please try again.');
     }
   };
 
   const handleLogin = async () => {
     try {
-      const storedUsername = await EncryptedStorage.getItem('username');
-      const storedPassword = await EncryptedStorage.getItem('password');
-      if (username === storedUsername && password === storedPassword) {
-        setIsSignedIn(true);
-        setIsLoginMode(false);
-        const userProfile = await EncryptedStorage.getItem('userProfile');
-        if (userProfile) {
-          const parsedProfile = JSON.parse(userProfile);
-          setName(parsedProfile.name);
-          setEmail(parsedProfile.email);
-          setPhone(parsedProfile.phone);
-          setProfileImage(parsedProfile.profileImage);
-          updateProfile(parsedProfile); // Update context
-        }
-        Alert.alert('Welcome Back', 'You have successfully logged in.');
-      } else {
-        Alert.alert('Invalid Credentials', 'The username or password is incorrect.');
+      console.log('========== STARTING LOGIN ==========');
+      const lowerUsername = username.toLowerCase();
+      console.log('Attempting login for username:', lowerUsername);
+      
+      // Get stored password for this username
+      const storedPassword = await safeGetItem(`password_${lowerUsername}`);
+      console.log('Password check:', storedPassword ? 'Found' : 'Not found');
+      
+      if (!storedPassword || storedPassword !== password) {
+        console.log('Login failed: Invalid credentials');
+        Alert.alert('Login Failed', 'Invalid username or password');
+        return;
       }
+      
+      // Get user profile
+      const allUsersString = await safeGetItem('allUsers');
+      const allUsers = allUsersString ? JSON.parse(allUsersString) : [];
+      const userProfile = allUsers.find((user: any) => user.username === lowerUsername);
+      
+      if (!userProfile) {
+        console.log('Login failed: User profile not found');
+        Alert.alert('Login Failed', 'User profile not found');
+        return;
+      }
+      
+      console.log('Login successful for user:', lowerUsername);
+      
+      // Get the saved profile image from AsyncStorage (this takes priority)
+      try {
+        console.log('Looking for profile image in AsyncStorage');
+        const savedProfileImage = await AsyncStorage.getItem(`profileImage_${lowerUsername}`);
+        
+        if (savedProfileImage) {
+          console.log('Found profile image in AsyncStorage:', savedProfileImage.substring(0, 50) + '...');
+          // Update the profile image in the userProfile object
+          userProfile.profileImage = savedProfileImage;
+        } else if (userProfile.profileImage) {
+          console.log('Using profile image from allUsers:', userProfile.profileImage.substring(0, 50) + '...');
+          // If AsyncStorage doesn't have an image but allUsers does, save it to AsyncStorage
+          await AsyncStorage.setItem(`profileImage_${lowerUsername}`, userProfile.profileImage);
+        } else {
+          console.log('No profile image found for user');
+        }
+      } catch (imageError) {
+        console.warn('Error retrieving profile image:', imageError);
+      }
+      
+      // Store current user info using the utility function
+      await setLoginStatus(true, lowerUsername);
+      console.log('Set login status to true for user:', lowerUsername);
+      
+      // Save the user profile to EncryptedStorage for future reference
+      try {
+        await EncryptedStorage.setItem('userProfile', JSON.stringify(userProfile));
+      } catch (profileError) {
+        console.warn('Error saving user profile to EncryptedStorage:', profileError);
+      }
+      
+      // Update profile context with the potentially updated user profile
+      updateProfile(userProfile);
+      
+      // Navigate to UserProfileScreen
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'UserProfile' }],
+      });
+      
+      console.log('========== FINISHED LOGIN ==========');
     } catch (error) {
-      console.log('Error during login:', error);
+      console.error('Error logging in:', error);
+      Alert.alert('Error', 'Failed to log in. Please try again.');
     }
   };
 
@@ -139,7 +289,20 @@ const ProfileSetupScreen = () => {
 
   const handleSignOut = async () => {
     try {
-      await EncryptedStorage.clear();
+      console.log('========== STARTING SIGN OUT ==========');
+      
+      // Get the current username before clearing it
+      const username = await safeGetItem('username');
+      
+      // Clear login status using the utility function
+      await clearLoginStatus();
+      
+      // Clear all user-specific data
+      if (username) {
+        await clearAllUserData(username);
+      }
+      
+      // Force clear the state
       setName('');
       setUsername('');
       setPassword('');
@@ -148,108 +311,411 @@ const ProfileSetupScreen = () => {
       setProfileImage('');
       setIsSignedIn(false);
       setIsLoginMode(true);
-      updateProfile({}); // Clear context
-      Alert.alert('Signed Out', 'You have successfully signed out.');
+      setShowLandingPage(true);
+      
+      // Use context's signOut method
+      await signOut(navigation);
+      
+      // Force a complete reset of the navigation stack
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'ProfileSetup' }],
+      });
+      
+      console.log('========== FINISHED SIGN OUT ==========');
     } catch (error) {
-      console.log('Error signing out:', error);
+      console.error('Error during sign out:', error);
+      Alert.alert('Error', 'Failed to sign out');
+    }
+  };
+
+  const updatePrivacySetting = (setting: string, value: boolean | string) => {
+    setPreferences(prev => ({
+      ...prev,
+      privacySettings: {
+        ...prev.privacySettings,
+        [setting]: value
+      }
+    }));
+  };
+
+  const updatePreference = (key: string, value: any) => {
+    setPreferences(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const handleAddPaymentMethod = () => {
+    Alert.alert('Coming Soon', 'Payment method functionality will be available soon.');
+  };
+
+  const handleUpgradeSubscription = async () => {
+    try {
+      // For testing, use the App Store URL
+      const appStoreUrl = 'https://apps.apple.com/';
+      await Linking.openURL(appStoreUrl);
+    } catch (error) {
+      console.log('Error opening App Store:', error);
+      Alert.alert(
+        'Error',
+        'Unable to open App Store. Please try again later or contact support.'
+      );
+    }
+  };
+
+  const searchUsers = async (query: string) => {
+    try {
+      console.log('Searching for users with query:', query);
+      // Get all stored users
+      const allUsers = await EncryptedStorage.getItem('allUsers');
+      console.log('All users from storage:', allUsers);
+      
+      if (allUsers) {
+        const users = JSON.parse(allUsers);
+        // Filter users based on search query
+        const filtered = users.filter((user: any) => 
+          user.name.toLowerCase().includes(query.toLowerCase()) ||
+          user.username.toLowerCase().includes(query.toLowerCase())
+        ).filter((user: any) => user.username !== profile.username);
+
+        console.log('Filtered users:', filtered);
+        setSearchResults(filtered);
+      }
+    } catch (error) {
+      console.log('Error searching users:', error);
+    }
+  };
+
+  const sendConnectionRequest = async (otherUser: any) => {
+    try {
+      // Get existing connections
+      const existingConnections = await EncryptedStorage.getItem('connections') || '{}';
+      const connections = JSON.parse(existingConnections);
+      
+      // Add to pending requests
+      if (!connections[otherUser.username]) {
+        connections[otherUser.username] = {
+          status: 'pending',
+          timestamp: new Date().toISOString()
+        };
+        
+        await EncryptedStorage.setItem('connections', JSON.stringify(connections));
+        Alert.alert('Success', 'Connection request sent!');
+      } else {
+        Alert.alert('Already Connected', 'You have already connected with or sent a request to this user.');
+      }
+    } catch (error) {
+      console.log('Error sending connection request:', error);
+      Alert.alert('Error', 'Failed to send connection request');
+    }
+  };
+
+  const handleLanguageChange = (value: string) => {
+    if (value) {
+      console.log('Changing language to:', value);
+      setLanguage(value);
+      updatePreference('language', value);
+    }
+  };
+
+  // Add a function to clear all form fields
+  const clearFormFields = () => {
+    setName('');
+    setUsername('');
+    setPassword('');
+    setEmail('');
+    setPhone('');
+    setProfileImage('');
+  };
+
+  // Update the mode switching functions
+  const switchToSignUp = () => {
+    setIsLoginMode(false);
+    setShowLandingPage(false);
+    clearFormFields();
+  };
+
+  const switchToLogin = () => {
+    setIsLoginMode(true);
+    setShowLandingPage(false);
+    setIsSignedIn(false);
+    clearFormFields();
+  };
+
+  // Add useEffect to clear fields when component mounts
+  useEffect(() => {
+    clearFormFields();
+  }, []);
+
+  // Replace the checkLoginState useEffect with useFocusEffect
+  useFocusEffect(
+    React.useCallback(() => {
+      const checkLoginState = async () => {
+        try {
+          const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+          if (isLoggedIn === 'true') {
+            const userProfileString = await EncryptedStorage.getItem('userProfile');
+            const username = await EncryptedStorage.getItem('username');
+
+            console.log('Profile Check:', {
+              isLoggedIn,
+              hasProfile: !!userProfileString,
+              username
+            });
+
+            if (userProfileString && username) {
+              const userProfile = JSON.parse(userProfileString);
+              setIsSignedIn(true);
+              updateProfile(userProfile);
+              setUsername(username);
+              setName(userProfile.name);
+              setEmail(userProfile.email);
+              setPhone(userProfile.phone || '');
+              setProfileImage(userProfile.profileImage || '');
+            }
+          } else {
+            // Reset state if not logged in
+            setIsSignedIn(false);
+            setIsLoginMode(true);
+            setShowLandingPage(true);
+            updateProfile({});
+          }
+        } catch (error) {
+          console.error('Error checking login state:', error);
+        }
+      };
+
+      checkLoginState();
+    }, [])
+  );
+
+  // Add this useEffect to handle profile image persistence
+  useEffect(() => {
+    const loadProfileImage = async () => {
+      try {
+        const username = await EncryptedStorage.getItem('username');
+        if (username) {
+          const userProfileString = await EncryptedStorage.getItem('userProfile');
+          if (userProfileString) {
+            const userProfile = JSON.parse(userProfileString);
+            if (userProfile.profileImage) {
+              setProfileImage(userProfile.profileImage);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading profile image:', error);
+      }
+    };
+
+    loadProfileImage();
+  }, []);
+
+  const handleSignIn = async () => {
+    try {
+      const storedUsername = await EncryptedStorage.getItem('username');
+      const storedPassword = await EncryptedStorage.getItem('password');
+      
+      if (storedUsername === username && storedPassword === password) {
+        // Get stored profile data
+        const userProfileString = await EncryptedStorage.getItem('userProfile');
+        const userProfile = userProfileString ? JSON.parse(userProfileString) : {};
+        
+        // Get stored profile image
+        const profileImage = await AsyncStorage.getItem(`profileImage_${username}`);
+        
+        // Update profile context
+        updateProfile({
+          name: userProfile.name || '',
+          username: username,
+          email: userProfile.email || '',
+          phone: userProfile.phone || '',
+          profileImage: profileImage || userProfile.profileImage || '',
+          memberSince: userProfile.memberSince || new Date().toISOString(),
+        });
+
+        await AsyncStorage.setItem('isLoggedIn', 'true');
+        await EncryptedStorage.setItem('isLoggedIn', 'true');
+
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+      } else {
+        Alert.alert('Error', 'Account not found');
+      }
+    } catch (error) {
+      console.error('Error signing in:', error);
+      Alert.alert('Error', 'Failed to sign in');
+    }
+  };
+
+  const handleSignUp = async () => {
+    try {
+      const lowerUsername = username.toLowerCase();
+
+      // Get all users
+      const allUsersString = await EncryptedStorage.getItem('allUsers');
+      let allUsers = allUsersString ? JSON.parse(allUsersString) : [];
+
+      // Check if username already exists
+      if (allUsers.some((user: any) => user.username === lowerUsername)) {
+        Alert.alert('Username Taken', 'This username is already registered. Please choose another.');
+        return;
+      }
+
+      const newProfile = { 
+        username: lowerUsername,
+        password, // Ensure password is stored
+        email,
+        phone,
+        profileImage: '', // Initialize with an empty string
+        memberSince: new Date().toISOString()
+      };
+
+      // Store user profile and password
+      allUsers.push(newProfile);
+      await EncryptedStorage.setItem('allUsers', JSON.stringify(allUsers));
+      await EncryptedStorage.setItem(`password_${lowerUsername}`, password);
+
+      // Update profile context
+      updateProfile(newProfile);
+
+      // Navigate to UserProfileScreen
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'UserProfile' }],
+      });
+    } catch (error) {
+      console.error('Error signing up:', error);
+      Alert.alert('Error', 'Failed to create account. Please try again.');
+    }
+  };
+
+  const loadUserStats = async () => {
+    try {
+      console.log('Loading user stats');
+      const username = await EncryptedStorage.getItem('username');
+      
+      if (!username) {
+        console.log('No username found, cannot load stats');
+        return;
+      }
+      
+      console.log('Current username:', username);
+      
+      // Load events created by the user
+      const submittedEventsKey = `submittedEvents_${username}`;
+      const draftEventsKey = `draftEvents_${username}`;
+      
+      const submittedEventsJson = await AsyncStorage.getItem(submittedEventsKey);
+      const draftEventsJson = await AsyncStorage.getItem(draftEventsKey);
+      
+      const submittedEvents = submittedEventsJson ? JSON.parse(submittedEventsJson) : [];
+      const draftEvents = draftEventsJson ? JSON.parse(draftEventsJson) : [];
+      
+      const eventsCreated = submittedEvents.length;
+      console.log('Events created:', eventsCreated);
+      
+      // For now, set events attended to 0 directly
+      const eventsAttended = 0;
+      
+      console.log('Setting events attended to 0');
+      
+      // Update the state with the correct counts
+      setUserStats({
+        eventsCreated,
+        eventsAttended,
+        upcomingEvents: 0
+      });
+    } catch (error) {
+      console.error('Error loading user stats:', error);
+    }
+  };
+
+  const clearAllUserData = async (username: string) => {
+    if (!username) return;
+    
+    // Get all keys in AsyncStorage
+    const allKeys = await AsyncStorage.getAllKeys();
+    
+    // Find all event-related keys for this user
+    const userKeys = allKeys.filter(key => 
+      key === `submittedEvents_${username}` || 
+      key === `draftEvents_${username}` ||
+      key.startsWith(`event_${username}_`)
+    );
+    
+    // Remove all user-specific keys
+    if (userKeys.length > 0) {
+      await AsyncStorage.multiRemove(userKeys);
+      console.log('Cleared user-specific data:', userKeys);
     }
   };
 
   return (
-    <ImageBackground source={require('../ios/assets/navy.jpg')} style={styles.background}>
+    <ImageBackground
+      source={require('../ios/assets/home.jpg')}
+      style={styles.background}
+    >
       <View style={styles.container}>
-        {isSignedIn ? (
-          <>
-            <Text style={styles.headerText}>Profile Setup</Text>
-            <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
-              {profileImage ? (
-                <Image source={{ uri: profileImage }} style={styles.profileImage} />
-              ) : (
-                <Text style={styles.imagePlaceholderText}>+ Add Profile Image</Text>
-              )}
+        {showLandingPage ? (
+          <View style={styles.welcomeContainer}>
+            <Text style={styles.welcomeText}>Welcome to Sign Me Up</Text>
+            <TouchableOpacity 
+              style={styles.landingButton}
+              onPress={switchToSignUp}
+            >
+              <Text style={styles.landingButtonText}>Create Account</Text>
             </TouchableOpacity>
-            <TextInput
-              placeholder="Name"
-              value={name}
-              onChangeText={setName}
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Username"
-              value={username}
-              onChangeText={setUsername}
-              style={styles.input}
-            />
-            <View style={styles.passwordContainer}>
-              <TextInput
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword} // Toggles visibility
-                style={[styles.input, styles.passwordInput]}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.toggleButton}
-              >
-                <MaterialIcons
-                  name={showPassword ? 'visibility' : 'visibility-off'}
-                  size={24}
-                  color="gray"
-                />
-              </TouchableOpacity>
-            </View>
-            <TextInput
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Phone Number"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              style={styles.input}
-            />
-            <TouchableOpacity onPress={handleSaveProfile} style={styles.saveButton}>
-              <Text style={styles.saveButtonText}>Save Profile</Text>
+            <TouchableOpacity 
+              style={styles.landingButton}
+              onPress={switchToLogin}
+            >
+              <Text style={styles.landingButtonText}>Login</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
-              <Text style={styles.signOutButtonText}>Sign Out</Text>
-            </TouchableOpacity>
-          </>
+          </View>
         ) : (
-          <>
+          <View style={styles.loginContainer}>
             <Text style={styles.headerText}>{isLoginMode ? 'Login' : 'Sign Up'}</Text>
             <TextInput
-              placeholder="Name"
-              placeholderTextColor="gray"
-              value={name}
-              onChangeText={setName}
               style={styles.input}
-            />
-            <TextInput
               placeholder="Username"
               placeholderTextColor="gray"
               value={username}
               onChangeText={setUsername}
-              style={styles.input}
             />
+            {!isLoginMode && (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  placeholderTextColor="gray"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Phone"
+                  placeholderTextColor="gray"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                />
+              </>
+            )}
             <View style={styles.passwordContainer}>
               <TextInput
+                style={styles.passwordInput}
                 placeholder="Password"
+                secureTextEntry={!showPassword}
                 placeholderTextColor="gray"
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry={!showPassword} // Toggles visibility
-                style={[styles.input, styles.passwordInput]}
               />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.toggleButton}
-              >
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                 <MaterialIcons
                   name={showPassword ? 'visibility' : 'visibility-off'}
                   size={24}
@@ -257,75 +723,21 @@ const ProfileSetupScreen = () => {
                 />
               </TouchableOpacity>
             </View>
-            <TextInput
-              placeholder="Email"
-              placeholderTextColor="gray"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Phone Number"
-              placeholderTextColor="gray"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              style={styles.input}
-            />
-                        <TouchableOpacity onPress={handleSaveProfile} style={styles.saveButton}>
-              <Text style={styles.saveButtonText}>
-                {isLoginMode ? 'Log In' : 'Sign Up'}
+            <TouchableOpacity style={styles.submitButton} onPress={isLoginMode ? handleLogin : handleSignUp}>
+              <Text style={styles.submitButtonText}>{isLoginMode ? 'Log In' : 'Sign Up'}</Text>
+            </TouchableOpacity>
+            {isLoginMode && (
+              <TouchableOpacity onPress={handleForgotPassword}>
+                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={() => setIsLoginMode(!isLoginMode)}>
+              <Text style={styles.switchModeText}>
+                {isLoginMode ? "Don't have an account? Sign Up" : 'Already have an account? Log In'}
               </Text>
             </TouchableOpacity>
-            {isLoginMode ? (
-              <>
-                <TouchableOpacity onPress={handleForgotPassword}>
-                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setIsLoginMode(false)}>
-                  <Text style={styles.switchModeText}>Don't have an account? Sign Up</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <TouchableOpacity onPress={() => setIsLoginMode(true)}>
-                  <Text style={styles.switchModeText}>
-                    Already have an account? Log In
-                  </Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </>
+          </View>
         )}
-      </View>
-      {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity onPress={() => navigation.popToTop()} style={styles.navButton}>
-          <MaterialIcons name="home" size={30} color="navy" />
-          <Text style={styles.iconLabel}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('MyEventsScreen')}
-          style={styles.navButton}
-        >
-          <MaterialIcons name="calendar-today" size={30} color="navy" />
-          <Text style={styles.iconLabel}>My Events</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('CreateEventScreen')}
-          style={styles.navButton}
-        >
-          <MaterialIcons name="event" size={30} color="navy" />
-          <Text style={styles.iconLabel}>Create Event</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('ProfileSetupScreen')}
-          style={styles.navButton}
-        >
-          <MaterialIcons name="account-circle" size={30} color="navy" />
-          <Text style={styles.iconLabel}>Profile</Text>
-        </TouchableOpacity>
       </View>
     </ImageBackground>
   );
@@ -338,42 +750,61 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  welcomeContainer: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 215, 0, 0.9)', // Semi-transparent gold
     padding: 20,
-    backgroundColor: 'rgba(240, 240, 240, 0.9)',
-    marginTop: 50,
+    borderRadius: 10,
+  },
+  welcomeText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: 'black',
+  },
+  landingButton: {
+    backgroundColor: '#007bff',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 15,
+    width: 200,
+  },
+  landingButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  loginContainer: {
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 215, 0, 0.9)', // Semi-transparent gold
+    padding: 20,
+    borderRadius: 10,
   },
   headerText: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
-  },
-  imagePicker: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#e1e1e1',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  profileImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 60,
-  },
-  imagePlaceholderText: {
-    color: '#888',
-    fontSize: 14,
+    color: 'black',
   },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
     padding: 10,
     marginBottom: 15,
-    borderRadius: 5,
     backgroundColor: '#fff',
+    color: 'navy',
+    borderRadius: 5,
+    width: '100%',
   },
   passwordContainer: {
     flexDirection: 'row',
@@ -383,46 +814,21 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: '#fff',
     marginBottom: 15,
+    width: '100%',
   },
   passwordInput: {
     flex: 1,
     padding: 10,
   },
-  toggleButton: {
-    padding: 10,
-  },
-  saveButton: {
+  submitButton: {
     backgroundColor: '#007bff',
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
     marginBottom: 15,
+    width: '100%',
   },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  signOutButton: {
-    backgroundColor: 'red',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  signOutButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  signInButton: {
-    backgroundColor: 'green',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  signInButtonText: {
+  submitButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
@@ -438,27 +844,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
     fontSize: 14,
-  },
-  bottomNav: {
-    position: 'absolute',
-    bottom: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    width: '100%',
-    height: 80,
-    backgroundColor: 'gold',
-    paddingBottom: 10,
-  },
-  navButton: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconLabel: {
-    color: 'navy',
-    fontSize: 12,
-    marginTop: 2,
   },
 });
 
