@@ -106,14 +106,21 @@ const BottomNavBar = () => {
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
-        const loginStatus = await EncryptedStorage.getItem('isLoggedIn');
-        console.log('Login status from encrypted storage:', loginStatus);
+        // Check both storage locations for login status
+        const encryptedLoginStatus = await EncryptedStorage.getItem('isLoggedIn');
+        const asyncLoginStatus = await AsyncStorage.getItem('isLoggedIn');
         
-        // Only set to true if explicitly "true"
-        setIsLoggedIn(loginStatus === 'true');
+        console.log('Login status from encrypted storage:', encryptedLoginStatus);
+        console.log('Login status from AsyncStorage:', asyncLoginStatus);
+        
+        // Consider logged in if either storage has "true" status
+        const loggedIn = encryptedLoginStatus === 'true' || asyncLoginStatus === 'true';
+        console.log('Combined login status:', loggedIn);
+        
+        setIsLoggedIn(loggedIn);
         
         // Clear profile image if not logged in
-        if (loginStatus !== 'true') {
+        if (!loggedIn) {
           setProfileImage(null);
         }
       } catch (error) {
@@ -125,23 +132,33 @@ const BottomNavBar = () => {
 
     const loadProfileImage = async () => {
       try {
-        // Only proceed if actually logged in
+        // First check if user is logged in
         if (!isLoggedIn) {
           console.log('Not logged in, not loading profile image');
           return;
         }
         
-        // First check if we have a profile image in context
+        // Then check if we have a profile image in context
         if (profile.profileImage) {
+          console.log('Loading profile image from context');
           setProfileImage(profile.profileImage);
           return;
         }
 
-        // If not in context, try to get from encrypted storage
+        // Check generic profile image in AsyncStorage
+        const genericProfileImage = await AsyncStorage.getItem('profileImage');
+        if (genericProfileImage) {
+          console.log('Loading generic profile image from AsyncStorage');
+          setProfileImage(genericProfileImage);
+          return;
+        }
+
+        // Try user-specific profile image
         const username = await EncryptedStorage.getItem('username');
         if (username) {
           const savedImage = await AsyncStorage.getItem(`profileImage_${username}`);
           if (savedImage) {
+            console.log('Loading user-specific profile image from AsyncStorage');
             setProfileImage(savedImage);
           }
         }
@@ -153,7 +170,7 @@ const BottomNavBar = () => {
     checkLoginStatus();
     loadProfileImage();
 
-    // Set up event listener for profile changes
+    // Set up event listener for changes
     const eventListener = navigation.addListener('focus', () => {
       checkLoginStatus();
       loadProfileImage();

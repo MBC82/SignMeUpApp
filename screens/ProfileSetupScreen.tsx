@@ -513,17 +513,54 @@ const ProfileSetupScreen = () => {
   }, []);
 
   const handleSignIn = async () => {
+    console.log('========== STARTING LOGIN ==========');
     try {
-      const storedUsername = await EncryptedStorage.getItem('username');
-      const storedPassword = await EncryptedStorage.getItem('password');
+      console.log('Attempting login for username:', username);
       
-      if (storedUsername === username && storedPassword === password) {
+      // Check username and password
+      const storedPassword = await EncryptedStorage.getItem(`password_${username}`);
+      
+      if (!storedPassword) {
+        console.log('Password check: Not found');
+        Alert.alert('Error', 'Username or password is incorrect');
+        return;
+      }
+      
+      console.log('Password check: Found');
+      
+      if (storedPassword === password) {
+        console.log('Login successful for user:', username);
+        
+        // Save the username to encrypted storage
+        await EncryptedStorage.setItem('username', username);
+        
         // Get stored profile data
         const userProfileString = await EncryptedStorage.getItem('userProfile');
         const userProfile = userProfileString ? JSON.parse(userProfileString) : {};
         
-        // Get stored profile image
-        const profileImage = await AsyncStorage.getItem(`profileImage_${username}`);
+        // Look for profile image in AsyncStorage
+        console.log('Looking for profile image in AsyncStorage');
+        const profileImageKey = `profileImage_${username}`;
+        let userProfileImage = await AsyncStorage.getItem(profileImageKey);
+        
+        if (userProfileImage) {
+          console.log('Found profile image in AsyncStorage:', userProfileImage.substring(0, 30) + '...');
+          // Also save to generic profileImage key for the nav bar
+          await AsyncStorage.setItem('profileImage', userProfileImage);
+        } else if (userProfile.profileImage) {
+          console.log('Using profile image from userProfile');
+          userProfileImage = userProfile.profileImage;
+          // Save it to AsyncStorage for future use
+          if (userProfileImage) {
+            await AsyncStorage.setItem(profileImageKey, userProfileImage);
+            await AsyncStorage.setItem('profileImage', userProfileImage);
+          }
+        }
+        
+        // Set login status to true
+        console.log('Set login status to true for user:', username);
+        await AsyncStorage.setItem('isLoggedIn', 'true');
+        await EncryptedStorage.setItem('isLoggedIn', 'true');
         
         // Update profile context
         updateProfile({
@@ -531,24 +568,24 @@ const ProfileSetupScreen = () => {
           username: username,
           email: userProfile.email || '',
           phone: userProfile.phone || '',
-          profileImage: profileImage || userProfile.profileImage || '',
+          profileImage: userProfileImage || '',
           memberSince: userProfile.memberSince || new Date().toISOString(),
         });
 
-        await AsyncStorage.setItem('isLoggedIn', 'true');
-        await EncryptedStorage.setItem('isLoggedIn', 'true');
-
+        // Navigate home
         navigation.reset({
           index: 0,
           routes: [{ name: 'Home' }],
         });
       } else {
-        Alert.alert('Error', 'Account not found');
+        console.log('Password incorrect for user:', username);
+        Alert.alert('Error', 'Username or password is incorrect');
       }
     } catch (error) {
       console.error('Error signing in:', error);
       Alert.alert('Error', 'Failed to sign in');
     }
+    console.log('========== FINISHED LOGIN ==========');
   };
 
   const handleSignUp = async () => {

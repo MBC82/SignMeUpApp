@@ -2,20 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
-  Modal,
-  ImageBackground,
-  TouchableWithoutFeedback,
-  Image,
   TextInput,
   Alert,
-  FlatList,
+  ImageBackground,
+  Modal,
   Switch,
   Platform,
-  Picker,
-  Slider,
+  Image,
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -27,7 +23,6 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { useRoute } from '@react-navigation/native';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { ColorPicker } from 'react-native-color-picker';
 
 // Local images for themes
 const localBackgrounds = {
@@ -647,8 +642,8 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSave, onSaveTheme }) => {
     setModalFontColor(theme.fontColor);
     setModalFontSize(theme.fontSize);
     setModalFontType(theme.fontType);
-    setHeaderTileColor(theme.headerTileColor);
-    setHeaderFontColor(theme.headerFontColor);
+    setHeaderTileColor(theme.tileColor);
+    setHeaderFontColor(theme.fontColor);
     setHeaderTextColor(theme.headerTextColor);
     setDateTextColor(theme.dateTextColor);
     setTextShadowEnabled(theme.textShadowEnabled);
@@ -1795,7 +1790,31 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSave, onSaveTheme }) => {
           
           <View style={styles.header}>
             <View style={styles.headerTextContainer}>
-              <Text style={styles.headerText}>Create Your Event</Text>
+              <Text style={styles.headerText}>{editedEventName || eventName || 'Create Your Event'}</Text>
+              {(editedLocation || location) && (
+                <Text style={styles.headerDetailText}>
+                  <Text style={styles.detailLabel}>Location: </Text>
+                  {editedLocation || location}
+                </Text>
+              )}
+              {(editedOrganizer || organizer) && (
+                <Text style={styles.headerDetailText}>
+                  <Text style={styles.detailLabel}>Organizer: </Text>
+                  {editedOrganizer || organizer}
+                </Text>
+              )}
+              {(editedAddress || address) && (
+                <Text style={styles.headerDetailText}>
+                  <Text style={styles.detailLabel}>Address: </Text>
+                  {editedAddress || address}
+                </Text>
+              )}
+              {(editedEventTime || eventTime) && (
+                <Text style={styles.headerDetailText}>
+                  <Text style={styles.detailLabel}>Time: </Text>
+                  {editedEventTime || eventTime}
+                </Text>
+              )}
               <TouchableOpacity
                 style={styles.headerEditButton}
                 onPress={() => setIsHeaderEditing(true)}
@@ -1992,10 +2011,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSave, onSaveTheme }) => {
               </TouchableOpacity>
               
               {showBackgroundColorPicker && (
-                <ColorPicker
-                  color={screenBgColor}
-                  onColorChange={(color) => setScreenBgColor(color)}
-                />
+                <ColorSelector color={screenBgColor} onColorChange={(color) => setScreenBgColor(color)} />
               )}
               
               <TouchableOpacity
@@ -2007,10 +2023,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSave, onSaveTheme }) => {
               </TouchableOpacity>
               
               {showFontColorPicker && (
-                <ColorPicker
-                  color={modalFontColor}
-                  onColorChange={(color) => setModalFontColor(color)}
-                />
+                <ColorSelector color={modalFontColor} onColorChange={(color) => setModalFontColor(color)} />
               )}
               
               <TouchableOpacity
@@ -2022,10 +2035,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSave, onSaveTheme }) => {
               </TouchableOpacity>
               
               {showTileColorPicker && (
-                <ColorPicker
-                  color={modalTileColor}
-                  onColorChange={(color) => setModalTileColor(color)}
-                />
+                <ColorSelector color={modalTileColor} onColorChange={(color) => setModalTileColor(color)} />
               )}
             </View>
             
@@ -2192,12 +2202,11 @@ const styles = StyleSheet.create({
   },
   headerTextContainer: {
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    padding: 10,
+    padding: 15,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    width: '80%',
-    position: 'relative',
+    width: '90%',
     borderColor: 'gold',
     borderWidth: 2,
   },
@@ -2206,9 +2215,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     color: 'white',
+    marginBottom: 10,
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
+  },
+  headerDetailText: {
+    color: 'white',
+    textAlign: 'center',
+    fontSize: 14,
+    marginVertical: 2,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  detailLabel: {
+    fontWeight: 'bold',
   },
   headerEditButton: {
     position: 'absolute',
@@ -2960,6 +2982,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
   },
+  eventDetailsContainer: {
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 5,
+    padding: 5,
+    marginVertical: 2,
+    marginHorizontal: 10,
+    borderColor: 'gold',
+    borderWidth: 1,
+  },
+  eventDetailText: {
+    color: 'white',
+    textAlign: 'center',
+    fontSize: 14,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
 });
 
 const pickerSelectStyles = {
@@ -2983,6 +3022,36 @@ const pickerSelectStyles = {
     color: 'black',
     paddingRight: 30,
   },
+};
+
+// Create a simple ColorSelector component to replace the buggy ColorPicker
+const ColorSelector = ({ color, onColorChange }) => {
+  const colors = [
+    '#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#8B00FF', // Rainbow
+    '#FFFFFF', '#000000', '#808080', // White, Black, Gray
+    '#FFC0CB', '#FFD700', '#ADD8E6', '#90EE90', // Pink, Gold, Light Blue, Light Green
+    '#800000', '#008000', '#000080', '#800080', // Dark Red, Dark Green, Navy, Purple
+  ];
+
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginVertical: 10 }}>
+      {colors.map((colorOption, index) => (
+        <TouchableOpacity
+          key={index}
+          style={{
+            width: 40,
+            height: 40,
+            backgroundColor: colorOption,
+            margin: 5,
+            borderRadius: 20,
+            borderWidth: colorOption === color ? 3 : 1,
+            borderColor: colorOption === color ? 'gold' : 'black',
+          }}
+          onPress={() => onColorChange(colorOption)}
+        />
+      ))}
+    </View>
+  );
 };
 
 export default SignUpScreen;
