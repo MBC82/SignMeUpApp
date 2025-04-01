@@ -106,17 +106,31 @@ const BottomNavBar = () => {
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
-        const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
-        console.log('Login status:', isLoggedIn);
-        setIsLoggedIn(isLoggedIn === 'true');
+        const loginStatus = await EncryptedStorage.getItem('isLoggedIn');
+        console.log('Login status from encrypted storage:', loginStatus);
+        
+        // Only set to true if explicitly "true"
+        setIsLoggedIn(loginStatus === 'true');
+        
+        // Clear profile image if not logged in
+        if (loginStatus !== 'true') {
+          setProfileImage(null);
+        }
       } catch (error) {
         console.log('Error checking login status:', error);
         setIsLoggedIn(false);
+        setProfileImage(null);
       }
     };
 
     const loadProfileImage = async () => {
       try {
+        // Only proceed if actually logged in
+        if (!isLoggedIn) {
+          console.log('Not logged in, not loading profile image');
+          return;
+        }
+        
         // First check if we have a profile image in context
         if (profile.profileImage) {
           setProfileImage(profile.profileImage);
@@ -148,14 +162,16 @@ const BottomNavBar = () => {
     return () => {
       eventListener();
     };
-  }, [navigation, profile.profileImage]);
+  }, [navigation, profile.profileImage, isLoggedIn]);
 
   // Also update profile image when profile context changes
   useEffect(() => {
-    if (profile.profileImage) {
+    if (isLoggedIn && profile.profileImage) {
       setProfileImage(profile.profileImage);
+    } else if (!isLoggedIn) {
+      setProfileImage(null);
     }
-  }, [profile.profileImage]);
+  }, [profile.profileImage, isLoggedIn]);
 
   const handleProfilePress = () => {
     if (isLoggedIn) {

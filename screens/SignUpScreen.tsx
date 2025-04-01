@@ -247,6 +247,8 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSave, onSaveTheme }) => {
   });
   const [customizeModalVisible, setCustomizeModalVisible] = useState(false);
   const [showTileColorPicker, setShowTileColorPicker] = useState(false);
+  const [showBackgroundColorPicker, setShowBackgroundColorPicker] = useState(false);
+  const [showFontColorPicker, setShowFontColorPicker] = useState(false);
 
   const scrollViewRef = useRef<ScrollView>(null);
 
