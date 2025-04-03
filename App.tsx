@@ -119,7 +119,7 @@ const BottomNavBar = () => {
         
         setIsLoggedIn(loggedIn);
         
-        // Clear profile image if not logged in
+        // Only clear profile image if explicitly logged out
         if (!loggedIn) {
           setProfileImage(null);
         }
@@ -135,6 +135,7 @@ const BottomNavBar = () => {
         // First check if user is logged in
         if (!isLoggedIn) {
           console.log('Not logged in, not loading profile image');
+          setProfileImage(null);
           return;
         }
         
@@ -164,6 +165,7 @@ const BottomNavBar = () => {
         }
       } catch (error) {
         console.log('Error loading profile image:', error);
+        setProfileImage(null);
       }
     };
 
@@ -217,12 +219,22 @@ const BottomNavBar = () => {
 
       {/* Profile Button */}
       <TouchableOpacity onPress={handleProfilePress} style={styles.navButton}>
-        {isLoggedIn && profileImage ? (
-          <Image source={{ uri: profileImage }} style={styles.profileImageNav} />
-        ) : (
-          <MaterialIcons name="account-circle" size={30} color="navy" />
-        )}
-        <Text style={styles.iconLabel}>My Profile</Text>
+        <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+          {isLoggedIn && profileImage ? (
+            <Image 
+              source={{ uri: profileImage }} 
+              style={styles.profileImageNav}
+              resizeMode="cover"
+              onError={(e) => {
+                console.log('Error loading profile image:', e.nativeEvent.error);
+                setProfileImage(null);
+              }}
+            />
+          ) : (
+            <MaterialIcons name="account-circle" size={30} color="navy" style={{ marginBottom: 4 }} />
+          )}
+          <Text style={styles.iconLabel}>My Profile</Text>
+        </View>
       </TouchableOpacity>
     </View>
   );
@@ -300,7 +312,7 @@ const App = () => {
                 />
                 <Stack.Screen 
                   name="SignUpScreen" 
-                  component={SignUpScreen}
+                  component={SignUpScreen as React.ComponentType<any>}
                   options={{
                     title: 'Sign Up'
                   }}
@@ -344,6 +356,9 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: 'navy',
   },
 });
 

@@ -288,7 +288,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
             date.notes[i] = editName;
           }
         });
-      } else {
+          } else {
         // Apply only to the current slot
         if (!dates[editingDateIndex].notes) dates[editingDateIndex].notes = [];
         dates[editingDateIndex].notes[editingSlotIndex] = editName;
@@ -324,7 +324,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
   const renderHeaderField = (label: string, value: string) => (
     <Text style={[styles.subHeaderText, { fontSize: modalFontSize, fontFamily: modalFontType, color: modalFontColor }]}>
       {label}: {value}
-    </Text>
+                </Text>
   );
 
   const renderSlotsOrAttendees = (dateIndex: number) => {
@@ -347,8 +347,8 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
               style={styles.editIconButton}
             >
               <MaterialIcons name="edit" size={16} color="navy" />
-            </TouchableOpacity>
-          </View>
+                  </TouchableOpacity>
+                </View>
           {dates[dateIndex].isTimeSlot && start && end && (
             <Text style={[styles.timeText, { color: modalFontColor }]}>
               {start} - {end}
@@ -356,9 +356,9 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
           )}
           <TouchableOpacity style={styles.rsvpButton}>
             <Text style={styles.rsvpButtonText}>Sign Me Up</Text>
-          </TouchableOpacity>
-        </View>
-      );
+              </TouchableOpacity>
+            </View>
+          );
     });
   };
 
@@ -389,9 +389,9 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
               {neededItems && neededItems.length > 0 && (
                 <Text style={[styles.subHeaderText, { fontSize: modalFontSize, fontFamily: modalFontType, color: modalFontColor }]}>
                   Items Needed: {neededItems.map((item) => item.value).join(', ')}
-                </Text>
+        </Text>
               )}
-            </View>
+      </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginVertical: 15 }}>
               <TouchableOpacity 
                 onPress={() => {
@@ -409,9 +409,9 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
               <TouchableOpacity onPress={() => setThemesModalVisible(true)} style={styles.themesButton}>
                 <MaterialIcons name="palette" size={18} color="black" />
                 <Text style={styles.themesButtonText}>Themes</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                    </TouchableOpacity>
+                  </View>
+                    </View>
 
           {dates.map((dateData, dateIndex) => (
             <View key={dateIndex} style={styles.dateTile}>
@@ -424,7 +424,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                   style={styles.editIconButton}
                 >
                   <MaterialIcons name="edit" size={20} color={modalFontColor} />
-                </TouchableOpacity>
+              </TouchableOpacity>
               </View>
               <View style={styles.tileRow}>{renderSlotsOrAttendees(dateIndex)}</View>
             </View>
@@ -432,53 +432,53 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
 
           <TouchableOpacity onPress={submitEvent} style={styles.submitButton}>
             <Text style={styles.submitButtonText}>Submit Your Event</Text>
-          </TouchableOpacity>
-          
+            </TouchableOpacity>
+            
           <TouchableOpacity onPress={saveDraft} style={styles.saveDraftButton}>
             <Text style={styles.saveDraftButtonText}>Save as Draft</Text>
-          </TouchableOpacity>
-        </ScrollView>
+            </TouchableOpacity>
+    </ScrollView>
 
         {/* Themes Modal */}
         <Modal visible={isThemesModalVisible} animationType="slide" transparent={true}>
           <TouchableWithoutFeedback onPress={() => setThemesModalVisible(false)}>
-            <View style={styles.modalContainer}>
+        <View style={styles.modalContainer}>
               <TouchableWithoutFeedback>
                 <View style={styles.customizationContainer}>
                   <ScrollView contentContainerStyle={styles.customizationContent}>
                     <Text style={styles.modalHeaderText}>Select a Theme</Text>
-                    {themes.map((theme, index) => (
-                      <TouchableOpacity
-                        key={index}
+              {themes.map((theme, index) => (
+                <TouchableOpacity
+                  key={index}
                         style={[styles.selectButton, { backgroundColor: theme.tileColor }]}
                         onPress={() => applyTheme(theme)}
                       >
-                        {theme.bgImage && (
-                          <Image 
-                            source={theme.bgImage} 
+                    {theme.bgImage && (
+                      <Image 
+                        source={theme.bgImage} 
                             style={{ width: '100%', height: 100, borderRadius: 10 }}
-                            resizeMode="cover"
-                          />
-                        )}
+                        resizeMode="cover"
+                      />
+                    )}
                         <Text style={{ color: theme.fontColor, fontFamily: theme.fontType, fontSize: 16, marginTop: 10 }}>
-                          {theme.name}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
+                      {theme.name}
+                    </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
                   <TouchableOpacity onPress={() => setThemesModalVisible(false)} style={styles.confirmButton}>
                     <Text style={styles.confirmButtonText}>Close</Text>
-                  </TouchableOpacity>
-                </View>
+            </TouchableOpacity>
+          </View>
               </TouchableWithoutFeedback>
-            </View>
+        </View>
           </TouchableWithoutFeedback>
-        </Modal>
+      </Modal>
 
-        {/* Customize Appearance Modal */}
+      {/* Customize Appearance Modal */}
         <Modal visible={isModalVisible} animationType="slide" transparent={true}>
           <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-            <View style={styles.modalContainer}>
+        <View style={styles.modalContainer}>
               <TouchableWithoutFeedback>
                 <View style={styles.customizationContainer}>
                   <ScrollView
@@ -490,8 +490,8 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                     {/* Background Image */}
                     <TouchableOpacity onPress={handleImageUpload} style={styles.selectButton}>
                       <Text style={styles.selectButtonText}>Select Background Image</Text>
-                    </TouchableOpacity>
-                    
+              </TouchableOpacity>
+              
                     {/* Background Color */}
                     <View style={styles.pickerContainer}>
                       <Text style={styles.selectLabel}>Background Color</Text>
@@ -535,8 +535,8 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                         placeholder={{ label: 'Select Font Color', value: null }}
                         style={pickerSelectStyles}
                       />
-                    </View>
-                    
+            </View>
+            
                     {/* Font Size */}
                     <View style={styles.pickerContainer}>
                       <Text style={styles.selectLabel}>Font Size</Text>
@@ -595,15 +595,15 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                         placeholder={{ label: 'Select Tile Color', value: null }}
                         style={pickerSelectStyles}
                       />
-                    </View>
-                    
+              </View>
+              
                     <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.confirmButton}>
                       <Text style={styles.confirmButtonText}>Confirm Customization</Text>
-                    </TouchableOpacity>
+                  </TouchableOpacity>
                   </ScrollView>
                 </View>
               </TouchableWithoutFeedback>
-            </View>
+              </View>
           </TouchableWithoutFeedback>
         </Modal>
 
@@ -615,7 +615,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                 <View style={styles.customizationContainer}>
                   <Text style={styles.modalHeaderText}>
                     {isEditingHeader ? 'Edit Header Fields' : isEditingDate ? 'Edit Date' : 'Edit Attendee Name'}
-                  </Text>
+              </Text>
                   {isEditingHeader ? (
                     <>
                       <View style={styles.headerEditContainer}>
@@ -672,35 +672,35 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                         placeholder="Enter attendee name"
                       />
                       <View style={styles.applyToAllContainer}>
-                        <TouchableOpacity
+              <TouchableOpacity
                           style={[styles.checkbox, applyToAll && styles.checkboxChecked]}
                           onPress={() => setApplyToAll(!applyToAll)}
                         >
                           {applyToAll && <MaterialIcons name="check" size={20} color="white" />}
-                        </TouchableOpacity>
+              </TouchableOpacity>
                         <Text style={styles.applyToAllText}>Apply to all attendees</Text>
-                      </View>
+          </View>
                     </>
                   )}
                   <View style={styles.modalButtonContainer}>
-                    <TouchableOpacity 
-                      style={[styles.modalButton, styles.cancelButton]}
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
                       onPress={() => setEditModalVisible(false)}
-                    >
-                      <Text style={styles.modalButtonText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                       style={[styles.modalButton, styles.confirmButton]}
                       onPress={isEditingHeader ? applyHeaderEdit : applyNameEdit}
                     >
                       <Text style={styles.modalButtonText}>Apply</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </TouchableWithoutFeedback>
+              </TouchableOpacity>
             </View>
+          </View>
+              </TouchableWithoutFeedback>
+        </View>
           </TouchableWithoutFeedback>
-        </Modal>
+      </Modal>
 
         {/* Bottom Navigation */}
         <View style={styles.bottomNav}>
@@ -933,7 +933,7 @@ const styles = StyleSheet.create({
     maxHeight: '75%',
   },
   customizationContent: {
-    paddingBottom: 20,
+    paddingBottom: 100,
   },
   modalHeaderText: {
     fontSize: 20,
@@ -953,7 +953,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   confirmButton: {
-    backgroundColor: 'gold',
+    backgroundColor: 'navy',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
+    width: '100%',
   },
   confirmButtonText: {
     color: 'white',
