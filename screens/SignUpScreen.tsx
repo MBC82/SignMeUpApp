@@ -10,6 +10,7 @@ import {
   TouchableWithoutFeedback,
   Image,
   TextInput,
+  Alert,
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,6 +18,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import EncryptedStorage from 'react-native-encrypted-storage';
 
 // Local images for themes
 const localBackgrounds = {
@@ -88,6 +90,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
   const [editingSlotIndex, setEditingSlotIndex] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [applyToAll, setApplyToAll] = useState(false);
+  const [applyNumbers, setApplyNumbers] = useState(false);
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editingDate, setEditingDate] = useState('');
   const [backgroundImage, setBackgroundImage] = useState<{ uri: string } | null>(null);
@@ -194,13 +197,23 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
 
   const saveDraft = async () => {
     try {
-      const draftEvents = JSON.parse(await AsyncStorage.getItem('draftEvents')) || [];
-      draftEvents.push({
-        eventName,
-        location,
-        organizer,
-        address,
-        eventTime,
+      const username = await EncryptedStorage.getItem('username');
+      if (!username) {
+        Alert.alert('Error', 'You must be logged in to save drafts');
+        return;
+      }
+      
+      const draftKey = `draftEvents_${username}`;
+      const draftEvents = JSON.parse(await AsyncStorage.getItem(draftKey)) || [];
+      const newDraft = {
+        eventId: Date.now().toString(),
+        id: Date.now().toString(),
+        username: username,
+        eventName: headerValues.eventName,
+        location: headerValues.location,
+        organizer: headerValues.organizer,
+        address: headerValues.address,
+        eventTime: headerValues.eventTime,
         neededItems,
         dates,
         timeSlots,
@@ -209,12 +222,25 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
         fontSize: modalFontSize,
         fontType: modalFontType,
         tileColor: modalTileColor,
-        backgroundImage: backgroundImage?.uri || backgroundImage || '',
-      });
-      await AsyncStorage.setItem('draftEvents', JSON.stringify(draftEvents));
-      alert('Event saved as draft!');
+        backgroundImage: backgroundImage?.uri || backgroundImage || null,
+        isDraft: true,
+        createdAt: Date.now(),
+        textNotificationsEnabled: false,
+        organizerPhone: '',
+        emailNotificationsEnabled: false,
+        organizerEmail: '',
+        globalNote: '',
+        slotLabels: {},
+        textShadowEnabled: false,
+      };
+      
+      draftEvents.push(newDraft);
+      await AsyncStorage.setItem(draftKey, JSON.stringify(draftEvents));
+      Alert.alert('Success', 'Event saved as draft!');
+      navigation.navigate('MyEventsScreen');
     } catch (error) {
       console.error('Error saving draft:', error);
+      Alert.alert('Error', 'Failed to save draft. Please try again.');
     }
   };
   
@@ -285,13 +311,21 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
           const signups = date.signups || 1;
           for (let i = 0; i < signups; i++) {
             if (!date.notes) date.notes = [];
-            date.notes[i] = editName;
+            if (applyNumbers) {
+              date.notes[i] = `${editName} ${i + 1}`;
+            } else {
+              date.notes[i] = editName;
+            }
           }
         });
-          } else {
+      } else {
         // Apply only to the current slot
         if (!dates[editingDateIndex].notes) dates[editingDateIndex].notes = [];
-        dates[editingDateIndex].notes[editingSlotIndex] = editName;
+        if (applyNumbers) {
+          dates[editingDateIndex].notes[editingSlotIndex] = `${editName} ${editingSlotIndex + 1}`;
+        } else {
+          dates[editingDateIndex].notes[editingSlotIndex] = editName;
+        }
       }
     }
 
@@ -302,6 +336,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
     setEditingDate('');
     setIsEditingDate(false);
     setApplyToAll(false);
+    setApplyNumbers(false);
   };
 
   const handleEditHeader = () => {
@@ -672,14 +707,23 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                         placeholder="Enter attendee name"
                       />
                       <View style={styles.applyToAllContainer}>
-              <TouchableOpacity
+                        <TouchableOpacity
                           style={[styles.checkbox, applyToAll && styles.checkboxChecked]}
                           onPress={() => setApplyToAll(!applyToAll)}
                         >
                           {applyToAll && <MaterialIcons name="check" size={20} color="white" />}
-              </TouchableOpacity>
+                        </TouchableOpacity>
                         <Text style={styles.applyToAllText}>Apply to all attendees</Text>
-          </View>
+                      </View>
+                      <View style={styles.applyToAllContainer}>
+                        <TouchableOpacity
+                          style={[styles.checkbox, applyNumbers && styles.checkboxChecked]}
+                          onPress={() => setApplyNumbers(!applyNumbers)}
+                        >
+                          {applyNumbers && <MaterialIcons name="check" size={20} color="white" />}
+                        </TouchableOpacity>
+                        <Text style={styles.applyToAllText}>Apply numbers to attendees</Text>
+                      </View>
                     </>
                   )}
                   <View style={styles.modalButtonContainer}>
@@ -1063,6 +1107,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 20,
     gap: 10,
+    width: '100%',
   },
   modalButton: {
     flex: 1,
@@ -1070,6 +1115,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     minWidth: 120,
+    maxWidth: '48%',
   },
   cancelButton: {
     backgroundColor: 'navy',

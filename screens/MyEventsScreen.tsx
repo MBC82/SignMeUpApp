@@ -9,8 +9,9 @@ import {
   Alert,
   ActivityIndicator,
   AppState,
+  FlatList,
 } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useIsFocused } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import EncryptedStorage from 'react-native-encrypted-storage';
@@ -24,10 +25,7 @@ type RootStackParamList = {
   CreateEvent: undefined;
   MyEvents: undefined;
   ProfileSetup: undefined;
-  EnhancedSignUp: {
-    eventId: string;
-    id: string;
-    username: string;
+  SignUpScreen: {
     eventName: string;
     location: string;
     organizer: string;
@@ -41,18 +39,8 @@ type RootStackParamList = {
     fontSize?: number;
     fontType?: string;
     tileColor?: string;
-    textNotificationsEnabled?: boolean;
-    organizerPhone?: string;
-    emailNotificationsEnabled?: boolean;
-    organizerEmail?: string;
-    globalNote?: string;
-    slotLabels?: Record<string, string>;
     backgroundImage?: string | null;
-    textShadowEnabled?: boolean;
-    isTimeSlot?: boolean;
-    isNewEvent?: boolean;
-    isPreview?: boolean;
-    showThemes?: boolean;
+    index?: string;
   };
   UserProfile: undefined;
   EventSignUp: { eventId: string };
@@ -112,9 +100,10 @@ type Event = {
 
 const MyEventsScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const isFocused = useIsFocused();
   const [submittedEvents, setSubmittedEvents] = useState<Event[]>([]);
   const [draftEvents, setDraftEvents] = useState<Event[]>([]);
-  const [isLoggedIn, setIsLoggedIn] = useState(true); // Default to true to avoid login screen flash
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUsername, setCurrentUsername] = useState('');
 
@@ -199,154 +188,47 @@ const MyEventsScreen = () => {
 
   const loadEventsForUser = async (username: string) => {
     try {
-      console.log('========== LOADING EVENTS FOR USER ==========');
       console.log('Loading events for user:', username);
       
-      // Clear existing events first
-      setSubmittedEvents([]);
-      setDraftEvents([]);
-      
-      if (!username) {
-        console.log('No username provided to loadEventsForUser');
-        return;
-      }
-      
-      // Load submitted events for this specific user
-      const submittedEventsKey = `submittedEvents_${username}`;
-      console.log('Using submitted events key:', submittedEventsKey);
-      
-      const submittedEventsJson = await AsyncStorage.getItem(submittedEventsKey);
-      const loadedSubmittedEvents = submittedEventsJson ? JSON.parse(submittedEventsJson) : [];
-      
-      // Load draft events for this specific user
-      const draftEventsKey = `draftEvents_${username}`;
-      console.log('Using draft events key:', draftEventsKey);
-      
-      const draftEventsJson = await AsyncStorage.getItem(draftEventsKey);
+      // Load draft events
+      const draftKey = `draftEvents_${username}`;
+      const draftEventsJson = await AsyncStorage.getItem(draftKey);
       const loadedDraftEvents = draftEventsJson ? JSON.parse(draftEventsJson) : [];
+      console.log('Loaded draft events:', loadedDraftEvents);
       
-      // Sort events by creation date (newest first)
-      loadedSubmittedEvents.sort((a: Event, b: Event) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-      loadedDraftEvents.sort((a: Event, b: Event) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      // Load submitted events
+      const submittedKey = `submittedEvents_${username}`;
+      const submittedEventsJson = await AsyncStorage.getItem(submittedKey);
+      const loadedSubmittedEvents = submittedEventsJson ? JSON.parse(submittedEventsJson) : [];
+      console.log('Loaded submitted events:', loadedSubmittedEvents);
       
-      // Set the events
-      setSubmittedEvents(loadedSubmittedEvents);
+      // Update state with loaded events
       setDraftEvents(loadedDraftEvents);
-      
-      console.log('Loaded submitted events count:', loadedSubmittedEvents.length);
-      console.log('Loaded draft events count:', loadedDraftEvents.length);
-      
-      console.log('========== FINISHED LOADING EVENTS ==========');
+      setSubmittedEvents(loadedSubmittedEvents);
     } catch (error) {
-      console.error('Error loading events for user:', error);
-      // Ensure events are cleared on error
-      setSubmittedEvents([]);
-      setDraftEvents([]);
+      console.error('Error loading events:', error);
+      Alert.alert('Error', 'Failed to load events. Please try again.');
     }
   };
 
   const handleEditEvent = (event: Event) => {
-    // Process dates to preserve the isTimeSlot property 
-    console.log("Edit event called for:", event.eventName);
-    
-    // Log original event properties to understand what we're working with
-    console.log("Original event tileNames:", event.tileNames);
-    console.log("Original event editedTiles:", event.editedTiles);
-    console.log("Original event slotLabels:", event.slotLabels);
-    
-    // Validate tileNames - ensure we have an array with names for each date
-    let validTileNames = event.tileNames || [];
-    
-    // Process the timeSlots for flat structure if they exist
-    let flattenedTimeSlots: any[] = [];
-    
-    // Check if we have timeSlots in the event
-    if (event.timeSlots) {
-      console.log("Original timeSlots structure:", event.timeSlots);
-      
-      // Convert the nested timeSlots to a flattened format
-      // where each item has dateIndex, slotIndex, start, and end
-      if (typeof event.timeSlots === 'object' && !Array.isArray(event.timeSlots)) {
-        Object.keys(event.timeSlots).forEach(dateIndexStr => {
-          const dateIndex = parseInt(dateIndexStr);
-          const slots = event.timeSlots?.[dateIndex];
-          
-          if (Array.isArray(slots)) {
-            slots.forEach((slot, slotIndex) => {
-              if (slot && typeof slot === 'object' && slot.start && slot.end) {
-                flattenedTimeSlots.push({
-                  dateIndex,
-                  slotIndex,
-                  start: slot.start,
-                  end: slot.end
-                });
-              }
-            });
-          }
-        });
-      }
-      
-      console.log("Flattened timeSlots:", flattenedTimeSlots);
-    }
-    
-    // Validate editedTiles
-    let validEditedTiles = event.editedTiles || {};
-    
-    // Build the complete event data
-    const completeEvent = {
-      ...event,
-      id: event.id,
-      eventId: event.eventId,
-      username: currentUsername,
-      editedTiles: validEditedTiles,
-      tileNames: validTileNames,
-      timeSlots: flattenedTimeSlots.length > 0 ? flattenedTimeSlots : event.timeSlots,
-      customTileNames: event.customTileNames ?? {},
-      participantNames: event.participantNames ?? [],
-      isNewEvent: true // Indicates we're editing, not creating new
-    };
-    
-    // Log the final event data being passed
-    console.log("Navigating to SignUpScreen with:", {
-      eventName: completeEvent.eventName,
-      tileNames: completeEvent.tileNames ? `Array length: ${completeEvent.tileNames.length}` : 'undefined',
-      editedTiles: completeEvent.editedTiles ? `Object with ${Object.keys(completeEvent.editedTiles).length} entries` : 'undefined',
-      slotLabels: completeEvent.slotLabels ? `Object with ${Object.keys(completeEvent.slotLabels).length} entries` : 'undefined',
-      timeSlots: completeEvent.timeSlots ? `Length: ${Array.isArray(completeEvent.timeSlots) ? completeEvent.timeSlots.length : 'Not an array'}` : 'undefined',
-      customTileNames: completeEvent.customTileNames,
-      participantNames: completeEvent.participantNames
-    });
-    
-    // Navigate to the EnhancedSignUp with the event data
-    navigation.navigate('EnhancedSignUp', {
-      eventId: event.eventId || '',
-      id: event.id || '',
-      username: event.username || '',
-      eventName: event.eventName || '',
-      location: event.location || '',
-      organizer: event.organizer || '',
-      address: event.address || '',
-      eventTime: event.eventTime || '',
+    // Navigate to SignUpScreen with all event details
+    navigation.navigate('SignUpScreen', {
+      eventName: event.eventName,
+      location: event.location,
+      organizer: event.organizer,
+      address: event.address,
+      eventTime: event.eventTime,
       neededItems: event.neededItems || [],
       dates: event.dates || [],
       timeSlots: event.timeSlots || [],
-      bgColor: event.bgColor || '#FFFFFF',
-      fontColor: event.fontColor || '#000000',
-      fontSize: event.fontSize || 16,
-      fontType: event.fontType || 'Arial',
-      tileColor: event.tileColor || '#F0F0F0',
-      textNotificationsEnabled: event.textNotificationsEnabled || false,
-      organizerPhone: event.organizerPhone || '',
-      emailNotificationsEnabled: event.emailNotificationsEnabled || false,
-      organizerEmail: event.organizerEmail || '',
-      globalNote: event.globalNote || '',
-      slotLabels: event.slotLabels || {},
-      backgroundImage: event.backgroundImage || null,
-      textShadowEnabled: event.textShadowEnabled || false,
-      isTimeSlot: event.isTimeSlot !== undefined ? event.isTimeSlot : true,
-      isNewEvent: false,
-      isPreview: false,
-      showThemes: false
+      bgColor: event.bgColor,
+      fontColor: event.fontColor,
+      fontSize: event.fontSize,
+      fontType: event.fontType,
+      tileColor: event.tileColor,
+      backgroundImage: event.backgroundImage,
+      index: event.eventId // Pass the event ID to identify which event to update
     });
   };
 
@@ -420,43 +302,24 @@ const MyEventsScreen = () => {
 
   const handleViewEvent = (event: Event) => {
     if (event.isDraft) {
-      // Make sure we have all the necessary data, but exclude eventTime from the header
-      const completeEventData = {
-        eventId: event.id,
-        id: event.id,
-        username: event.username,
-        eventName: event.eventName || '',
-        location: event.location || '',
-        organizer: event.organizer || '',
-        address: event.address || '',
+      // Navigate to SignUpScreen for editing drafts
+      navigation.navigate('SignUpScreen', {
+        eventName: event.eventName,
+        location: event.location,
+        organizer: event.organizer,
+        address: event.address,
+        eventTime: event.eventTime,
         neededItems: event.neededItems || [],
         dates: event.dates || [],
-        timeSlots: event.timeSlots || {},
-        bgColor: event.bgColor || 'white',
-        fontColor: event.fontColor || 'black',
-        fontSize: event.fontSize || 16,
-        fontType: event.fontType || 'sans-serif',
-        tileColor: event.tileColor || '#f0f0f0',
-        backgroundImage: event.backgroundImage || null,
-        textNotificationsEnabled: event.textNotificationsEnabled || false,
-        organizerPhone: event.organizerPhone || '',
-        emailNotificationsEnabled: event.emailNotificationsEnabled || false,
-        organizerEmail: event.organizerEmail || '',
-        globalNote: event.globalNote || '',
-        slotLabels: event.slotLabels || {},
-        textShadowEnabled: event.textShadowEnabled || false,
-        isTimeSlot: event.isTimeSlot !== undefined ? event.isTimeSlot : true,
-        isEditing: true,
-        isDraft: true,
-        hideEventTimeInHeader: true,
-        // Add tileNames if they exist
-        tileNames: event.tileNames || [],
-        // Add editedTiles if they exist
-        editedTiles: event.editedTiles || {},
-      };
-      
-      // Navigate to EnhancedSignUp with the complete event data
-      navigation.navigate('EnhancedSignUp', completeEventData);
+        timeSlots: event.timeSlots || [],
+        bgColor: event.bgColor,
+        fontColor: event.fontColor,
+        fontSize: event.fontSize,
+        fontType: event.fontType,
+        tileColor: event.tileColor,
+        backgroundImage: event.backgroundImage,
+        index: event.eventId
+      });
     } else {
       // If it's a submitted event, navigate to EventDetailsScreen for viewing
       navigation.navigate('EventDetails', { eventId: event.id });
@@ -589,185 +452,65 @@ const MyEventsScreen = () => {
 
   // Update the renderEvent function to use larger font sizes
   const renderEvent = (event: Event, isDraft = false) => {
-    console.log('Rendering event:', event.id);
-    console.log('Event background image:', event.backgroundImage);
-    console.log('Event bgColor:', event.bgColor);
-    console.log('Event fontColor:', event.fontColor);
-    console.log('Event fontType:', event.fontType);
-    console.log('Event fontSize:', event.fontSize);
-    console.log('Event tileColor:', event.tileColor); // Log the tileColor
-    
-    // Get the background image source
-    const backgroundSource = getBackgroundImageSource(event);
-    console.log('Background source for rendering:', backgroundSource);
-    
-    // Call this at the beginning of the renderEvent function
-    logEventStructure(event);
-    
-    // Get the tile color using the separate function
+    const backgroundImageSource = getBackgroundImageSource(event);
     const tileColor = getTileColor(event);
-    console.log('Using tile color:', tileColor);
-    
-    // Format the date to show only the date part (not time)
-    const formatDate = (dateTimeString: string | number | undefined) => {
-      if (!dateTimeString) return 'No date';
-      
-      try {
-        console.log('Formatting date string:', dateTimeString);
-        
-        // Handle different date formats
-        let date;
-        
-        // Check if it's a timestamp number
-        if (typeof dateTimeString === 'number' || !isNaN(Number(dateTimeString))) {
-          date = new Date(Number(dateTimeString));
-        } 
-        // Check if it's a string that needs parsing
-        else if (typeof dateTimeString === 'string') {
-          date = new Date(dateTimeString);
-        }
-        // In any other case, assume it's already a date object or try to convert it
-        else {
-          date = new Date(dateTimeString as any);
-        }
-        
-        // Check if the date is valid
-        if (isNaN(date.getTime())) {
-          console.error('Invalid date:', dateTimeString);
-          return 'Invalid date';
-        }
-        
-        // Format as MM/DD/YYYY
-        const month = date.getMonth() + 1;
-        const day = date.getDate();
-        const year = date.getFullYear();
-        
-        console.log('Parsed date components:', { month, day, year });
-        
-        return `${month}/${day}/${year}`;
-      } catch (error) {
-        console.error('Error formatting date:', error, 'for input:', dateTimeString);
-        return 'Date error';
-      }
-    };
-    
-    // Update the getEventDate function to better handle date formats
-    const getEventDate = () => {
-      console.log('Event dates:', event.dates);
-      
-      // Check if we have dates array with valid date entries
-      if (event.dates && Array.isArray(event.dates) && event.dates.length > 0) {
-        // Log the first date to debug
-        console.log('First date in array:', event.dates[0]);
-        
-        // Try to get the date from the first entry in the dates array
-        if (event.dates[0] && event.dates[0].date) {
-          console.log('Using date from dates array:', event.dates[0].date);
-          return formatDate(event.dates[0].date);
-        }
-      }
-      
-      // If we have an eventTime, use that
-      if (event.eventTime) {
-        console.log('Using eventTime:', event.eventTime);
-        return formatDate(event.eventTime);
-      }
-      
-      // If we have a createdAt timestamp, use that as a fallback
-      if (event.createdAt) {
-        console.log('Using createdAt as fallback:', event.createdAt);
-        return formatDate(event.createdAt);
-      }
-      
-      // Last resort fallback
-      return 'No date available';
-    };
-    
-    return (
-      <View key={event.id} style={styles.eventItem}>
-        <ImageBackground
-          source={backgroundSource || undefined}
-          style={[
-            styles.eventBackground,
-            { backgroundColor: event.bgColor || '#f5f5f5' }
-          ]}
-          resizeMode="cover"
-        >
-          {/* Add a semi-transparent header tile with the event's tileColor */}
-          <View style={[
-            styles.eventHeaderTile,
-            { backgroundColor: tileColor }
-          ]}>
-            <Text style={[
-              styles.eventName,
-              {
-                color: event.fontColor || 'black',
-                fontFamily: event.fontType || 'System',
-                fontSize: Math.max((event.fontSize || 18), 18), // Ensure minimum size of 18
-                ...(event.textShadowEnabled ? {
-                  textShadowColor: 'rgba(0, 0, 0, 0.75)',
-                  textShadowOffset: { width: 1, height: 1 },
-                  textShadowRadius: 3,
-                } : {})
-              }
-            ]}>
-              {event.eventName || 'Unnamed Event'}
-            </Text>
-            
-            <Text style={[
-              styles.eventLocation,
-              {
-                color: event.fontColor || 'black',
-                fontFamily: event.fontType || 'System',
-                fontSize: Math.max((event.fontSize || 16) - 2, 16), // Ensure minimum size of 16
-              }
-            ]}>
-              {event.location || 'No location'}
-            </Text>
-            
-            <Text style={[
-              styles.eventTime,
-              {
-                color: event.fontColor || 'black',
-                fontFamily: event.fontType || 'System',
-                fontSize: Math.max((event.fontSize || 14) - 2, 14), // Ensure minimum size of 14
-              }
-            ]}>
-              {getEventDate()}
-            </Text>
 
-            {/* Show LIVE indicator badge for events that are not drafts */}
-            {!isDraft && (
-              <View style={styles.liveIndicator}>
-                <Text style={styles.liveIndicatorText}>LIVE</Text>
-              </View>
+    return (
+      <TouchableOpacity
+        key={event.eventId}
+        onPress={() => handleViewEvent(event)}
+        style={styles.eventCard}
+      >
+        <ImageBackground
+          source={backgroundImageSource}
+          style={[styles.eventCardBackground, { backgroundColor: event.bgColor || 'white' }]}
+        >
+          <View style={[styles.eventCardContent, { backgroundColor: tileColor }]}>
+            <View style={styles.eventHeader}>
+              <Text style={[styles.eventTitle, { 
+                fontFamily: event.fontType || 'sans-serif',
+                color: event.fontColor || 'black'
+              }]}>
+                {event.eventName}
+              </Text>
+            </View>
+            <Text style={[styles.eventDetail, { 
+              fontFamily: event.fontType || 'sans-serif',
+              color: event.fontColor || 'black'
+            }]}>
+              Location: {event.location}
+            </Text>
+            <Text style={[styles.eventDetail, { 
+              fontFamily: event.fontType || 'sans-serif',
+              color: event.fontColor || 'black'
+            }]}>
+              Organizer: {event.organizer}
+            </Text>
+            {event.eventTime && (
+              <Text style={[styles.eventDetail, { 
+                fontFamily: event.fontType || 'sans-serif',
+                color: event.fontColor || 'black'
+              }]}>
+                Time: {event.eventTime}
+              </Text>
             )}
-          </View>
-          
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.viewButton]}
-              onPress={() => handleViewEvent(event)}
-            >
-              <Text style={[styles.buttonText, { color: 'navy' }]}>View</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.actionButton, styles.editButton]}
-              onPress={() => handleEditEvent(event)}
-            >
-              <Text style={styles.buttonText}>Edit</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.actionButton, styles.deleteButton]}
-              onPress={() => handleDeleteEvent(event.id, isDraft)}
-            >
-              <Text style={styles.buttonText}>Delete</Text>
-            </TouchableOpacity>
+            <View style={styles.eventActions}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => handleEditEvent(event)}
+              >
+                <Text style={styles.actionButtonText}>Edit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.deleteButton]}
+                onPress={() => handleDeleteEvent(event.eventId, isDraft)}
+              >
+                <Text style={styles.deleteButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ImageBackground>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -974,10 +717,10 @@ const styles = StyleSheet.create({
     minWidth: 150,
   },
   actionButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    marginHorizontal: 5,
+    backgroundColor: 'gold',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
     minWidth: 75,
     alignItems: 'center',
   },
@@ -985,7 +728,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#007bff',
   },
   deleteButton: {
-    backgroundColor: '#dc3545',
+    backgroundColor: 'red',
   },
   viewButton: {
     backgroundColor: 'gold',
@@ -1120,10 +863,12 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   centeredTitle: {
-    fontSize: 24,
+    fontSize: 36,
+    marginTop: 60,
+    alignSelf: 'center',
     fontWeight: 'bold',
-    color: 'navy',
-    textAlign: 'center',
+    color: '#FFFFFF',
+    marginBottom: 8,
   },
   eventHeaderTile: {
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
@@ -1166,6 +911,70 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
     letterSpacing: 0.5,
+  },
+  eventCard: {
+    marginVertical: 8,
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#000',
+  },
+  eventCardBackground: {
+    padding: 16,
+    borderRadius: 10,
+  },
+  eventCardContent: {
+    padding: 5,
+    width: '78%',
+    alignItems: 'center',
+    alignSelf: 'center',
+    borderRadius: 5,
+  },
+  eventHeader: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 5,
+    width: '100%',
+  },
+  eventTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  eventDetail: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  eventActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    width: '100%',
+    paddingHorizontal: 10,
+  },
+  actionButtonText: {
+    color: 'navy',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  deleteButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  draftBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 10,
+  },
+  draftText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: 'black',
   },
 });
 
