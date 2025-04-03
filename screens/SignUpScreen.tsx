@@ -99,6 +99,16 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [isDesigner, setIsDesigner] = useState(false);
+  const [isEditingHeader, setIsEditingHeader] = useState(false);
+  const [editingHeaderField, setEditingHeaderField] = useState('');
+  const [editingHeaderValue, setEditingHeaderValue] = useState('');
+  const [headerValues, setHeaderValues] = useState({
+    eventName,
+    location,
+    organizer,
+    address,
+    eventTime,
+  });
 
   const themes = [
     { name: 'Classic', tileColor: 'gold', fontColor: 'navy', bgColor: '#f0f0f0', fontType: 'Roboto', bgImage: localBackgrounds.classic },
@@ -294,6 +304,29 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
     setApplyToAll(false);
   };
 
+  const handleEditHeader = () => {
+    setIsEditingHeader(true);
+    setEditModalVisible(true);
+  };
+
+  const applyHeaderEdit = () => {
+    setHeaderValues({
+      eventName: headerValues.eventName,
+      location: headerValues.location,
+      organizer: headerValues.organizer,
+      address: headerValues.address,
+      eventTime: headerValues.eventTime,
+    });
+    setEditModalVisible(false);
+    setIsEditingHeader(false);
+  };
+
+  const renderHeaderField = (label: string, value: string) => (
+    <Text style={[styles.subHeaderText, { fontSize: modalFontSize, fontFamily: modalFontType, color: modalFontColor }]}>
+      {label}: {value}
+    </Text>
+  );
+
   const renderSlotsOrAttendees = (dateIndex: number) => {
     const signups = dates[dateIndex].signups || 1;
 
@@ -338,25 +371,21 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
         <ScrollView contentContainerStyle={{ paddingBottom: 150 }}>
           <View style={styles.header}>
             <View style={[styles.headerTextContainer, { backgroundColor: modalTileColor }]}>
-              <Text style={[styles.headerText, { fontSize: modalFontSize + 8, fontFamily: modalFontType, color: modalFontColor }]}>
-                {eventName}
-              </Text>
-              <Text style={[styles.subHeaderText, { fontSize: modalFontSize, fontFamily: modalFontType, color: modalFontColor }]}>
-                Location: {location}
-              </Text>
-              <Text style={[styles.subHeaderText, { fontSize: modalFontSize, fontFamily: modalFontType, color: modalFontColor }]}>
-                Organizer: {organizer}
-              </Text>
-              {address && (
-                <Text style={[styles.subHeaderText, { fontSize: modalFontSize, fontFamily: modalFontType, color: modalFontColor }]}>
-                  Address: {address}
+              <View style={styles.headerFieldContainer}>
+                <Text style={[styles.headerText, { fontSize: modalFontSize + 8, fontFamily: modalFontType, color: modalFontColor }]}>
+                  {headerValues.eventName}
                 </Text>
-              )}
-              {eventTime && (
-                <Text style={[styles.subHeaderText, { fontSize: modalFontSize, fontFamily: modalFontType, color: modalFontColor }]}>
-                  Event Time: {eventTime}
-                </Text>
-              )}
+                <TouchableOpacity 
+                  onPress={handleEditHeader}
+                  style={styles.editIconButton}
+                >
+                  <MaterialIcons name="edit" size={20} color={modalFontColor} />
+                </TouchableOpacity>
+              </View>
+              {renderHeaderField('Location', headerValues.location)}
+              {renderHeaderField('Organizer', headerValues.organizer)}
+              {headerValues.address && renderHeaderField('Address', headerValues.address)}
+              {headerValues.eventTime && renderHeaderField('Event Time', headerValues.eventTime)}
               {neededItems && neededItems.length > 0 && (
                 <Text style={[styles.subHeaderText, { fontSize: modalFontSize, fontFamily: modalFontType, color: modalFontColor }]}>
                   Items Needed: {neededItems.map((item) => item.value).join(', ')}
@@ -372,17 +401,17 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                     alert('This feature requires a premium subscription.');
                   }
                 }}
-                style={styles.roundedButton}
+                style={styles.customizeButton}
               >
                 <MaterialIcons name="edit" size={18} color="black" />
-                <Text style={styles.roundedButtonText}>Customize Appearance</Text>
+                <Text style={styles.customizeButtonText}>Customize Appearance</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setThemesModalVisible(true)} style={styles.roundedButton}>
+              <TouchableOpacity onPress={() => setThemesModalVisible(true)} style={styles.themesButton}>
                 <MaterialIcons name="palette" size={18} color="black" />
-                <Text style={styles.roundedButtonText}>Themes</Text>
-                    </TouchableOpacity>
-                  </View>
-                    </View>
+                <Text style={styles.themesButtonText}>Themes</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
           {dates.map((dateData, dateIndex) => (
             <View key={dateIndex} style={styles.dateTile}>
@@ -403,53 +432,53 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
 
           <TouchableOpacity onPress={submitEvent} style={styles.submitButton}>
             <Text style={styles.submitButtonText}>Submit Your Event</Text>
-            </TouchableOpacity>
-            
+          </TouchableOpacity>
+          
           <TouchableOpacity onPress={saveDraft} style={styles.saveDraftButton}>
             <Text style={styles.saveDraftButtonText}>Save as Draft</Text>
-            </TouchableOpacity>
-    </ScrollView>
+          </TouchableOpacity>
+        </ScrollView>
 
         {/* Themes Modal */}
         <Modal visible={isThemesModalVisible} animationType="slide" transparent={true}>
           <TouchableWithoutFeedback onPress={() => setThemesModalVisible(false)}>
-        <View style={styles.modalContainer}>
+            <View style={styles.modalContainer}>
               <TouchableWithoutFeedback>
                 <View style={styles.customizationContainer}>
                   <ScrollView contentContainerStyle={styles.customizationContent}>
                     <Text style={styles.modalHeaderText}>Select a Theme</Text>
-              {themes.map((theme, index) => (
-                <TouchableOpacity
-                  key={index}
+                    {themes.map((theme, index) => (
+                      <TouchableOpacity
+                        key={index}
                         style={[styles.selectButton, { backgroundColor: theme.tileColor }]}
                         onPress={() => applyTheme(theme)}
                       >
-                    {theme.bgImage && (
-                      <Image 
-                        source={theme.bgImage} 
+                        {theme.bgImage && (
+                          <Image 
+                            source={theme.bgImage} 
                             style={{ width: '100%', height: 100, borderRadius: 10 }}
-                        resizeMode="cover"
-                      />
-                    )}
+                            resizeMode="cover"
+                          />
+                        )}
                         <Text style={{ color: theme.fontColor, fontFamily: theme.fontType, fontSize: 16, marginTop: 10 }}>
-                      {theme.name}
-                    </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+                          {theme.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
                   <TouchableOpacity onPress={() => setThemesModalVisible(false)} style={styles.confirmButton}>
                     <Text style={styles.confirmButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
+                  </TouchableOpacity>
+                </View>
               </TouchableWithoutFeedback>
-        </View>
+            </View>
           </TouchableWithoutFeedback>
-      </Modal>
+        </Modal>
 
-      {/* Customize Appearance Modal */}
+        {/* Customize Appearance Modal */}
         <Modal visible={isModalVisible} animationType="slide" transparent={true}>
           <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-        <View style={styles.modalContainer}>
+            <View style={styles.modalContainer}>
               <TouchableWithoutFeedback>
                 <View style={styles.customizationContainer}>
                   <ScrollView
@@ -461,8 +490,8 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                     {/* Background Image */}
                     <TouchableOpacity onPress={handleImageUpload} style={styles.selectButton}>
                       <Text style={styles.selectButtonText}>Select Background Image</Text>
-              </TouchableOpacity>
-              
+                    </TouchableOpacity>
+                    
                     {/* Background Color */}
                     <View style={styles.pickerContainer}>
                       <Text style={styles.selectLabel}>Background Color</Text>
@@ -506,8 +535,8 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                         placeholder={{ label: 'Select Font Color', value: null }}
                         style={pickerSelectStyles}
                       />
-            </View>
-            
+                    </View>
+                    
                     {/* Font Size */}
                     <View style={styles.pickerContainer}>
                       <Text style={styles.selectLabel}>Font Size</Text>
@@ -566,15 +595,15 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                         placeholder={{ label: 'Select Tile Color', value: null }}
                         style={pickerSelectStyles}
                       />
-              </View>
-              
+                    </View>
+                    
                     <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.confirmButton}>
                       <Text style={styles.confirmButtonText}>Confirm Customization</Text>
-                  </TouchableOpacity>
+                    </TouchableOpacity>
                   </ScrollView>
                 </View>
               </TouchableWithoutFeedback>
-              </View>
+            </View>
           </TouchableWithoutFeedback>
         </Modal>
 
@@ -585,9 +614,49 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
               <TouchableWithoutFeedback>
                 <View style={styles.customizationContainer}>
                   <Text style={styles.modalHeaderText}>
-                    {isEditingDate ? 'Edit Date' : 'Edit Attendee Name'}
+                    {isEditingHeader ? 'Edit Header Fields' : isEditingDate ? 'Edit Date' : 'Edit Attendee Name'}
                   </Text>
-                  {isEditingDate ? (
+                  {isEditingHeader ? (
+                    <>
+                      <View style={styles.headerEditContainer}>
+                        <Text style={styles.headerEditLabel}>Event Name</Text>
+                        <TextInput
+                          style={styles.headerEditInput}
+                          value={headerValues.eventName}
+                          onChangeText={(text) => setHeaderValues({ ...headerValues, eventName: text })}
+                          placeholder="Enter event name"
+                        />
+                        <Text style={styles.headerEditLabel}>Location</Text>
+                        <TextInput
+                          style={styles.headerEditInput}
+                          value={headerValues.location}
+                          onChangeText={(text) => setHeaderValues({ ...headerValues, location: text })}
+                          placeholder="Enter location"
+                        />
+                        <Text style={styles.headerEditLabel}>Organizer</Text>
+                        <TextInput
+                          style={styles.headerEditInput}
+                          value={headerValues.organizer}
+                          onChangeText={(text) => setHeaderValues({ ...headerValues, organizer: text })}
+                          placeholder="Enter organizer"
+                        />
+                        <Text style={styles.headerEditLabel}>Address</Text>
+                        <TextInput
+                          style={styles.headerEditInput}
+                          value={headerValues.address}
+                          onChangeText={(text) => setHeaderValues({ ...headerValues, address: text })}
+                          placeholder="Enter address"
+                        />
+                        <Text style={styles.headerEditLabel}>Event Time</Text>
+                        <TextInput
+                          style={styles.headerEditInput}
+                          value={headerValues.eventTime}
+                          onChangeText={(text) => setHeaderValues({ ...headerValues, eventTime: text })}
+                          placeholder="Enter event time"
+                        />
+                      </View>
+                    </>
+                  ) : isEditingDate ? (
                     <TextInput
                       style={styles.editInput}
                       value={editingDate}
@@ -622,7 +691,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                     </TouchableOpacity>
                     <TouchableOpacity 
                       style={[styles.modalButton, styles.confirmButton]}
-                      onPress={applyNameEdit}
+                      onPress={isEditingHeader ? applyHeaderEdit : applyNameEdit}
                     >
                       <Text style={styles.modalButtonText}>Apply</Text>
                     </TouchableOpacity>
@@ -638,11 +707,11 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
           <TouchableOpacity onPress={() => navigation.popToTop()} style={styles.navButton}>
             <MaterialIcons name="home" size={30} color="navy" />
             <Text style={styles.iconLabel}>Home</Text>
-            </TouchableOpacity>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('MyEventsScreen')} style={styles.navButton}>
             <MaterialIcons name="calendar-today" size={30} color="navy" />
             <Text style={styles.iconLabel}>My Events</Text>
-              </TouchableOpacity>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('CreateEventScreen')} style={styles.navButton}>
             <MaterialIcons name="event" size={30} color="navy" />
             <Text style={styles.iconLabel}>Create Event</Text>
@@ -654,8 +723,8 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
               <MaterialIcons name="account-circle" size={30} color="navy" />
             )}
             <Text style={styles.iconLabel}>My Profile</Text>
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
+        </View>
       </ImageBackground>
     </View>
   );
@@ -691,7 +760,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
   },
-  roundedButton: {
+  customizeButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -705,8 +774,33 @@ const styles = StyleSheet.create({
     shadowRadius: 1.5,
     elevation: 3,
     marginHorizontal: 5,
+    borderWidth: 1,
+    borderColor: 'black',
   },
-  roundedButtonText: {
+  customizeButtonText: {
+    marginLeft: 6,
+    color: 'black',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  themesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+    elevation: 3,
+    marginHorizontal: 5,
+    borderWidth: 1,
+    borderColor: 'black',
+  },
+  themesButtonText: {
     marginLeft: 6,
     color: 'black',
     fontSize: 14,
@@ -978,6 +1072,38 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  headerFieldContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 2,
+  },
+  editInstructions: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  headerEditContainer: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  headerEditLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'navy',
+    marginBottom: 5,
+    marginTop: 10,
+  },
+  headerEditInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 5,
+    backgroundColor: '#f9f9f9',
   },
 });
 
