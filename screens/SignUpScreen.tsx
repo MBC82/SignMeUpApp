@@ -318,12 +318,12 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
             }
           }
         });
-      } else {
+          } else {
         // Apply only to the current slot
         if (!dates[editingDateIndex].notes) dates[editingDateIndex].notes = [];
         if (applyNumbers) {
           dates[editingDateIndex].notes[editingSlotIndex] = `${editName} ${editingSlotIndex + 1}`;
-        } else {
+            } else {
           dates[editingDateIndex].notes[editingSlotIndex] = editName;
         }
       }
@@ -707,23 +707,23 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                         placeholder="Enter attendee name"
                       />
                       <View style={styles.applyToAllContainer}>
-                        <TouchableOpacity
+            <TouchableOpacity
                           style={[styles.checkbox, applyToAll && styles.checkboxChecked]}
                           onPress={() => setApplyToAll(!applyToAll)}
-                        >
+            >
                           {applyToAll && <MaterialIcons name="check" size={20} color="white" />}
-                        </TouchableOpacity>
+            </TouchableOpacity>
                         <Text style={styles.applyToAllText}>Apply to all attendees</Text>
                       </View>
                       <View style={styles.applyToAllContainer}>
-                        <TouchableOpacity
+              <TouchableOpacity
                           style={[styles.checkbox, applyNumbers && styles.checkboxChecked]}
                           onPress={() => setApplyNumbers(!applyNumbers)}
                         >
                           {applyNumbers && <MaterialIcons name="check" size={20} color="white" />}
-                        </TouchableOpacity>
+              </TouchableOpacity>
                         <Text style={styles.applyToAllText}>Apply numbers to attendees</Text>
-                      </View>
+          </View>
                     </>
                   )}
                   <View style={styles.modalButtonContainer}>

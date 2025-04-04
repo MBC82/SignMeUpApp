@@ -490,18 +490,15 @@ const UserProfileScreen = () => {
               ) : (
                 <TouchableOpacity onPress={pickImage} style={styles.profileImagePlaceholder}>
                   <View style={styles.defaultProfileCircle}>
-                    <Text style={styles.profileInitials}>
-                      {profile.name ? profile.name.charAt(0).toUpperCase() : profile.username ? profile.username.charAt(0).toUpperCase() : '?'}
-                    </Text>
+                    <Text style={styles.chooseImageText}>Choose Image</Text>
                   </View>
-                  <MaterialIcons name="add-a-photo" size={24} color="navy" style={styles.placeholderIcon} />
                 </TouchableOpacity>
               )}
               <TouchableOpacity 
                 style={styles.editImageButton}
                 onPress={pickImage}
               >
-                <MaterialIcons name="edit" size={24} color="white" />
+                <MaterialIcons name="add-a-photo" size={24} color="white" />
               </TouchableOpacity>
             </View>
             <Text style={styles.userName}>{profile.name}</Text>
@@ -798,49 +795,51 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   profileImageContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
     position: 'relative',
-    marginBottom: 0,
   },
   profileImage: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    marginBottom: 5,
+    borderWidth: 3,
+    borderColor: 'gold',
   },
   profileImagePlaceholder: {
     width: 120,
     height: 120,
-    borderRadius: 60,
-    backgroundColor: '#e1e1e1',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: 'white',
-    position: 'relative',
-    overflow: 'visible',
   },
   defaultProfileCircle: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#c0d6f0',
+    backgroundColor: 'transparent',
+    borderWidth: 3,
+    borderColor: 'gold',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  profileInitials: {
-    fontSize: 48,
+  chooseImageText: {
+    fontSize: 16,
+    color: 'gold',
     fontWeight: 'bold',
-    color: 'navy',
+    textAlign: 'center',
   },
-  placeholderIcon: {
+  editImageButton: {
     position: 'absolute',
-    bottom: -8,
-    right: -8,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    bottom: 0,
+    right: 0,
+    backgroundColor: 'navy',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'gold',
   },
   userName: {
     fontSize: 24,
@@ -988,101 +987,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  editImageButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 0,
-    backgroundColor: '#007bff',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'white',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 20,
-    width: '90%',
-    maxHeight: '80%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  closeButton: {
-    padding: 5,
-  },
-  searchInput: {
-    backgroundColor: '#f5f5f5',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 15,
-    fontSize: 16,
-  },
-  searchResults: {
-    maxHeight: '80%',
-  },
-  userSearchResult: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  searchUserInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  searchResultImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  searchResultName: {
-    fontSize: 16,
-    color: '#333',
-  },
-  findUsersButton: {
-    backgroundColor: '#007bff',
-    padding: 15,
-    borderRadius: 5,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  findUsersButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  noResultsContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  noResultsText: {
-    fontSize: 16,
-    color: '#666',
-    fontStyle: 'italic',
-  },
   editContainer: {
     width: '100%',
     alignItems: 'center',
@@ -1195,6 +1099,88 @@ const styles = StyleSheet.create({
     backgroundColor: '#c0d6f0',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 20,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  searchInput: {
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 15,
+    fontSize: 16,
+  },
+  searchResults: {
+    maxHeight: '80%',
+  },
+  userSearchResult: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  searchUserInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  searchResultImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  searchResultName: {
+    fontSize: 16,
+    color: '#333',
+  },
+  findUsersButton: {
+    backgroundColor: '#007bff',
+    padding: 15,
+    borderRadius: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  findUsersButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  noResultsContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  noResultsText: {
+    fontSize: 16,
+    color: '#666',
+    fontStyle: 'italic',
   },
 });
 
