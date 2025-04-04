@@ -420,156 +420,159 @@ const EventSignUpScreen = ({ route }: { route?: any }) => {
     // Get isTimeSlot property directly from the date object to ensure it's respected
     const showTimeSlots = date.isTimeSlot === true;
     
-    // Log the tileNames for debugging
-    console.log(`Rendering slots for date ${dateIndex}, tileNames:`, tileNames);
-    console.log(`Date at index ${dateIndex} isTimeSlot:`, showTimeSlots);
+    // Calculate if we have only one slot
+    const hasSingleSlot = slots.length === 1;
     
-    return slots.map((slotIndex) => {
-      // Generate a unique key for this slot
-      const slotKey = `${dateIndex}_${slotIndex}`;
-      
-      // Get the signup for this slot if it exists
-      const dateId = dateIndex.toString();
-      const hasSignup = signups[dateId] && signups[dateId][slotIndex] !== undefined;
-      const signupData = hasSignup ? signups[dateId][slotIndex] : null;
-      
-      // Extract the name from signup data
-      let signupName = '';
-      if (signupData) {
-        if (typeof signupData === 'object' && signupData.name) {
-          signupName = signupData.name;
-        } else if (typeof signupData === 'string') {
-          signupName = signupData;
-        }
-      }
-      
-      // Get the time slot for this slot if it exists
-      let timeSlotText = '';
-      if (showTimeSlots && timeSlots && timeSlots[slotIndex]) {
-        const timeSlot = timeSlots[slotIndex];
-        console.log(`Time slot for index ${slotIndex}:`, timeSlot);
-        
-        if (typeof timeSlot === 'object' && timeSlot.start && timeSlot.end) {
-          timeSlotText = `${timeSlot.start} - ${timeSlot.end}`;
-        } else if (typeof timeSlot === 'string') {
-          timeSlotText = timeSlot;
-        }
-      }
-      
-      // Get the label for this slot if it exists
-      let slotLabel = '';
-      
-      // First check if we have a custom tile name from the loaded tileNames state
-      if (tileNames && 
-          tileNames[dateIndex] && 
-          tileNames[dateIndex].names && 
-          tileNames[dateIndex].names[slotIndex]) {
-        slotLabel = tileNames[dateIndex].names[slotIndex];
-      }
-      // Then check if we have a slot label
-      else if (slotLabels && slotLabels[slotKey]) {
-        slotLabel = slotLabels[slotKey];
-      } 
-      // Fall back to default labels
-      else {
-        slotLabel = showTimeSlots ? 'Time Slot' : 'Attendee';
-        if (slotIndex !== null) {
-          slotLabel += ` ${slotIndex + 1}`;
-        }
-      }
-      
-      return (
-        <TouchableOpacity
-          key={slotIndex}
-          style={[
-            styles.tile,
-            {
-              backgroundColor: modalTileColor,
+    return (
+      <View style={[styles.slotsContainer, hasSingleSlot && styles.singleSlotContainer]}>
+        {slots.map((slotIndex) => {
+          // Generate a unique key for this slot
+          const slotKey = `${dateIndex}_${slotIndex}`;
+          
+          // Get the signup for this slot if it exists
+          const dateId = dateIndex.toString();
+          const hasSignup = signups[dateId] && signups[dateId][slotIndex] !== undefined;
+          const signupData = hasSignup ? signups[dateId][slotIndex] : null;
+          
+          // Extract the name from signup data
+          let signupName = '';
+          if (signupData) {
+            if (typeof signupData === 'object' && signupData.name) {
+              signupName = signupData.name;
+            } else if (typeof signupData === 'string') {
+              signupName = signupData;
             }
-          ]}
-          onPress={() => {
-            if (!hasSignup) {
-              setSelectedSlot(slotIndex);
-              setSelectedDateIndex(dateIndex);
-              setModalVisible(true);
-            }
-          }}
-        >
-          {hasSignup && (
-            <View style={styles.signedUpOverlay} />
-          )}
-          <View style={styles.tileContent}>
-            <Text style={[
-              styles.tileText,
-              {
-                color: modalFontColor,
-                fontFamily: modalFontType,
-                fontSize: modalFontSize,
-                ...(textShadowEnabled ? {
-                  textShadowColor: 'rgba(0, 0, 0, 0.75)',
-                  textShadowOffset: { width: 1, height: 1 },
-                  textShadowRadius: 2,
-                } : {})
-              }
-            ]}>
-              {slotLabel}
-            </Text>
+          }
+          
+          // Get the time slot for this slot if it exists
+          let timeSlotText = '';
+          if (showTimeSlots && timeSlots && timeSlots[slotIndex]) {
+            const timeSlot = timeSlots[slotIndex];
             
-            {showTimeSlots && timeSlotText && (
-              <Text style={[
-                styles.timeText,
+            if (typeof timeSlot === 'object' && timeSlot.start && timeSlot.end) {
+              timeSlotText = `${timeSlot.start} - ${timeSlot.end}`;
+            } else if (typeof timeSlot === 'string') {
+              timeSlotText = timeSlot;
+            }
+          }
+          
+          // Get the label for this slot if it exists
+          let slotLabel = '';
+          
+          // First check if we have a custom tile name from the loaded tileNames state
+          if (tileNames && 
+              tileNames[dateIndex] && 
+              tileNames[dateIndex].names && 
+              tileNames[dateIndex].names[slotIndex]) {
+            slotLabel = tileNames[dateIndex].names[slotIndex];
+          }
+          // Then check if we have a slot label
+          else if (slotLabels && slotLabels[slotKey]) {
+            slotLabel = slotLabels[slotKey];
+          } 
+          // Fall back to default labels
+          else {
+            slotLabel = showTimeSlots ? 'Time Slot' : 'Attendee';
+            if (slotIndex !== null) {
+              slotLabel += ` ${slotIndex + 1}`;
+            }
+          }
+          
+          return (
+            <TouchableOpacity
+              key={slotIndex}
+              style={[
+                styles.tile,
+                hasSingleSlot && styles.singleTile,
                 {
-                  color: modalFontColor,
-                  fontFamily: modalFontType,
-                  fontSize: modalFontSize - 2,
+                  backgroundColor: modalTileColor,
                 }
-              ]}>
-                {timeSlotText}
-              </Text>
-            )}
-            
-            {hasSignup && (
-              <View style={[styles.signupInfo, { opacity: 1 }]}>
-                <Text style={[
-                  styles.signupName,
-                  {
-                    color: 'darkblue',
-                    fontFamily: modalFontType,
-                    fontSize: modalFontSize - 2,
-                    fontWeight: 'bold',
-                    opacity: 1,
-                  }
-                ]}>
-                  {signupName}
-                </Text>
-                
-                {isCreator && (
-                  <TouchableOpacity
-                    style={styles.cancelButton}
-                    onPress={() => handleCancelSignup(dateId, slotIndex)}
-                  >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
-            
-            {!hasSignup && (
-              <TouchableOpacity
-                style={styles.signUpButton}
-                onPress={() => {
+              ]}
+              onPress={() => {
+                if (!hasSignup) {
                   setSelectedSlot(slotIndex);
                   setSelectedDateIndex(dateIndex);
                   setModalVisible(true);
-                }}
-              >
-                <Text style={styles.signUpButtonText}>Sign Up</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </TouchableOpacity>
-      );
-    });
+                }
+              }}
+            >
+              {hasSignup && (
+                <View style={styles.signedUpOverlay} />
+              )}
+              <View style={styles.tileContent}>
+                <Text style={[
+                  styles.tileText,
+                  {
+                    color: modalFontColor,
+                    fontFamily: modalFontType,
+                    fontSize: modalFontSize,
+                    ...(textShadowEnabled ? {
+                      textShadowColor: 'rgba(0, 0, 0, 0.75)',
+                      textShadowOffset: { width: 1, height: 1 },
+                      textShadowRadius: 2,
+                    } : {})
+                  }
+                ]}>
+                  {slotLabel}
+                </Text>
+                
+                {showTimeSlots && timeSlotText && (
+                  <Text style={[
+                    styles.timeText,
+                    {
+                      color: modalFontColor,
+                      fontFamily: modalFontType,
+                      fontSize: modalFontSize - 2,
+                    }
+                  ]}>
+                    {timeSlotText}
+                  </Text>
+                )}
+                
+                {hasSignup && (
+                  <View style={[styles.signupInfo, { opacity: 1 }]}>
+                    <Text style={[
+                      styles.signupName,
+                      {
+                        color: 'darkblue',
+                        fontFamily: modalFontType,
+                        fontSize: modalFontSize - 2,
+                        fontWeight: 'bold',
+                        opacity: 1,
+                      }
+                    ]}>
+                      {signupName}
+                    </Text>
+                    
+                    {isCreator && (
+                      <TouchableOpacity
+                        style={styles.cancelButton}
+                        onPress={() => handleCancelSignup(dateId, slotIndex)}
+                      >
+                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+                
+                {!hasSignup && (
+                  <TouchableOpacity
+                    style={styles.signUpButton}
+                    onPress={() => {
+                      setSelectedSlot(slotIndex);
+                      setSelectedDateIndex(dateIndex);
+                      setModalVisible(true);
+                    }}
+                  >
+                    <Text style={styles.signUpButtonText}>Sign Up</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
   };
 
   useEffect(() => {
@@ -1282,10 +1285,14 @@ const styles = StyleSheet.create({
   },
   dateTile: {
     marginBottom: 20,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dateTextContainer: {
     alignItems: 'center',
     marginBottom: 10,
+    width: '100%',
   },
   dateText: {
     padding: 10,
@@ -1303,6 +1310,12 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 10,
   },
+  singleSlotContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    flex: 1,
+  },
   tile: {
     width: '42%',
     marginBottom: 15,
@@ -1319,19 +1332,10 @@ const styles = StyleSheet.create({
     elevation: 5,
     minHeight: 100,
   },
-  slot: {
-    width: '40%',
-    marginBottom: 15,
-    marginHorizontal: 8,
-    padding: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    minHeight: 100,
+  singleTile: {
+    width: '60%',
+    marginHorizontal: 0,
+    alignSelf: 'center',
   },
   modalOverlay: {
     flex: 1,
@@ -1401,16 +1405,11 @@ const styles = StyleSheet.create({
   currentUserBadge: {
     backgroundColor: 'rgba(218, 165, 32, 0.7)',
   },
-  timeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
   timeText: {
     textAlign: 'center',
     fontWeight: '500',
     flexShrink: 1,
+    marginTop: 5,
   },
   signUpButton: {
     backgroundColor: 'gold',
@@ -1506,6 +1505,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
     width: '100%',
     alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

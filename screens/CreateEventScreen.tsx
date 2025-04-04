@@ -250,7 +250,8 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
     if (!newTimeSlots[dateIndex][slotIndex]) {
       newTimeSlots[dateIndex][slotIndex] = { start: '', end: '', isTimeSlot: true };
     }
-    newTimeSlots[dateIndex][slotIndex][field] = value.toLocaleTimeString();
+    // Format time without seconds
+    newTimeSlots[dateIndex][slotIndex][field] = value.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setTimeSlots(newTimeSlots);
   };
 
@@ -1230,6 +1231,26 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
                 mode="date"
                 onConfirm={(date) => handleDateChange(parseInt(currentDateIndex), date)}
                 onCancel={() => setDatePickerVisibility(false)}
+              />
+
+              <DateTimePickerModal
+                isVisible={isTimePickerVisible}
+                mode="time"
+                onConfirm={(date) => {
+                  handleTimeChange(currentDateIndex, currentSlotIndex, 'start', date);
+                  setTimePickerVisibility(false);
+                }}
+                onCancel={() => setTimePickerVisibility(false)}
+              />
+
+              <DateTimePickerModal
+                isVisible={isEndTimePickerVisible}
+                mode="time"
+                onConfirm={(date) => {
+                  handleTimeChange(currentDateIndex, currentSlotIndex, 'end', date);
+                  setEndTimePickerVisibility(false);
+                }}
+                onCancel={() => setEndTimePickerVisibility(false)}
               />
             </View>
           ))}
