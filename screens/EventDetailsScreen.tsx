@@ -132,7 +132,15 @@ const EventDetailsScreen: React.FC<Props> = ({ route }) => {
   };
 
   const handleConfirmCustomization = () => {
-    console.log("Navigating to EnhancedSignUp with timeSlots:", timeSlots);
+    console.log("Navigating to EnhancedSignUp with customization:", {
+      bgColor,
+      fontColor,
+      fontSize,
+      fontType,
+      tileColor,
+      backgroundImage
+    });
+
     navigation.navigate('EnhancedSignUp', {
       eventId: route.params.eventId || '',
       id: route.params.id || '',
@@ -235,7 +243,10 @@ const EventDetailsScreen: React.FC<Props> = ({ route }) => {
             <Text style={styles.selectLabel}>Background Color</Text>
             <View style={styles.arrowContainer}>
               <RNPickerSelect
-                onValueChange={(itemValue) => setBgColor(itemValue)}
+                onValueChange={(itemValue) => {
+                  console.log('Selected background color:', itemValue);
+                  setBgColor(itemValue);
+                }}
                 items={[
                   { label: 'White', value: 'white' },
                   { label: 'Light Gray', value: 'lightgray' },
@@ -248,10 +259,10 @@ const EventDetailsScreen: React.FC<Props> = ({ route }) => {
                   { label: 'Yellow', value: 'yellow' }
                 ]}
                 style={pickerStyle}
+                value={bgColor}
                 placeholder={{ label: "Select Background", value: null }}
                 useNativeAndroidPickerStyle={false}
               />
-              <ArrowRight onPress={() => setOpenBgColorPicker(true)} />
             </View>
           </View>
         </View>
@@ -262,17 +273,20 @@ const EventDetailsScreen: React.FC<Props> = ({ route }) => {
             <Text style={styles.selectLabel}>Font Color</Text>
             <View style={styles.arrowContainer}>
               <RNPickerSelect
-                onValueChange={(itemValue) => setFontColor(itemValue)}
+                onValueChange={(itemValue) => {
+                  console.log('Selected font color:', itemValue);
+                  setFontColor(itemValue);
+                }}
                 items={[
                   { label: 'Black', value: 'black' },
                   { label: 'White', value: 'white' },
                   { label: 'Gray', value: 'gray' },
                 ]}
                 style={pickerStyle}
+                value={fontColor}
                 placeholder={{ label: "Select Font Color", value: null }}
                 useNativeAndroidPickerStyle={false}
               />
-              <ArrowRight onPress={() => setOpenFontColorPicker(true)} />
             </View>
           </View>
         </View>
@@ -283,7 +297,10 @@ const EventDetailsScreen: React.FC<Props> = ({ route }) => {
             <Text style={styles.selectLabel}>Font Size</Text>
             <View style={styles.arrowContainer}>
               <RNPickerSelect
-                onValueChange={(itemValue) => setFontSize(itemValue)}
+                onValueChange={(itemValue) => {
+                  console.log('Selected font size:', itemValue);
+                  setFontSize(itemValue);
+                }}
                 items={[
                   { label: '12', value: 12 },
                   { label: '14', value: 14 },
@@ -294,10 +311,10 @@ const EventDetailsScreen: React.FC<Props> = ({ route }) => {
                   { label: '30', value: 30 }
                 ]}
                 style={pickerStyle}
+                value={fontSize}
                 placeholder={{ label: "Select Font Size", value: null }}
                 useNativeAndroidPickerStyle={false}
               />
-              <ArrowRight onPress={() => setOpenFontSizePicker(true)} />
             </View>
           </View>
         </View>
@@ -308,17 +325,20 @@ const EventDetailsScreen: React.FC<Props> = ({ route }) => {
             <Text style={styles.selectLabel}>Font Type</Text>
             <View style={styles.arrowContainer}>
               <RNPickerSelect
-                onValueChange={(itemValue) => setFontType(itemValue)}
+                onValueChange={(itemValue) => {
+                  console.log('Selected font type:', itemValue);
+                  setFontType(itemValue);
+                }}
                 items={[
                   { label: 'Arial', value: 'Arial' },
                   { label: 'Times New Roman', value: 'Times New Roman' },
                   { label: 'Verdana', value: 'Verdana' }
                 ]}
                 style={pickerStyle}
+                value={fontType}
                 placeholder={{ label: "Select Font Type", value: null }}
                 useNativeAndroidPickerStyle={false}
               />
-              <ArrowRight onPress={() => setOpenFontTypePicker(true)} />
             </View>
           </View>
         </View>
@@ -329,7 +349,10 @@ const EventDetailsScreen: React.FC<Props> = ({ route }) => {
             <Text style={styles.selectLabel}>Tile Color</Text>
             <View style={styles.arrowContainer}>
               <RNPickerSelect
-                onValueChange={(itemValue) => setTileColor(itemValue)}
+                onValueChange={(itemValue) => {
+                  console.log('Selected tile color:', itemValue);
+                  setTileColor(itemValue);
+                }}
                 items={[
                   { label: 'White', value: '#FFFFFF' },
                   { label: 'Light Gray', value: '#F0F0F0' },
@@ -337,10 +360,10 @@ const EventDetailsScreen: React.FC<Props> = ({ route }) => {
                   { label: 'Light Green', value: '#90ee90' }
                 ]}
                 style={pickerStyle}
+                value={tileColor}
                 placeholder={{ label: "Select Tile Color", value: null }}
                 useNativeAndroidPickerStyle={false}
               />
-              <ArrowRight onPress={() => setOpenTileColorPicker(true)} />
             </View>
           </View>
         </View>

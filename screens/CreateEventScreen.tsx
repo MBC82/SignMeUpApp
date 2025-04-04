@@ -55,7 +55,7 @@ interface NavigationParams {
   eventTime: string;
   neededItems: string[];
   dates: EventDate[];
-  timeSlots: TimeSlot[][];
+  timeSlots: any[];
   bgColor: string;
   fontColor: string;
   fontSize: number;
@@ -250,8 +250,7 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
     if (!newTimeSlots[dateIndex][slotIndex]) {
       newTimeSlots[dateIndex][slotIndex] = { start: '', end: '', isTimeSlot: true };
     }
-    // Format time without seconds
-    newTimeSlots[dateIndex][slotIndex][field] = value.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    newTimeSlots[dateIndex][slotIndex][field] = value.toLocaleTimeString();
     setTimeSlots(newTimeSlots);
   };
 
@@ -795,6 +794,20 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
 
   const handlePreviewEvent = async () => {
     try {
+      // Format timeSlots properly
+      const formattedTimeSlots = Object.keys(timeSlots).map((dateIndex: string) => {
+        return timeSlots[dateIndex].map((slot: TimeSlot) => ({
+          start: slot.start || '',
+          end: slot.end || '',
+          isTimeSlot: true
+        }));
+      });
+
+      // Ensure we have valid time slots
+      if (!formattedTimeSlots.length) {
+        formattedTimeSlots.push([{ start: '', end: '', isTimeSlot: true }]);
+      }
+
       const navigationParams: NavigationParams = {
         eventId: Date.now().toString(),
         id: Date.now().toString(),
@@ -811,7 +824,7 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
           notes: date.notes || [],
           isTimeSlot: date.isTimeSlot || false
         })),
-        timeSlots: Object.values(timeSlots),
+        timeSlots: formattedTimeSlots,
         bgColor: customBgColor || '#FFFFFF',
         fontColor: customFontColor || '#000000',
         fontSize: customFontSize || 16,
@@ -1231,26 +1244,6 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
                 mode="date"
                 onConfirm={(date) => handleDateChange(parseInt(currentDateIndex), date)}
                 onCancel={() => setDatePickerVisibility(false)}
-              />
-
-              <DateTimePickerModal
-                isVisible={isTimePickerVisible}
-                mode="time"
-                onConfirm={(date) => {
-                  handleTimeChange(currentDateIndex, currentSlotIndex, 'start', date);
-                  setTimePickerVisibility(false);
-                }}
-                onCancel={() => setTimePickerVisibility(false)}
-              />
-
-              <DateTimePickerModal
-                isVisible={isEndTimePickerVisible}
-                mode="time"
-                onConfirm={(date) => {
-                  handleTimeChange(currentDateIndex, currentSlotIndex, 'end', date);
-                  setEndTimePickerVisibility(false);
-                }}
-                onCancel={() => setEndTimePickerVisibility(false)}
               />
             </View>
           ))}

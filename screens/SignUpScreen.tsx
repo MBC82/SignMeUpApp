@@ -141,6 +141,17 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
     setThemesModalVisible(false);
   };
 
+  const handleBackgroundColorChange = (value: string) => {
+    console.log('Selected background color:', value);
+    if (value) {
+      // Clear any existing background image
+      setBackgroundImage(null);
+      // Set the new background color
+      setScreenBgColor(value);
+      // Don't modify the tile color - it should remain independent
+    }
+  };
+
   useEffect(() => {
     const loadUserData = async () => {
       try {
@@ -176,10 +187,10 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
         dates,
         timeSlots,
         bgColor: screenBgColor,
-        fontColor: modalFontColor,
-        fontSize: modalFontSize,
-        fontType: modalFontType,
-        tileColor: modalTileColor,
+      fontColor: modalFontColor,
+      fontSize: modalFontSize,
+      fontType: modalFontType,
+      tileColor: modalTileColor,
         backgroundImage: backgroundImage?.uri || backgroundImage || null,
       };
 
@@ -213,11 +224,11 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
         eventId: Date.now().toString(),
         id: Date.now().toString(),
         username: username,
-        eventName: headerValues.eventName,
-        location: headerValues.location,
-        organizer: headerValues.organizer,
-        address: headerValues.address,
-        eventTime: headerValues.eventTime,
+        eventName: eventName,
+        location: location,
+        organizer: organizer,
+        address: address,
+        eventTime: eventTime,
         neededItems,
         dates,
         timeSlots,
@@ -241,7 +252,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
       draftEvents.push(newDraft);
       await AsyncStorage.setItem(draftKey, JSON.stringify(draftEvents));
       Alert.alert('Success', 'Event saved as draft!');
-      navigation.navigate('MyEventsScreen');
+      navigation.goBack();
     } catch (error) {
       console.error('Error saving draft:', error);
       Alert.alert('Error', 'Failed to save draft. Please try again.');
@@ -281,8 +292,8 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
       } else if (response.assets && response.assets.length > 0) {
         const selectedImageUri = response.assets[0].uri;
         if (selectedImageUri) {
-          setBackgroundImage({ uri: selectedImageUri });
-          setScreenBgColor('transparent');
+        setBackgroundImage({ uri: selectedImageUri });
+        setScreenBgColor('transparent');
         }
       }
     });
@@ -326,12 +337,12 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
             }
           }
         });
-      } else {
+          } else {
         // Apply only to the current slot
         if (!dates[editingDateIndex].notes) dates[editingDateIndex].notes = [];
         if (applyNumbers) {
           dates[editingDateIndex].notes[editingSlotIndex] = `${editName} ${editingSlotIndex + 1}`;
-        } else {
+            } else {
           dates[editingDateIndex].notes[editingSlotIndex] = editName;
         }
       }
@@ -354,11 +365,11 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
 
   const applyHeaderEdit = () => {
     setHeaderValues({
-      eventName: headerValues.eventName,
-      location: headerValues.location,
-      organizer: headerValues.organizer,
-      address: headerValues.address,
-      eventTime: headerValues.eventTime,
+      eventName,
+      location,
+      organizer,
+      address,
+      eventTime,
     });
     setEditModalVisible(false);
     setIsEditingHeader(false);
@@ -367,7 +378,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
   const renderHeaderField = (label: string, value: string) => (
     <Text style={[styles.subHeaderText, { fontSize: modalFontSize, fontFamily: modalFontType, color: modalFontColor }]}>
       {label}: {value}
-    </Text>
+                </Text>
   );
 
   const renderSlotsOrAttendees = (dateIndex: number) => {
@@ -390,8 +401,8 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
               style={styles.editIconButton}
             >
               <MaterialIcons name="edit" size={16} color="navy" />
-            </TouchableOpacity>
-          </View>
+                  </TouchableOpacity>
+                </View>
           {dates[dateIndex].isTimeSlot && start && end && (
             <Text style={[styles.timeText, { color: modalFontColor }]}>
               {start} - {end}
@@ -399,17 +410,17 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
           )}
           <TouchableOpacity style={styles.rsvpButton}>
             <Text style={styles.rsvpButtonText}>Sign Me Up</Text>
-          </TouchableOpacity>
-        </View>
-      );
+              </TouchableOpacity>
+            </View>
+          );
     });
   };
 
   return (
     <View style={{ flex: 1 }}>
       <ImageBackground
-        source={backgroundImage ? backgroundImage : null}
-        style={[styles.container, { backgroundColor: backgroundImage ? 'transparent' : screenBgColor }]}
+        source={backgroundImage ? backgroundImage : undefined}
+        style={[styles.container, { backgroundColor: screenBgColor }]}
       >
         <ScrollView contentContainerStyle={{ paddingBottom: 150 }}>
           <View style={styles.header}>
@@ -432,9 +443,9 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
               {neededItems && neededItems.length > 0 && (
                 <Text style={[styles.subHeaderText, { fontSize: modalFontSize, fontFamily: modalFontType, color: modalFontColor }]}>
                   Items Needed: {neededItems.map((item) => item.value).join(', ')}
-                </Text>
+        </Text>
               )}
-            </View>
+      </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginVertical: 15 }}>
               <TouchableOpacity 
                 onPress={() => {
@@ -452,9 +463,9 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
               <TouchableOpacity onPress={() => setThemesModalVisible(true)} style={styles.themesButton}>
                 <MaterialIcons name="palette" size={18} color="black" />
                 <Text style={styles.themesButtonText}>Themes</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                    </TouchableOpacity>
+                  </View>
+                    </View>
 
           {dates.map((dateData, dateIndex) => (
             <View key={dateIndex} style={styles.dateTile}>
@@ -467,7 +478,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                   style={styles.editIconButton}
                 >
                   <MaterialIcons name="edit" size={20} color={modalFontColor} />
-                </TouchableOpacity>
+              </TouchableOpacity>
               </View>
               <View style={styles.tileRow}>{renderSlotsOrAttendees(dateIndex)}</View>
             </View>
@@ -475,53 +486,53 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
 
           <TouchableOpacity onPress={submitEvent} style={styles.submitButton}>
             <Text style={styles.submitButtonText}>Submit Your Event</Text>
-          </TouchableOpacity>
-          
+            </TouchableOpacity>
+            
           <TouchableOpacity onPress={saveDraft} style={styles.saveDraftButton}>
             <Text style={styles.saveDraftButtonText}>Save as Draft</Text>
-          </TouchableOpacity>
-        </ScrollView>
+            </TouchableOpacity>
+    </ScrollView>
 
         {/* Themes Modal */}
         <Modal visible={isThemesModalVisible} animationType="slide" transparent={true}>
           <TouchableWithoutFeedback onPress={() => setThemesModalVisible(false)}>
-            <View style={styles.modalContainer}>
+        <View style={styles.modalContainer}>
               <TouchableWithoutFeedback>
                 <View style={styles.customizationContainer}>
                   <ScrollView contentContainerStyle={styles.customizationContent}>
                     <Text style={styles.modalHeaderText}>Select a Theme</Text>
-                    {themes.map((theme, index) => (
-                      <TouchableOpacity
-                        key={index}
+              {themes.map((theme, index) => (
+                <TouchableOpacity
+                  key={index}
                         style={[styles.selectButton, { backgroundColor: theme.tileColor }]}
                         onPress={() => applyTheme(theme)}
                       >
-                        {theme.bgImage && (
-                          <Image 
-                            source={theme.bgImage} 
+                    {theme.bgImage && (
+                      <Image 
+                        source={theme.bgImage} 
                             style={{ width: '100%', height: 100, borderRadius: 10 }}
-                            resizeMode="cover"
-                          />
-                        )}
+                        resizeMode="cover"
+                      />
+                    )}
                         <Text style={{ color: theme.fontColor, fontFamily: theme.fontType, fontSize: 16, marginTop: 10 }}>
-                          {theme.name}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
+                      {theme.name}
+                    </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
                   <TouchableOpacity onPress={() => setThemesModalVisible(false)} style={styles.confirmButton}>
                     <Text style={styles.confirmButtonText}>Close</Text>
-                  </TouchableOpacity>
-                </View>
+            </TouchableOpacity>
+          </View>
               </TouchableWithoutFeedback>
-            </View>
+        </View>
           </TouchableWithoutFeedback>
-        </Modal>
+      </Modal>
 
-        {/* Customize Appearance Modal */}
+      {/* Customize Appearance Modal */}
         <Modal visible={isModalVisible} animationType="slide" transparent={true}>
           <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-            <View style={styles.modalContainer}>
+        <View style={styles.modalContainer}>
               <TouchableWithoutFeedback>
                 <View style={styles.customizationContainer}>
                   <ScrollView
@@ -533,16 +544,13 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                     {/* Background Image */}
                     <TouchableOpacity onPress={handleImageUpload} style={styles.selectButton}>
                       <Text style={styles.selectButtonText}>Select Background Image</Text>
-                    </TouchableOpacity>
-                    
+              </TouchableOpacity>
+              
                     {/* Background Color */}
                     <View style={styles.pickerContainer}>
                       <Text style={styles.selectLabel}>Background Color</Text>
                       <RNPickerSelect
-                        onValueChange={(value) => {
-                          setScreenBgColor(value);
-                          setBackgroundImage(null);
-                        }}
+                        onValueChange={handleBackgroundColorChange}
                         items={[
                           { label: 'White', value: 'white' },
                           { label: 'Light Green', value: 'lightgreen' },
@@ -553,6 +561,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                           { label: 'Purple', value: 'purple' },
                           { label: 'Pink', value: 'pink' },
                         ]}
+                        value={screenBgColor}
                         placeholder={{ label: 'Select Background Color', value: null }}
                         style={pickerSelectStyles}
                       />
@@ -562,7 +571,10 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                     <View style={styles.pickerContainer}>
                       <Text style={styles.selectLabel}>Font Color</Text>
                       <RNPickerSelect
-                        onValueChange={setModalFontColor}
+                        onValueChange={(value) => {
+                          console.log('Selected font color:', value);
+                          setModalFontColor(value);
+                        }}
                         items={[
                           { label: 'Black', value: 'black' },
                           { label: 'Gold', value: 'gold' },
@@ -575,21 +587,26 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                           { label: 'Light Green', value: 'lightgreen' },
                           { label: 'Green', value: 'green' },
                         ]}
+                        value={modalFontColor}
                         placeholder={{ label: 'Select Font Color', value: null }}
                         style={pickerSelectStyles}
                       />
-                    </View>
-                    
+            </View>
+            
                     {/* Font Size */}
                     <View style={styles.pickerContainer}>
                       <Text style={styles.selectLabel}>Font Size</Text>
                       <RNPickerSelect
-                        onValueChange={(value) => setModalFontSize(parseInt(value))}
+                        onValueChange={(value) => {
+                          console.log('Selected font size:', value);
+                          setModalFontSize(parseInt(value));
+                        }}
                         items={[
                           { label: 'Small', value: '14' },
                           { label: 'Medium', value: '16' },
                           { label: 'Large', value: '20' },
                         ]}
+                        value={modalFontSize.toString()}
                         placeholder={{ label: 'Select Font Size', value: null }}
                         style={pickerSelectStyles}
                       />
@@ -599,7 +616,10 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                     <View style={styles.pickerContainer}>
                       <Text style={styles.selectLabel}>Font Type</Text>
                       <RNPickerSelect
-                        onValueChange={setModalFontType}
+                        onValueChange={(value) => {
+                          console.log('Selected font type:', value);
+                          setModalFontType(value);
+                        }}
                         items={[
                           { label: 'Arial', value: 'Arial' },
                           { label: 'Georgia', value: 'Georgia' },
@@ -610,6 +630,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                           { label: 'Roboto', value: 'Roboto' },
                           { label: 'Comic Sans MS', value: 'Comic Sans MS' },
                         ]}
+                        value={modalFontType}
                         placeholder={{ label: 'Select Font Type', value: null }}
                         style={pickerSelectStyles}
                       />
@@ -619,7 +640,10 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                     <View style={styles.pickerContainer}>
                       <Text style={styles.selectLabel}>Tile Color</Text>
                       <RNPickerSelect
-                        onValueChange={setModalTileColor}
+                        onValueChange={(value) => {
+                          console.log('Selected tile color:', value);
+                          setModalTileColor(value);
+                        }}
                         items={[
                           { label: 'White', value: '#ffffff' },
                           { label: 'Black', value: 'black' },
@@ -635,18 +659,19 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                           { label: 'Light Green', value: 'lightgreen' },
                           { label: 'Green', value: 'green' },
                         ]}
+                        value={modalTileColor}
                         placeholder={{ label: 'Select Tile Color', value: null }}
                         style={pickerSelectStyles}
                       />
-                    </View>
-                    
+              </View>
+              
                     <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.confirmButton}>
                       <Text style={styles.confirmButtonText}>Confirm Customization</Text>
-                    </TouchableOpacity>
+                  </TouchableOpacity>
                   </ScrollView>
                 </View>
               </TouchableWithoutFeedback>
-            </View>
+              </View>
           </TouchableWithoutFeedback>
         </Modal>
 
@@ -715,44 +740,44 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                         placeholder="Enter attendee name"
                       />
                       <View style={styles.applyToAllContainer}>
-                        <TouchableOpacity
+            <TouchableOpacity
                           style={[styles.checkbox, applyToAll && styles.checkboxChecked]}
                           onPress={() => setApplyToAll(!applyToAll)}
-                        >
+            >
                           {applyToAll && <MaterialIcons name="check" size={20} color="white" />}
-                        </TouchableOpacity>
+            </TouchableOpacity>
                         <Text style={styles.applyToAllText}>Apply to all attendees</Text>
                       </View>
                       <View style={styles.applyToAllContainer}>
-                        <TouchableOpacity
+              <TouchableOpacity
                           style={[styles.checkbox, applyNumbers && styles.checkboxChecked]}
                           onPress={() => setApplyNumbers(!applyNumbers)}
                         >
                           {applyNumbers && <MaterialIcons name="check" size={20} color="white" />}
-                        </TouchableOpacity>
+              </TouchableOpacity>
                         <Text style={styles.applyToAllText}>Apply numbers to attendees</Text>
-                      </View>
+          </View>
                     </>
                   )}
                   <View style={styles.modalButtonContainer}>
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.cancelButton]}
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
                       onPress={() => setEditModalVisible(false)}
-                    >
-                      <Text style={styles.modalButtonText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                       style={[styles.modalButton, styles.confirmButton]}
                       onPress={isEditingHeader ? applyHeaderEdit : applyNameEdit}
                     >
                       <Text style={styles.modalButtonText}>Apply</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </TouchableWithoutFeedback>
+              </TouchableOpacity>
             </View>
+          </View>
+              </TouchableWithoutFeedback>
+        </View>
           </TouchableWithoutFeedback>
-        </Modal>
+      </Modal>
 
         {/* Bottom Navigation */}
         <View style={styles.bottomNav}>
@@ -892,9 +917,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     width: '100%',
+    gap: 10,
   },
   slotTile: {
-    width: '48%',
+    width: '45%',
     borderRadius: 10,
     padding: 12,
     marginBottom: 15,
