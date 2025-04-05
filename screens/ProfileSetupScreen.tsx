@@ -23,8 +23,16 @@ import StatBox from '../components/StatBox';
 import ToggleOption from '../components/ToggleOption';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { useLanguage } from '../contexts/LanguageContext';
-import ImagePicker from 'react-native-image-picker';
 import { safeGetItem, safeSetItem, setLoginStatus, clearLoginStatus } from '../utils/StorageUtils';
+import ReCAPTCHA from 'react-native-recaptcha-v3';
+import { WebView } from 'react-native-webview';
+import { auth, db, storage } from '../config/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import * as ImagePicker from 'expo-image-picker';
+import { verifyCaptcha } from '../utils/captchaUtils';
+import Slider from '@react-native-community/slider';
 
 // Define the type for the navigation parameters
 type RootStackParamList = {
@@ -36,6 +44,18 @@ type RootStackParamList = {
 };
 
 type ProfileSetupScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ProfileSetup'>;
+
+// Add type declaration for ReCAPTCHA
+declare module 'react-native-recaptcha-v3' {
+  interface ReCAPTCHAProps {
+    siteKey: string;
+    baseUrl: string;
+    onVerify: (token: string) => void;
+    onError?: (error: Error) => void;
+  }
+  const ReCAPTCHA: React.FC<ReCAPTCHAProps>;
+  export default ReCAPTCHA;
+}
 
 const ProfileSetupScreen = () => {
   const navigation = useNavigation<ProfileSetupScreenNavigationProp>();
@@ -49,6 +69,10 @@ const ProfileSetupScreen = () => {
   useEffect(() => {
     console.log('Current language:', language);
   }, [language]);
+
+  useEffect(() => {
+    generateCaptcha();
+  }, []);
 
   const [name, setName] = useState(profile.name || '');
   const [username, setUsername] = useState(profile.username || '');
@@ -95,6 +119,16 @@ const ProfileSetupScreen = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showConnectionSearch, setShowConnectionSearch] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
+  const [captchaQuestion, setCaptchaQuestion] = useState('');
+  const [captchaCorrectAnswer, setCaptchaCorrectAnswer] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [sliderValue, setSliderValue] = useState(0);
+  const [targetValue, setTargetValue] = useState(0);
+  const [isVerified, setIsVerified] = useState(false);
+  const [sliderWidth, setSliderWidth] = useState(300);
 
   const loadProfile = async () => {
     try {
@@ -110,15 +144,16 @@ const ProfileSetupScreen = () => {
     }
   };
 
-  const handleImagePicker = () => {
-    const options = {
-      mediaType: 'photo' as const,
-      includeBase64: true,
-      maxHeight: 300,
-      maxWidth: 300,
-    };
+  const handleImagePicker = async () => {
+    try {
+      const options = {
+        mediaType: 'photo' as const,
+        includeBase64: true,
+        maxHeight: 300,
+        maxWidth: 300,
+      };
 
-    launchImageLibrary(options, (response) => {
+      const response = await launchImageLibrary(options);
       console.log('Image picker response:', response);
       
       if (response.didCancel) {
@@ -133,10 +168,23 @@ const ProfileSetupScreen = () => {
         // Set the profile image with the full URI
         setProfileImage(source.uri || '');
         
+        // If we have a username, save the image to AsyncStorage
+        if (username) {
+          try {
+            await AsyncStorage.setItem(`profileImage_${username}`, source.uri);
+            console.log('Saved profile image for user:', username);
+          } catch (error) {
+            console.error('Error saving profile image:', error);
+          }
+        }
+        
         // Log to verify the image was set
         console.log('Profile image set to:', source.uri);
       }
-    });
+    } catch (error) {
+      console.error('Error in handleImagePicker:', error);
+      Alert.alert('Error', 'Failed to pick image');
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -164,7 +212,7 @@ const ProfileSetupScreen = () => {
         username: lowerUsername,
         email, 
         phone, 
-        profileImage, // Include the profile image
+        profileImage: profileImage || '', // Ensure we have a value even if empty
         password, // Ensure password is stored
         memberSince: new Date().toISOString()
       };
@@ -175,6 +223,12 @@ const ProfileSetupScreen = () => {
       allUsers.push(newProfile);
       await safeSetItem('allUsers', JSON.stringify(allUsers));
       await safeSetItem(`password_${lowerUsername}`, password);
+
+      // Save profile image separately if it exists
+      if (profileImage) {
+        await AsyncStorage.setItem(`profileImage_${lowerUsername}`, profileImage);
+        console.log('Saved profile image for new user:', lowerUsername);
+      }
 
       // Set login status
       await setLoginStatus(true, lowerUsername);
@@ -593,12 +647,61 @@ const ProfileSetupScreen = () => {
     console.log('========== FINISHED LOGIN ==========');
   };
 
+  const handleCaptchaVerify = (token: string) => {
+    setCaptchaToken(token);
+    setShowCaptcha(false);
+  };
+
+  const handleCaptchaError = (error: any) => {
+    console.error('CAPTCHA Error:', error);
+    Alert.alert('Error', 'Failed to verify CAPTCHA. Please try again.');
+    setShowCaptcha(false);
+  };
+
+  const generateCaptcha = () => {
+    const num1 = Math.floor(Math.random() * 10);
+    const num2 = Math.floor(Math.random() * 10);
+    setCaptchaQuestion(`${num1} + ${num2} = ?`);
+    setCaptchaCorrectAnswer(String(num1 + num2));
+  };
+
+  useEffect(() => {
+    // Generate a random target value between 30 and 70
+    setTargetValue(Math.floor(Math.random() * 40) + 30);
+  }, []);
+
+  const handleSliderChange = (value: number) => {
+    setSliderValue(value);
+    // Check if the slider is within 5 units of the target
+    if (Math.abs(value - targetValue) <= 5) {
+      setIsVerified(true);
+    } else {
+      setIsVerified(false);
+    }
+  };
+
   const handleSignUp = async () => {
+    if (!isVerified) {
+      Alert.alert('Security Check', 'Please complete the security check by sliding to the correct position');
+      return;
+    }
+
     try {
+      setIsVerifying(true);
+      
+      // Verify the user is not a bot using reCAPTCHA v3
+      const captchaResult = await verifyCaptcha();
+      
+      if (!captchaResult.success) {
+        Alert.alert('Security Check Failed', 'Please try again');
+        return;
+      }
+
+      // If captcha verification passed, proceed with signup
       const lowerUsername = username.toLowerCase();
 
-      // Get all users
-      const allUsersString = await EncryptedStorage.getItem('allUsers');
+      // Get all users using safeGetItem
+      const allUsersString = await safeGetItem('allUsers');
       let allUsers = allUsersString ? JSON.parse(allUsersString) : [];
 
       // Check if username already exists
@@ -609,17 +712,20 @@ const ProfileSetupScreen = () => {
 
       const newProfile = { 
         username: lowerUsername,
-        password, // Ensure password is stored
+        password,
         email,
         phone,
-        profileImage: '', // Initialize with an empty string
+        profileImage: '',
         memberSince: new Date().toISOString()
       };
 
-      // Store user profile and password
+      // Store user profile and password using safeSetItem
       allUsers.push(newProfile);
-      await EncryptedStorage.setItem('allUsers', JSON.stringify(allUsers));
-      await EncryptedStorage.setItem(`password_${lowerUsername}`, password);
+      await safeSetItem('allUsers', JSON.stringify(allUsers));
+      await safeSetItem(`password_${lowerUsername}`, password);
+
+      // Set login status
+      await setLoginStatus(true, lowerUsername);
 
       // Update profile context
       updateProfile(newProfile);
@@ -630,8 +736,10 @@ const ProfileSetupScreen = () => {
         routes: [{ name: 'UserProfile' }],
       });
     } catch (error) {
-      console.error('Error signing up:', error);
+      console.error('Signup Error:', error);
       Alert.alert('Error', 'Failed to create account. Please try again.');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -641,7 +749,13 @@ const ProfileSetupScreen = () => {
       const username = await EncryptedStorage.getItem('username');
       
       if (!username) {
-        console.log('No username found, cannot load stats');
+        console.log('No username found, initializing new user stats');
+        // Initialize with default values for new users
+        setUserStats({
+          eventsCreated: 0,
+          eventsAttended: 0,
+          upcomingEvents: 0
+        });
         return;
       }
       
@@ -673,6 +787,12 @@ const ProfileSetupScreen = () => {
       });
     } catch (error) {
       console.error('Error loading user stats:', error);
+      // Initialize with default values if there's an error
+      setUserStats({
+        eventsCreated: 0,
+        eventsAttended: 0,
+        upcomingEvents: 0
+      });
     }
   };
 
@@ -765,8 +885,77 @@ const ProfileSetupScreen = () => {
                 />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.submitButton} onPress={isLoginMode ? handleLogin : handleSignUp}>
-              <Text style={styles.submitButtonText}>{isLoginMode ? 'Log In' : 'Sign Up'}</Text>
+            {!isLoginMode && (
+              <View style={styles.captchaContainer}>
+                <Text style={styles.captchaQuestion}>
+                  Slide the white circle to match the gold circle
+                </Text>
+                <View style={styles.sliderContainer}>
+                  <View 
+                    style={styles.sliderTrack}
+                    onLayout={(event) => {
+                      const { width } = event.nativeEvent.layout;
+                      setSliderWidth(width);
+                    }}
+                  >
+                    <View 
+                      style={[
+                        styles.sliderProgress,
+                        { 
+                          width: `${sliderValue}%`,
+                          backgroundColor: isVerified ? '#4CAF50' : '#007bff'
+                        }
+                      ]} 
+                    />
+                    <View 
+                      style={[
+                        styles.sliderThumb,
+                        { 
+                          left: `${sliderValue}%`,
+                          borderColor: isVerified ? '#4CAF50' : '#007bff'
+                        }
+                      ]}
+                      onStartShouldSetResponder={() => true}
+                      onMoveShouldSetResponder={() => true}
+                      onResponderMove={(event) => {
+                        const { locationX } = event.nativeEvent;
+                        const newValue = Math.min(100, Math.max(0, (locationX / sliderWidth) * 100));
+                        setSliderValue(newValue);
+                        if (newValue >= 80) {
+                          setIsVerified(true);
+                        } else {
+                          setIsVerified(false);
+                        }
+                      }}
+                    />
+                    <View style={styles.targetShape} />
+                  </View>
+                  <View 
+                    style={styles.touchArea}
+                    onStartShouldSetResponder={() => true}
+                    onMoveShouldSetResponder={() => true}
+                    onResponderMove={(event) => {
+                      const { locationX } = event.nativeEvent;
+                      const newValue = Math.min(100, Math.max(0, (locationX / sliderWidth) * 100));
+                      setSliderValue(newValue);
+                      if (newValue >= 80) {
+                        setIsVerified(true);
+                      } else {
+                        setIsVerified(false);
+                      }
+                    }}
+                  />
+                </View>
+              </View>
+            )}
+            <TouchableOpacity 
+              style={[styles.submitButton, isVerifying && styles.disabledButton]} 
+              onPress={isLoginMode ? handleLogin : handleSignUp}
+              disabled={isVerifying}
+            >
+              <Text style={styles.submitButtonText}>
+                {isVerifying ? 'Verifying...' : (isLoginMode ? 'Log In' : 'Sign Up')}
+              </Text>
             </TouchableOpacity>
             {isLoginMode && (
               <TouchableOpacity onPress={handleForgotPassword}>
@@ -795,12 +984,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
+    paddingTop: 10,
   },
   welcomeContainer: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 215, 0, 0.9)', // Semi-transparent gold
+    backgroundColor: 'rgba(255, 215, 0, 1)',
     padding: 20,
     borderRadius: 10,
+    marginTop: -40,
   },
   welcomeText: {
     fontSize: 24,
@@ -827,7 +1018,7 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 215, 0, 0.9)', // Semi-transparent gold
+    backgroundColor: 'rgba(255, 215, 0, 1)', // Changed from 0.9 to 1 for solid gold
     padding: 20,
     borderRadius: 10,
   },
@@ -886,6 +1077,84 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
     fontSize: 14,
+  },
+  captchaContainer: {
+    width: '100%',
+    marginBottom: 15,
+    padding: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  captchaQuestion: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  sliderContainer: {
+    width: '100%',
+    height: 60, // Increased height for better touch area
+    position: 'relative',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  sliderTrack: {
+    width: '100%',
+    height: 8,
+    backgroundColor: 'transparent',
+    borderRadius: 4,
+    position: 'relative',
+  },
+  touchArea: {
+    position: 'absolute',
+    top: -20,
+    left: 0,
+    right: 0,
+    height: 60, // Full height touch area
+    backgroundColor: 'transparent',
+  },
+  sliderProgress: {
+    height: '100%',
+    borderRadius: 4,
+    position: 'absolute',
+    left: 0,
+    opacity: 0.3,
+  },
+  sliderThumb: {
+    width: 32,
+    height: 32,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    position: 'absolute',
+    top: -12,
+    marginLeft: -16,
+    borderWidth: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  targetShape: {
+    position: 'absolute',
+    right: 0,
+    top: -12,
+    width: 32,
+    height: 32,
+    backgroundColor: 'rgba(255, 215, 0, 1)',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
 });
 
