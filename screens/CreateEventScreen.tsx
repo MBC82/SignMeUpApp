@@ -242,8 +242,8 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
     }
   };
 
-  const handleTimeChange = (dateIndex: string, slotIndex: number, field: 'start' | 'end', value: Date) => {
-    const newTimeSlots = { ...timeSlots };
+  const handleTimeChange = (dateIndex: number, slotIndex: number, field: 'start' | 'end', value: Date) => {
+    const newTimeSlots: TimeSlots = { ...timeSlots };
     if (!newTimeSlots[dateIndex]) {
       newTimeSlots[dateIndex] = [];
     }
@@ -413,7 +413,7 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
     ));
   };
 
-  const toggleShowTimeSlots = (dateIndex) => {
+  const toggleShowTimeSlots = (dateIndex: number) => {
     const updatedDates = [...dates];
     updatedDates[dateIndex].isTimeSlot = !updatedDates[dateIndex].isTimeSlot;
     setDates(updatedDates);
@@ -478,7 +478,7 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
         }));
       });
 
-      const eventData = {
+      const eventData: NavigationParams = {
         id: eventId,
         eventId: eventId,
         username,
@@ -506,10 +506,12 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
         isDraft: false,
         status: 'Submitted',
         slotLabels: {},
-        backgroundImage: profileData.profileImage,
+        backgroundImage: null,
         textShadowEnabled: false,
         isTimeSlot: false,
-        isNewEvent: true
+        isNewEvent: true,
+        isPreview: false,
+        showThemes: false,
       };
 
       // Save to submitted events
@@ -518,47 +520,25 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
       submittedEvents.push(eventData);
       await AsyncStorage.setItem(`submittedEvents_${username}`, JSON.stringify(submittedEvents));
 
-      // Navigate to EventDetailsScreen
-      navigation.navigate('EventDetailsScreen', {
-        eventId: eventId,
-        id: eventId,
-        username: username,
-        eventName: eventName || '',
-        location: location || '',
-        organizer: organizer || '',
-        address: address || '',
-        eventTime: eventTime || '',
-        neededItems: neededItems.map(item => item.value),
-        dates: dates.map(date => ({
-          date: date.date || '',
-          signups: date.signups || 1,
-          notes: date.notes || [],
-          isTimeSlot: date.isTimeSlot || false
-        })),
-        timeSlots: formattedTimeSlots,
-        bgColor: customBgColor || '#FFFFFF',
-        fontColor: customFontColor || '#000000',
-        fontSize: customFontSize || 16,
-        fontType: customFontType || 'Arial',
-        tileColor: customTileColor || '#f0f0f0',
-      });
+      // Navigate to SignUpScreen
+      navigation.navigate('SignUpScreen', eventData);
     } catch (error) {
       console.error('Error submitting event:', error);
       Alert.alert('Error', 'Failed to create event');
     }
   };
 
-  const incrementSignup = (dateIndex) => {
+  const incrementSignup = (dateIndex: number) => {
     const newDates = [...dates];
     newDates[dateIndex].signups += 1;
     if (!newDates[dateIndex].notes) {
       newDates[dateIndex].notes = [];
     }
-    newDates[dateIndex].notes.push(undefined);
+    newDates[dateIndex].notes.push('');
     setDates(newDates);
   };
 
-  const decrementSignup = (dateIndex) => {
+  const decrementSignup = (dateIndex: number) => {
     const newDates = [...dates];
     if (newDates[dateIndex].signups > 1) {
       newDates[dateIndex].signups -= 1;
@@ -643,7 +623,7 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
         isDraft: true,
         status: 'Draft',
         slotLabels: {},
-        backgroundImage: profileData.profileImage,
+        backgroundImage: null,
         textShadowEnabled: false,
         isTimeSlot: false,
         isNewEvent: true
@@ -775,7 +755,7 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
         organizerEmail: organizerEmail || '',
         globalNote: globalNote || '',
         slotLabels: slotLabels || {},
-        backgroundImage: null,
+        backgroundImage: profileData?.profileImage || '',
         textShadowEnabled: false,
         isTimeSlot: true,
         isNewEvent: true,
@@ -836,7 +816,7 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
         organizerEmail: organizerEmail || '',
         globalNote: globalNote || '',
         slotLabels: {},
-        backgroundImage: profileData?.profileImage || null,
+        backgroundImage: null,
         textShadowEnabled: false,
         isTimeSlot: true,
         isNewEvent: true,
@@ -881,7 +861,7 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
         organizerEmail: organizerEmail || '',
         globalNote: globalNote || '',
         slotLabels: {},
-        backgroundImage: profileData?.profileImage || null,
+        backgroundImage: null,
         textShadowEnabled: false,
         isTimeSlot: true,
         isNewEvent: true,
@@ -1052,7 +1032,7 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
   };
 
   return (
-    <ImageBackground source={require('../ios/assets/navy.jpg')} style={{ flex: 1 }}>
+    <ImageBackground source={require('../ios/assets/navy.jpg')} style={{ flex: 1, backgroundColor: 'white' }}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 120 }}>
         <Image
           source={require('../ios/assets/logo.jpg')}
@@ -1292,6 +1272,55 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
             <Text style={styles.actionButtonText}>Save as Draft</Text>
           </TouchableOpacity>
         </View>
+
+        <DateTimePickerModal
+          isVisible={isTimePickerVisible}
+          mode="time"
+          is24Hour={false}
+          display="spinner"
+          onConfirm={(time) => {
+            const newTimeSlots = { ...timeSlots };
+            if (!newTimeSlots[currentDateIndex]) {
+              newTimeSlots[currentDateIndex] = [];
+            }
+            if (!newTimeSlots[currentDateIndex][currentSlotIndex]) {
+              newTimeSlots[currentDateIndex][currentSlotIndex] = { start: '', end: '', isTimeSlot: true };
+            }
+            const hours = time.getHours();
+            const minutes = time.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const formattedHours = hours % 12 || 12;
+            const formattedMinutes = minutes.toString().padStart(2, '0');
+            newTimeSlots[currentDateIndex][currentSlotIndex].start = `${formattedHours}:${formattedMinutes} ${ampm}`;
+            setTimeSlots(newTimeSlots);
+            setTimePickerVisibility(false);
+          }}
+          onCancel={() => setTimePickerVisibility(false)}
+        />
+        <DateTimePickerModal
+          isVisible={isEndTimePickerVisible}
+          mode="time"
+          is24Hour={false}
+          display="spinner"
+          onConfirm={(time) => {
+            const newTimeSlots = { ...timeSlots };
+            if (!newTimeSlots[currentDateIndex]) {
+              newTimeSlots[currentDateIndex] = [];
+            }
+            if (!newTimeSlots[currentDateIndex][currentSlotIndex]) {
+              newTimeSlots[currentDateIndex][currentSlotIndex] = { start: '', end: '', isTimeSlot: true };
+            }
+            const hours = time.getHours();
+            const minutes = time.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const formattedHours = hours % 12 || 12;
+            const formattedMinutes = minutes.toString().padStart(2, '0');
+            newTimeSlots[currentDateIndex][currentSlotIndex].end = `${formattedHours}:${formattedMinutes} ${ampm}`;
+            setTimeSlots(newTimeSlots);
+            setEndTimePickerVisibility(false);
+          }}
+          onCancel={() => setEndTimePickerVisibility(false)}
+        />
       </ScrollView>
     </ImageBackground>
   );

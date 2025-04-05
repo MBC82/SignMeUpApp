@@ -151,23 +151,51 @@ export const checkLoginStatus = async () => {
 };
 
 // Set login status
-export const setLoginStatus = async (isLoggedIn, username) => {
+export const setLoginStatus = async (isLoggedIn: boolean, username: string | null) => {
   try {
-    await AsyncStorage.setItem('isLoggedIn', isLoggedIn ? 'true' : 'false');
+    // First, try to create the directory if it doesn't exist
+    try {
+      await AsyncStorage.getItem('dummy_key');
+    } catch (error) {
+      console.warn('AsyncStorage directory check failed:', error);
+    }
+
+    // Set login status with retry mechanism
+    let retryCount = 0;
+    const maxRetries = 3;
     
-    if (isLoggedIn && username) {
-      // Set the username
-      await safeSetItem('username', username);
-      
-      // Also store the username in AsyncStorage directly as a backup
-      await AsyncStorage.setItem('current_username', username);
-    } else {
-      // Clear the username
-      await bypassRemoveItem('username');
-      await AsyncStorage.removeItem('current_username');
+    while (retryCount < maxRetries) {
+      try {
+        await AsyncStorage.setItem('isLoggedIn', isLoggedIn ? 'true' : 'false');
+        
+        if (isLoggedIn && username) {
+          // Set the username
+          await safeSetItem('username', username);
+          
+          // Also store the username in AsyncStorage directly as a backup
+          await AsyncStorage.setItem('current_username', username);
+        } else {
+          // Clear the username
+          await bypassRemoveItem('username');
+          await AsyncStorage.removeItem('current_username');
+        }
+        
+        return true;
+      } catch (error) {
+        console.warn(`Attempt ${retryCount + 1} failed:`, error);
+        retryCount++;
+        
+        if (retryCount === maxRetries) {
+          console.error('All retry attempts failed:', error);
+          return false;
+        }
+        
+        // Wait a bit before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
     
-    return true;
+    return false;
   } catch (error) {
     console.error('Error setting login status:', error);
     return false;

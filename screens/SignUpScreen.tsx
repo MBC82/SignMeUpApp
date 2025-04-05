@@ -34,10 +34,10 @@ const localBackgrounds = {
 
 // Define the type for the navigation parameters
 type RootStackParamList = {
-  HomeScreen: undefined;
-  MyEventsScreen: undefined;
-  CreateEventScreen: undefined;
-  ProfileSetupScreen: undefined;
+  Home: undefined;
+  MyEvents: undefined;
+  CreateEvent: undefined;
+  ProfileSetup: undefined;
   SignUpScreen: {
     eventName: string;
     location: string;
@@ -59,6 +59,42 @@ type RootStackParamList = {
     modalFontSize?: number;
     modalFontType?: string;
     index?: number;
+  };
+  EventSignUp: {
+    eventId: string;
+    id: string;
+    username: string;
+    eventName: string;
+    location: string;
+    organizer: string;
+    address: string;
+    eventTime: string;
+    neededItems: any[];
+    dates: any[];
+    timeSlots: any[];
+    bgColor: string;
+    fontColor: string;
+    fontSize: number;
+    fontType: string;
+    tileColor: string;
+    backgroundImage?: string | number | { uri: string } | null;
+    isNewEvent: boolean;
+    textNotificationsEnabled: boolean;
+    organizerPhone: string;
+    emailNotificationsEnabled: boolean;
+    organizerEmail: string;
+    globalNote: string;
+    slotLabels: any;
+    textShadowEnabled: boolean;
+    isTimeSlot: boolean;
+    isPreview: boolean;
+    headerTileColor: string;
+    headerFontColor: string;
+    screenBgColor: string;
+    modalFontColor: string;
+    modalFontSize: number;
+    modalFontType: string;
+    modalTileColor: string;
   };
 };
 
@@ -120,7 +156,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
     { name: 'Fancy', tileColor: 'lightyellow', fontColor: 'black', bgColor: '#ffccbc', fontType: 'Comic Sans MS', bgImage: localBackgrounds.playful },
     { name: 'Elegant', tileColor: 'white', fontColor: 'black', bgColor: '#ede7f6', fontType: 'Georgia', bgImage: localBackgrounds.elegant },
     { name: 'Sporty', tileColor: '#81c784', fontColor: 'white', bgColor: '#a5d6a7', fontType: 'Comic Sans MS', bgImage: localBackgrounds.sporty },
-    { name: 'Classy', tileColor: '#FFE4E1', fontColor: 'lightblue', bgColor: '#a5d6a7', fontType: 'Comic Sans MS', bgImage: localBackgrounds.candy },
+    { name: 'Classy', tileColor: '#FFE4E1', fontColor: 'black', bgColor: '#a5d6a7', fontType: 'Comic Sans MS', bgImage: localBackgrounds.candy },
     { name: 'Dark Mode', tileColor: '#424242', fontColor: '#e0e0e0', bgColor: '#212121', fontType: 'Arial New', bgImage: localBackgrounds.darkmode },
   ];
 
@@ -173,39 +209,62 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
 
   const submitEvent = async () => {
     try {
-      const submittedEventsJson = await AsyncStorage.getItem('submittedEvents');
-      const submittedEvents = submittedEventsJson ? JSON.parse(submittedEventsJson) : [];
-      const eventIndex = route.params?.index;
-
-      const updatedEvent = {
-        eventName,
-        location,
-        organizer,
-        address,
-        eventTime,
-        neededItems,
-        dates,
-        timeSlots,
-        bgColor: screenBgColor,
-      fontColor: modalFontColor,
-      fontSize: modalFontSize,
-      fontType: modalFontType,
-      tileColor: modalTileColor,
-        backgroundImage: backgroundImage?.uri || backgroundImage || null,
-      };
-
-      if (eventIndex !== undefined) {
-        submittedEvents[eventIndex] = updatedEvent;
-      } else {
-        submittedEvents.push(updatedEvent);
+      const username = await EncryptedStorage.getItem('username');
+      if (!username) {
+        Alert.alert('Error', 'You must be logged in to submit events');
+        return;
       }
 
-      await AsyncStorage.setItem('submittedEvents', JSON.stringify(submittedEvents));
-      Alert.alert('Success', 'Event submitted successfully!');
-      navigation.navigate('MyEventsScreen');
+      const storedEvents = await AsyncStorage.getItem(`submittedEvents_${username}`);
+      const submittedEvents = storedEvents ? JSON.parse(storedEvents) : [];
+      
+      const updatedEvent = {
+        id: Date.now().toString(),
+        eventId: Date.now().toString(),
+        username,
+        eventName: route.params.eventName,
+        location: route.params.location,
+        organizer: route.params.organizer,
+        address: route.params.address,
+        eventTime: route.params.eventTime,
+        neededItems: route.params.neededItems || [],
+        dates: route.params.dates || [],
+        timeSlots: route.params.timeSlots || [],
+        bgColor: screenBgColor,
+        fontColor: modalFontColor,
+        fontSize: modalFontSize,
+        fontType: modalFontType,
+        tileColor: modalTileColor,
+        textNotificationsEnabled: false,
+        organizerPhone: '',
+        emailNotificationsEnabled: false,
+        organizerEmail: '',
+        globalNote: '',
+        slotLabels: {},
+        backgroundImage: backgroundImage || 2,
+        textShadowEnabled: false,
+        isTimeSlot: false,
+        isNewEvent: true,
+        isPreview: false,
+        isEditing: false,
+        headerTileColor: modalTileColor,
+        headerFontColor: modalFontColor,
+        screenBgColor: screenBgColor,
+        modalFontColor: modalFontColor,
+        modalFontSize: modalFontSize,
+        modalFontType: modalFontType,
+        modalTileColor: modalTileColor,
+        tileNames: [],
+        editedTiles: {}
+      };
+
+      submittedEvents.push(updatedEvent);
+      await AsyncStorage.setItem(`submittedEvents_${username}`, JSON.stringify(submittedEvents));
+      
+      navigation.navigate('EventSignUp', updatedEvent);
     } catch (error) {
       console.error('Error submitting event:', error);
-      Alert.alert('Error', 'Failed to submit event. Please try again.');
+      Alert.alert('Error', 'Failed to submit event');
     }
   };
 
@@ -252,7 +311,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
       draftEvents.push(newDraft);
       await AsyncStorage.setItem(draftKey, JSON.stringify(draftEvents));
       Alert.alert('Success', 'Event saved as draft!');
-      navigation.goBack();
+      navigation.navigate('MyEvents' as never);
     } catch (error) {
       console.error('Error saving draft:', error);
       Alert.alert('Error', 'Failed to save draft. Please try again.');
@@ -416,10 +475,26 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
     });
   };
 
+  const handleCustomizePress = () => {
+    if (isPremium || isDesigner) {
+      setModalVisible(true);
+    } else {
+      Alert.alert('Premium Feature', 'This feature requires a premium subscription.');
+    }
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <ImageBackground
-        source={backgroundImage ? backgroundImage : undefined}
+        source={
+          backgroundImage
+            ? typeof backgroundImage === 'string'
+              ? { uri: backgroundImage }
+              : typeof backgroundImage === 'number'
+                ? backgroundImage
+                : backgroundImage
+            : require('../ios/assets/blue.jpg')
+        }
         style={[styles.container, { backgroundColor: screenBgColor }]}
       >
         <ScrollView contentContainerStyle={{ paddingBottom: 150 }}>
@@ -448,13 +523,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
       </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginVertical: 15 }}>
               <TouchableOpacity 
-                onPress={() => {
-                  if (isPremium || isDesigner) {
-                    setModalVisible(true);
-                  } else {
-                    alert('This feature requires a premium subscription.');
-                  }
-                }}
+                onPress={handleCustomizePress}
                 style={styles.customizeButton}
               >
                 <MaterialIcons name="edit" size={18} color="black" />
@@ -785,15 +854,15 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
             <MaterialIcons name="home" size={30} color="navy" />
             <Text style={styles.iconLabel}>Home</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('MyEventsScreen')} style={styles.navButton}>
+          <TouchableOpacity onPress={() => navigation.navigate('MyEvents')} style={styles.navButton}>
             <MaterialIcons name="calendar-today" size={30} color="navy" />
             <Text style={styles.iconLabel}>My Events</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('CreateEventScreen')} style={styles.navButton}>
+          <TouchableOpacity onPress={() => navigation.navigate('CreateEvent')} style={styles.navButton}>
             <MaterialIcons name="event" size={30} color="navy" />
             <Text style={styles.iconLabel}>Create Event</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('ProfileSetupScreen')} style={styles.navButton}>
+          <TouchableOpacity onPress={() => navigation.navigate('ProfileSetup')} style={styles.navButton}>
             {profileImage ? (
               <Image source={{ uri: profileImage }} style={styles.profileImageNav} />
             ) : (
@@ -925,8 +994,8 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 15,
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    opacity: 0.5,
+    backgroundColor: 'transparent',
+    opacity: 0.8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,

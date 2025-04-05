@@ -243,7 +243,12 @@ const ProfileSetupScreen = () => {
       }
       
       // Store current user info using the utility function
-      await setLoginStatus(true, lowerUsername);
+      const loginSuccess = await setLoginStatus(true, lowerUsername);
+      if (!loginSuccess) {
+        console.error('Failed to set login status');
+        Alert.alert('Error', 'Failed to complete login. Please try again.');
+        return;
+      }
       console.log('Set login status to true for user:', lowerUsername);
       
       // Save the user profile to EncryptedStorage for future reference

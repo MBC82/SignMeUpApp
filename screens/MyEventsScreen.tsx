@@ -267,11 +267,15 @@ const MyEventsScreen = () => {
                 console.log('Total events before deletion:', events.length);
                 console.log('Events IDs before deletion:', events.map((e: any) => e.id));
                 
-                // Filter out the event with the matching ID
+                // Filter out the event with the matching ID (check both eventId and id)
                 const updatedEvents = events.filter((event: Event) => {
-                  const matches = event.id !== eventId;
+                  const matches = event.id !== eventId && event.eventId !== eventId;
                   if (!matches) {
-                    console.log('Found event to delete:', event.id, event.eventName);
+                    console.log('Found event to delete:', {
+                      id: event.id,
+                      eventId: event.eventId,
+                      name: event.eventName
+                    });
                   }
                   return matches;
                 });
@@ -456,11 +460,7 @@ const MyEventsScreen = () => {
     const tileColor = getTileColor(event);
 
     return (
-      <TouchableOpacity
-        key={event.eventId}
-        onPress={() => handleViewEvent(event)}
-        style={styles.eventCard}
-      >
+      <View style={styles.eventCard}>
         <ImageBackground
           source={backgroundImageSource}
           style={[styles.eventCardBackground, { backgroundColor: event.bgColor || 'white' }]}
@@ -494,23 +494,23 @@ const MyEventsScreen = () => {
                 Time: {event.eventTime}
               </Text>
             )}
-            <View style={styles.eventActions}>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => handleEditEvent(event)}
-              >
-                <Text style={styles.actionButtonText}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.deleteButton]}
-                onPress={() => handleDeleteEvent(event.eventId, isDraft)}
-              >
-                <Text style={styles.deleteButtonText}>Delete</Text>
-              </TouchableOpacity>
-            </View>
+          </View>
+          <View style={styles.eventActions}>
+            <TouchableOpacity 
+              style={styles.actionButton} 
+              onPress={() => handleViewEvent(event)}
+            >
+              <MaterialIcons name="edit" size={24} color="navy" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.deleteButton]}
+              onPress={() => handleDeleteEvent(event.eventId, isDraft)}
+            >
+              <MaterialIcons name="delete" size={24} color="white" />
+            </TouchableOpacity>
           </View>
         </ImageBackground>
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -719,6 +719,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'center',
     borderRadius: 5,
+    marginTop: 10,
   },
   eventHeader: {
     flexDirection: 'row',
@@ -726,6 +727,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 5,
     width: '100%',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+    paddingBottom: 5,
   },
   eventTitle: {
     fontSize: 18,
@@ -741,9 +745,10 @@ const styles = StyleSheet.create({
   eventActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 15,
-    width: '100%',
+    marginTop: 10,
+    width: '78%',
     paddingHorizontal: 10,
+    alignSelf: 'center',
   },
   actionButton: {
     backgroundColor: 'gold',
@@ -760,16 +765,6 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     backgroundColor: 'red',
-  },
-  actionButtonText: {
-    color: 'navy',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  deleteButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
   },
   button: {
     backgroundColor: 'gold',
@@ -818,6 +813,16 @@ const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
     width: '100%',
+  },
+  draftBadge: {
+    backgroundColor: 'red',
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+    paddingVertical: 2,
+    paddingHorizontal: 5,
+    borderRadius: 5,
+    marginTop: 5,
   },
 });
 

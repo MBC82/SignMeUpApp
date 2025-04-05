@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import EnhancedSignUpScreen from './screens/EnhancedSignUpScreen';
 import SignUpScreen from './screens/SignUpScreen';
 import EncryptedStorage from 'react-native-encrypted-storage';
+import EventSignUpScreen from './screens/EventSignUpScreen';
 
 type EventDate = {
   date: string;
@@ -315,6 +316,13 @@ const App = () => {
                   component={SignUpScreen as React.ComponentType<any>}
                   options={{
                     title: 'Sign Up'
+                  }}
+                />
+                <Stack.Screen 
+                  name="EventSignUp" 
+                  component={EventSignUpScreen}
+                  options={{
+                    title: 'Event Sign Up'
                   }}
                 />
               </Stack.Navigator>
