@@ -80,7 +80,52 @@ const localBackgrounds = {
   darkmode: require('../ios/assets/darkmode.jpg'),
 };
 
-const EventSignUpScreen = ({ route }: { route?: any }) => {
+interface DateData {
+  date: string;
+  signups: number;
+  isTimeSlot: boolean;
+  notes?: string[];
+}
+
+interface RouteParams {
+  eventId: string;
+  id: string;
+  username: string;
+  eventName: string;
+  location: string;
+  organizer: string;
+  address: string;
+  eventTime: string;
+  neededItems: string[];
+  dates: DateData[];
+  timeSlots?: { start: string; end: string }[][];
+  bgColor: string;
+  fontColor: string;
+  fontSize: number;
+  fontType: string;
+  tileColor: string;
+  textNotificationsEnabled: boolean;
+  organizerPhone: string;
+  emailNotificationsEnabled: boolean;
+  organizerEmail: string;
+  globalNote: string;
+  slotLabels?: { [key: string]: string };
+  backgroundImage?: string;
+  textShadowEnabled: boolean;
+  isTimeSlot: boolean;
+  isNewEvent: boolean;
+  isPreview: boolean;
+  isEditing: boolean;
+  headerTileColor: string;
+  headerFontColor: string;
+  screenBgColor: string;
+  modalFontColor: string;
+  modalFontSize: number;
+  modalFontType: string;
+  modalTileColor: string;
+}
+
+const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route }) => {
   // Extract parameters safely using optional chaining
   const params = route?.params || {};
   
@@ -133,16 +178,7 @@ const EventSignUpScreen = ({ route }: { route?: any }) => {
   const [currentModalTileColor, setCurrentModalTileColor] = useState(modalTileColor);
   const [currentHeaderTileColor, setCurrentHeaderTileColor] = useState(headerTileColor);
   const [currentHeaderFontColor, setCurrentHeaderFontColor] = useState(headerFontColor);
-  const [signups, setSignups] = useState<{
-    [key: string]: {
-      [slotIndex: number]: {
-        name: string;
-        phoneNumber?: string;
-        wantsReminders?: boolean;
-        username?: string;
-      } | string;
-    };
-  }>({});
+  const [signups, setSignups] = useState<{ [key: string]: { [key: number]: string } }>({});
   const [currentUserName, setCurrentUserName] = useState<string>('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [wantsReminders, setWantsReminders] = useState(false);
@@ -153,36 +189,32 @@ const EventSignUpScreen = ({ route }: { route?: any }) => {
   const [isLoading, setIsLoading] = useState(true);
   
   // Definition for tileNames with default values
-  const [tileNames, setTileNames] = useState<Array<{
-    names: string[];
-    includeNumbers: boolean;
-  }>>([]);
+  const [tileNames, setTileNames] = useState<string[][]>([]);
   
   // Definition for editedTiles
-  const [editedTiles, setEditedTiles] = useState<{[key: string]: boolean}>({});
+  const [editedTiles, setEditedTiles] = useState<boolean[][]>([]);
   
   // Add useEffect to load tileNames from route params
   useEffect(() => {
-    // Initialize tileNames with default values if not provided in route params
-    if (route.params && route.params.tileNames) {
-      console.log('Setting tileNames from route params:', route.params.tileNames);
-      setTileNames(route.params.tileNames);
-    } else {
-      console.log('Initializing default tileNames');
-      setTileNames(
-        dates.map(date => ({
-          names: Array(date.signups).fill('Attendee'),
-          includeNumbers: true
-        }))
+    if (route.params?.dates) {
+      const initialTileNames = route.params.dates.map((date: DateData) => 
+        Array(date.signups || 1).fill('')
       );
+      const initialEditedTiles = route.params.dates.map((date: DateData) => 
+        Array(date.signups || 1).fill(false)
+      );
+      const initialNotes = route.params.dates.map((date: DateData) => 
+        Array(date.signups || 1).fill('')
+      );
+      const initialShowNotes = route.params.dates.map((date: DateData) => 
+        Array(date.signups || 1).fill(false)
+      );
+      setTileNames(initialTileNames);
+      setEditedTiles(initialEditedTiles);
+      setNotes(initialNotes);
+      setShowNotes(initialShowNotes);
     }
-    
-    // Initialize editedTiles from route params if available
-    if (route.params && route.params.editedTiles) {
-      console.log('Setting editedTiles from route params:', route.params.editedTiles);
-      setEditedTiles(route.params.editedTiles);
-    }
-  }, [route.params, dates]);
+  }, [route.params?.dates]);
 
   // Apply theme styling from route params
   useEffect(() => {
@@ -448,138 +480,52 @@ const EventSignUpScreen = ({ route }: { route?: any }) => {
   };
 
   const renderSlotsOrAttendees = (dateIndex: number) => {
-    const date = dates[dateIndex];
-    const slots = Array.from({ length: date.signups }, (_, i) => i);
-    const showTimeSlots = date.isTimeSlot === true;
-    const hasSingleSlot = slots.length === 1;
-    
-    return (
-      <View style={[styles.slotsContainer, { width: '100%' }]}>
-        {slots.map((slotIndex) => {
-          const slotKey = `${dateIndex}_${slotIndex}`;
-          const dateId = dateIndex.toString();
-          const hasSignup = signups[dateId] && signups[dateId][slotIndex] !== undefined;
-          const signupData = hasSignup ? signups[dateId][slotIndex] : null;
-          
-          let signupName = '';
-          if (signupData) {
-            if (typeof signupData === 'object' && signupData.name) {
-              signupName = signupData.name;
-            } else if (typeof signupData === 'string') {
-              signupName = signupData;
-            }
-          }
-          
-          let timeSlotText = '';
-          if (showTimeSlots && timeSlots && timeSlots[dateIndex] && timeSlots[dateIndex][slotIndex]) {
-            const timeSlot = timeSlots[dateIndex][slotIndex];
-            if (typeof timeSlot === 'object' && timeSlot.start && timeSlot.end) {
-              timeSlotText = `${timeSlot.start} - ${timeSlot.end}`;
-            } else if (typeof timeSlot === 'string') {
-              timeSlotText = timeSlot;
-            }
-          }
-          
-          let slotLabel = '';
-          if (tileNames && tileNames[dateIndex] && tileNames[dateIndex].names && tileNames[dateIndex].names[slotIndex]) {
-            slotLabel = tileNames[dateIndex].names[slotIndex];
-          } else if (slotLabels && slotLabels[slotKey]) {
-            slotLabel = slotLabels[slotKey];
-          } else {
-            slotLabel = showTimeSlots ? 'Time Slot' : 'Attendee';
-            if (slotIndex !== null) {
-              slotLabel += ` ${slotIndex + 1}`;
-            }
-          }
-          
-          return (
-            <View key={slotIndex} style={[
-              styles.tile,
-              hasSingleSlot && styles.singleTile,
-              {
-                backgroundColor: currentModalTileColor,
-                opacity: 0.9,
-              }
-            ]}>
-              <View style={styles.tileContent}>
-                <View style={styles.attendeeHeader}>
-                  <Text style={[
-                    styles.tileText,
-                    {
-                      color: currentModalFontColor,
-                      fontFamily: currentModalFontType,
-                      fontSize: currentModalFontSize,
-                      ...(textShadowEnabled ? {
-                        textShadowColor: 'rgba(0, 0, 0, 0.75)',
-                        textShadowOffset: { width: 1, height: 1 },
-                        textShadowRadius: 2,
-                      } : {})
-                    }
-                  ]}>
-                    {slotLabel}
-                  </Text>
-                </View>
-                
-                {showTimeSlots && timeSlotText && (
-                  <Text style={[
-                    styles.timeText,
-                    {
-                      color: currentModalFontColor,
-                      fontFamily: currentModalFontType,
-                      fontSize: currentModalFontSize - 2,
-                      textAlign: 'center',
-                      marginTop: 5,
-                      flexShrink: 1,
-                      flexWrap: 'nowrap',
-                      width: '100%',
-                      overflow: 'hidden',
-                    }
-                  ]}>
-                    {timeSlotText}
-                  </Text>
-                )}
-                
-                {hasSignup ? (
-                  <View style={[styles.signupInfo, { opacity: 1 }]}>
-                    <Text style={[
-                      styles.signupName,
-                      {
-                        color: 'darkblue',
-                        fontFamily: currentModalFontType,
-                        fontSize: currentModalFontSize - 2,
-                        fontWeight: 'bold',
-                        opacity: 1,
-                      }
-                    ]}>
-                      {signupName}
-                    </Text>
-                    {isCreator && (
-                      <TouchableOpacity
-                        style={styles.cancelButton}
-                        onPress={() => handleCancelSignup(dateId, slotIndex)}
-                      >
-                        <Text style={styles.cancelButtonText}>Cancel</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.signUpButton}
-                    onPress={() => {
-                      setSelectedSlot(slotIndex);
-                      setSelectedDateIndex(dateIndex);
-                      setModalVisible(true);
-                    }}
-                  >
-                    <Text style={styles.signUpButtonText}>Sign Up</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-          );
-        })}
-      </View>
-    );
+    const signups = dates[dateIndex].signups || 1;
+
+    return Array.from({ length: signups }, (_, i) => {
+      const slot = timeSlots?.[dateIndex]?.[i] || {};
+      const start = slot.start ? String(slot.start) : null;
+      const end = slot.end ? String(slot.end) : null;
+      const attendeeName = tileNames[dateIndex]?.[i] || (dates[dateIndex].isTimeSlot ? 'Time Slot' : `Attendee ${i + 1}`);
+      const hasNote = notes[dateIndex]?.[i] && notes[dateIndex][i] !== '';
+
+      return (
+        <View key={i} style={[styles.slotTile, signups === 1 && styles.singleTile, { backgroundColor: modalTileColor, opacity: 0.9 }]}>
+          <View style={styles.attendeeHeader}>
+            <Text style={[styles.slotHeading, { color: modalFontColor, fontSize: modalFontSize }]}>
+              {attendeeName}
+            </Text>
+            <TouchableOpacity 
+              onPress={() => handleEditName(dateIndex, i)}
+              style={styles.editIconButton}
+            >
+              <MaterialIcons name="edit" size={16} color="navy" />
+            </TouchableOpacity>
+          </View>
+          {dates[dateIndex].isTimeSlot && start && end && (
+            <Text style={[styles.timeText, { color: modalFontColor }]}>
+              {start} - {end}
+            </Text>
+          )}
+          {hasNote ? (
+            <Text style={[styles.noteText, { color: modalFontColor }]}>
+              {notes[dateIndex][i]}
+            </Text>
+          ) : showNotes[dateIndex]?.[i] ? (
+            <TextInput
+              style={[styles.noteInput, { color: modalFontColor }]}
+              placeholder="Add a note (optional)"
+              placeholderTextColor="gray"
+              value={notes[dateIndex]?.[i] || ''}
+              onChangeText={(text) => handleNoteChange(dateIndex, i, text)}
+            />
+          ) : null}
+          <TouchableOpacity style={styles.rsvpButton}>
+            <Text style={styles.rsvpButtonText}>Sign Me Up</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    });
   };
 
   useEffect(() => {
@@ -1001,6 +947,116 @@ const EventSignUpScreen = ({ route }: { route?: any }) => {
     }
   };
 
+  const handleNoteChange = (dateIndex: number, slotIndex: number, text: string) => {
+    const newNotes = [...notes];
+    if (!newNotes[dateIndex]) {
+      newNotes[dateIndex] = [];
+    }
+    newNotes[dateIndex][slotIndex] = text;
+    setNotes(newNotes);
+  };
+
+  const [applyToAll, setApplyToAll] = useState(false);
+  const [applyNumbers, setApplyNumbers] = useState(false);
+  const [applyToAllTimeSlots, setApplyToAllTimeSlots] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDateIndex, setEditDateIndex] = useState<number | null>(null);
+  const [editSlotIndex, setEditSlotIndex] = useState<number | null>(null);
+
+  const handleEditName = (dateIndex: number, slotIndex: number) => {
+    setEditDateIndex(dateIndex);
+    setEditSlotIndex(slotIndex);
+    setEditName(tileNames[dateIndex]?.[slotIndex] || '');
+    
+    // If applyToAllTimeSlots is checked, apply the current name to all time slots across all dates
+    if (applyToAllTimeSlots) {
+      const updatedTileNames = [...tileNames];
+      const currentName = tileNames[dateIndex]?.[slotIndex] || '';
+      
+      // Apply to all time slots in all dates
+      updatedTileNames.forEach((_, dateIdx) => {
+        if (route.params.dates[dateIdx].isTimeSlot) {
+          updatedTileNames[dateIdx] = updatedTileNames[dateIdx].map(() => currentName);
+        }
+      });
+      
+      setTileNames(updatedTileNames);
+      return;
+    }
+    
+    // If applyToAll is checked, apply the current name to all attendee slots across all dates
+    if (applyToAll) {
+      const updatedTileNames = [...tileNames];
+      const currentName = tileNames[dateIndex]?.[slotIndex] || '';
+      
+      // Apply to all attendee slots in all dates
+      updatedTileNames.forEach((_, dateIdx) => {
+        if (!route.params.dates[dateIdx].isTimeSlot) {
+          updatedTileNames[dateIdx] = updatedTileNames[dateIdx].map(() => currentName);
+        }
+      });
+      
+      setTileNames(updatedTileNames);
+      return;
+    }
+    
+    // If applyNumbers is checked, apply numbered names to all slots across all dates
+    if (applyNumbers) {
+      const updatedTileNames = [...tileNames];
+      
+      // Apply numbered names to all slots in all dates
+      updatedTileNames.forEach((_, dateIdx) => {
+        const isTimeSlot = route.params.dates[dateIdx].isTimeSlot;
+        updatedTileNames[dateIdx] = updatedTileNames[dateIdx].map((_: string, slotIdx: number) => 
+          isTimeSlot ? `Time Slot ${slotIdx + 1}` : `Attendee ${slotIdx + 1}`
+        );
+      });
+      
+      setTileNames(updatedTileNames);
+      return;
+    }
+    
+    // Otherwise, show the edit modal
+    setModalVisible(true);
+  };
+
+  const handleApplyToAllAttendees = () => {
+    if (editName !== null && editName !== '' && editDateIndex !== null) {
+      const updatedTileNames = [...tileNames];
+      updatedTileNames[editDateIndex] = updatedTileNames[editDateIndex].map(() => editName);
+      setTileNames(updatedTileNames);
+      setEditName('');
+      setEditDateIndex(null);
+      setEditSlotIndex(null);
+      setModalVisible(false);
+    }
+  };
+
+  const handleApplyNumbersToAttendees = () => {
+    if (editDateIndex !== null) {
+      const updatedTileNames = [...tileNames];
+      updatedTileNames[editDateIndex] = updatedTileNames[editDateIndex].map((_: string, index: number) => 
+        route.params.dates[editDateIndex].isTimeSlot ? `Time Slot ${index + 1}` : `Attendee ${index + 1}`
+      );
+      setTileNames(updatedTileNames);
+      setEditName('');
+      setEditDateIndex(null);
+      setEditSlotIndex(null);
+      setModalVisible(false);
+    }
+  };
+
+  const handleSignUp = (dateIndex: number, slotIndex: number) => {
+    const newSignups = { ...signups };
+    const dateId = dateIndex.toString();
+    if (!newSignups[dateId]) {
+      newSignups[dateId] = {};
+    }
+    newSignups[dateId][slotIndex] = route.params.username;
+    setSignups(newSignups);
+    setModalVisible(false);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: 'transparent' }]}>
       <ImageBackground
@@ -1172,53 +1228,140 @@ const EventSignUpScreen = ({ route }: { route?: any }) => {
                       color: currentModalFontColor,
                     }
                   ]}>
-                    Sign Up for Event
+                    {editDateIndex !== null ? 'Edit Name' : 'Sign Up for Event'}
                   </Text>
 
-                  {/* Name Input with Label */}
-                  <Text style={[
-                    styles.inputLabel,
-                    {
-                      fontSize: currentModalFontSize,
-                      fontFamily: currentModalFontType,
-                      color: currentModalFontColor,
-                    }
-                  ]}>
-                    Your Name *
-                  </Text>
-                  <TextInput
-                    style={[
-                      styles.modalInput,
-                      {
-                        fontSize: currentModalFontSize,
-                        fontFamily: currentModalFontType,
-                        color: 'black',
-                      }
-                    ]}
-                    placeholder="Enter your full name"
-                    value={attendeeName}
-                    onChangeText={setAttendeeName}
-                    autoCapitalize="words"
-                    autoCorrect={false}
-                    autoFocus={true}
-                    returnKeyType="next"
-                  />
+                  {editDateIndex !== null ? (
+                    <>
+                      <TextInput
+                        style={[
+                          styles.modalInput,
+                          {
+                            fontSize: currentModalFontSize,
+                            fontFamily: currentModalFontType,
+                            color: 'black',
+                          }
+                        ]}
+                        placeholder="Enter name"
+                        value={editName}
+                        onChangeText={setEditName}
+                        autoCapitalize="words"
+                        autoCorrect={false}
+                        autoFocus={true}
+                      />
+                      <View style={styles.applyToAllContainer}>
+                        <TouchableOpacity
+                          style={[styles.checkbox, applyToAll && styles.checkboxChecked]}
+                          onPress={() => setApplyToAll(!applyToAll)}
+                        >
+                          {applyToAll && <MaterialIcons name="check" size={20} color="white" />}
+                        </TouchableOpacity>
+                        <Text style={styles.applyToAllText}>Apply to all attendees</Text>
+                      </View>
+                      <View style={styles.applyToAllContainer}>
+                        <TouchableOpacity
+                          style={[styles.checkbox, applyNumbers && styles.checkboxChecked]}
+                          onPress={() => setApplyNumbers(!applyNumbers)}
+                        >
+                          {applyNumbers && <MaterialIcons name="check" size={20} color="white" />}
+                        </TouchableOpacity>
+                        <Text style={styles.applyToAllText}>Apply numbers to attendees</Text>
+                      </View>
+                      <View style={styles.applyToAllContainer}>
+                        <TouchableOpacity
+                          style={[styles.checkbox, applyToAllTimeSlots && styles.checkboxChecked]}
+                          onPress={() => setApplyToAllTimeSlots(!applyToAllTimeSlots)}
+                        >
+                          {applyToAllTimeSlots && <MaterialIcons name="check" size={20} color="white" />}
+                        </TouchableOpacity>
+                        <Text style={styles.applyToAllText}>Apply to all time slots</Text>
+                      </View>
+                      <View style={styles.modalButtonContainer}>
+                        <TouchableOpacity
+                          style={[styles.modalButton, { backgroundColor: 'navy' }]}
+                          onPress={() => {
+                            if (applyToAll) {
+                              handleApplyToAllAttendees();
+                            } else if (applyNumbers) {
+                              handleApplyNumbersToAttendees();
+                            } else if (applyToAllTimeSlots) {
+                              handleApplyToAllTimeSlots();
+                            } else if (editName && editDateIndex !== null && editSlotIndex !== null) {
+                              const newTileNames = [...tileNames];
+                              if (!newTileNames[editDateIndex]) {
+                                newTileNames[editDateIndex] = [];
+                              }
+                              newTileNames[editDateIndex][editSlotIndex] = editName;
+                              setTileNames(newTileNames);
+                              setEditName('');
+                              setEditDateIndex(null);
+                              setEditSlotIndex(null);
+                              setModalVisible(false);
+                            }
+                          }}
+                        >
+                          <Text style={styles.modalButtonText}>Save</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.modalButton, { backgroundColor: 'gray' }]}
+                          onPress={() => {
+                            setEditName('');
+                            setEditDateIndex(null);
+                            setEditSlotIndex(null);
+                            setModalVisible(false);
+                          }}
+                        >
+                          <Text style={styles.modalButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={[
+                        styles.inputLabel,
+                        {
+                          fontSize: currentModalFontSize,
+                          fontFamily: currentModalFontType,
+                          color: currentModalFontColor,
+                        }
+                      ]}>
+                        Your Name *
+                      </Text>
+                      <TextInput
+                        style={[
+                          styles.modalInput,
+                          {
+                            fontSize: currentModalFontSize,
+                            fontFamily: currentModalFontType,
+                            color: 'black',
+                          }
+                        ]}
+                        placeholder="Enter your full name"
+                        value={attendeeName}
+                        onChangeText={setAttendeeName}
+                        autoCapitalize="words"
+                        autoCorrect={false}
+                        autoFocus={true}
+                        returnKeyType="next"
+                      />
 
-                  <TouchableOpacity
-                    style={[styles.modalButton, { backgroundColor: 'gold' }]}
-                    onPress={handleConfirmSignUp}
-                  >
-                    <Text style={[
-                      styles.modalButtonText,
-                      {
-                        fontSize: currentModalFontSize,
-                        fontFamily: currentModalFontType,
-                        color: 'white',
-                      }
-                    ]}>
-                      Confirm Sign Up
-                    </Text>
-                  </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.modalButton, { backgroundColor: 'gold' }]}
+                        onPress={handleConfirmSignUp}
+                      >
+                        <Text style={[
+                          styles.modalButtonText,
+                          {
+                            fontSize: currentModalFontSize,
+                            fontFamily: currentModalFontType,
+                            color: 'white',
+                          }
+                        ]}>
+                          Confirm Sign Up
+                        </Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
                 </View>
               </TouchableWithoutFeedback>
             </View>
@@ -1232,82 +1375,458 @@ const EventSignUpScreen = ({ route }: { route?: any }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: '100%',
-    height: '100%',
   },
   scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 80,
+    paddingBottom: 150,
+  },
+  header: {
+    marginBottom: -5,
+    marginTop: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
   },
   headerTextContainer: {
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 8,
-    marginBottom: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
-    width: '85%',
-    alignSelf: 'center',
-    borderColor: 'gold',
+    padding: 10,
+    borderRadius: 10,
+    opacity: 0.9,
     borderWidth: 2,
+    borderColor: 'gold',
   },
   headerText: {
-    textAlign: 'center',
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 8,
-    fontSize: 20,
-    color: 'white',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   subHeaderText: {
+    fontSize: 18,
     textAlign: 'center',
-    marginBottom: 4,
   },
-  shareButton: {
-    backgroundColor: 'gold',
+  customizeButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    marginTop: 10,
-    marginBottom: 10,
-    width: 180,
-    alignSelf: 'center',
-    borderColor: 'gold',
-    borderWidth: 2,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+    elevation: 3,
+    marginHorizontal: 5,
+    borderWidth: 1,
+    borderColor: 'black',
   },
-  shareButtonText: {
-    color: 'white',
-    marginLeft: 10,
-    fontWeight: 'bold',
+  customizeButtonText: {
+    marginLeft: 6,
+    color: 'black',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  themesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+    elevation: 3,
+    marginHorizontal: 5,
+    borderWidth: 1,
+    borderColor: 'black',
+  },
+  themesButtonText: {
+    marginLeft: 6,
+    color: 'black',
+    fontSize: 14,
+    fontWeight: '500',
   },
   dateTile: {
+    borderWidth: 0,
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 15,
+  },
+  dateHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 3,
+    borderRadius: 10,
+    maxWidth: '60%',
+    marginBottom: 10,
+    alignSelf: 'center',
+    opacity: 0.9,
+    borderWidth: 2,
+    borderColor: 'gold',
+  },
+  dateText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  editIconButton: {
+    padding: 4,
+  },
+  tileRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    width: '100%',
+    gap: 10,
+  },
+  slotTile: {
+    width: '48%',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 15,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    opacity: 0.8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    borderWidth: 2,
+    borderColor: 'gold',
+  },
+  singleTile: {
+    width: '60%',
+    marginHorizontal: 'auto',
+    alignSelf: 'center',
+  },
+  attendeeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  slotHeading: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
     marginBottom: 5,
+  },
+  timeText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  noteInput: {
+    width: '90%',
+    borderWidth: 1,
+    borderColor: 'navy',
+    padding: 10,
+    fontSize: 16,
+    backgroundColor: 'white',
+    borderRadius: 5,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  rsvpButton: {
+    backgroundColor: 'gold',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    marginTop: 8,
+  },
+  rsvpButtonText: {
+    color: 'navy',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  submitButton: {
+    backgroundColor: 'navy',
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginVertical: 10,
+    width: '70%',
+    alignSelf: 'center',
+  },
+  submitButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  saveDraftButton: {
+    backgroundColor: '#ADD8E6',
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    width: '70%',
+    alignSelf: 'center',
+  },
+  saveDraftButtonText: {
+    color: 'darkblue',
+    fontWeight: 'bold',
+    fontSize: 18,
+    alignSelf: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  customizationContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '75%',
+  },
+  customizationContent: {
+    paddingBottom: 100,
+  },
+  modalHeaderText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  selectButton: {
+    marginVertical: 10,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  selectButtonText: {
+    color: 'blue',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  confirmButton: {
+    backgroundColor: 'navy',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
+    width: '100%',
+  },
+  confirmButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  pickerContainer: {
+    marginBottom: 15,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+  },
+  selectLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'black',
+    marginBottom: 5,
+  },
+  bottomNav: {
+    position: 'absolute',
+    bottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    width: '100%',
+    height: 80,
+    backgroundColor: 'gold',
+    paddingBottom: 10,
+  },
+  navButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconLabel: {
+    color: 'navy',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  profileImageNav: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 8,
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'gold',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+  },
+  editButtonText: {
+    color: 'navy',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  editInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 15,
+  },
+  applyToAllContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: 'navy',
+    borderRadius: 4,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: 'navy',
+  },
+  applyToAllText: {
+    fontSize: 16,
+    color: 'black',
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    gap: 10,
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    minWidth: 120,
+    maxWidth: '48%',
+  },
+  cancelButton: {
+    backgroundColor: 'navy',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  headerFieldContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 2,
+  },
+  editInstructions: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  headerEditContainer: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  headerEditLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'navy',
+    marginBottom: 5,
+    marginTop: 10,
+  },
+  headerEditInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 5,
+    backgroundColor: '#f9f9f9',
+  },
+  noteText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginVertical: 8,
+    paddingHorizontal: 10,
+    width: '100%',
+  },
+  headerContainer: {
+    alignItems: 'center',
+    paddingTop: 80,
+    marginBottom: 20,
+  },
+  signedUpOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    borderRadius: 10,
+    zIndex: 1,
+  },
+  tileContent: {
+    position: 'relative',
+    zIndex: 2,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dateTextContainer: {
-    alignItems: 'center',
-    marginBottom: 10,
-    width: '100%',
-  },
-  dateText: {
-    padding: 10,
-    borderRadius: 25,
-    overflow: 'hidden',
-    borderColor: 'gold',
-    borderWidth: 2,
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    fontSize: 20,
+  tileText: {
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
+    marginBottom: 5,
+  },
+  signupInfo: {
+    marginTop: 5,
+    width: '100%',
+    alignItems: 'center',
+  },
+  signupName: {
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  signUpButton: {
+    backgroundColor: 'gold',
+    padding: 8,
+    borderRadius: 5,
+    marginTop: 5,
+    alignSelf: 'center',
+    borderColor: 'gold',
+    borderWidth: 2,
+  },
+  signUpButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
   slotsContainer: {
     flexDirection: 'row',
@@ -1315,33 +1834,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
     paddingHorizontal: 10,
-  },
-  singleSlotContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-    flex: 1,
-  },
-  tile: {
-    width: '42%',
-    marginBottom: 15,
-    marginHorizontal: 8,
-    padding: 12,
-    borderRadius: 10,
-    borderColor: 'gold',
-    borderWidth: 2,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    minHeight: 100,
-  },
-  singleTile: {
-    width: '42%',
-    marginHorizontal: 8,
-    alignSelf: 'center',
   },
   modalOverlay: {
     flex: 1,
@@ -1360,6 +1852,13 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: 'center',
   },
+  inputLabel: {
+    fontWeight: '600',
+    marginBottom: 5,
+    color: '#333',
+    fontSize: 16,
+    marginTop: 5,
+  },
   modalInput: {
     width: '100%',
     height: 40,
@@ -1370,21 +1869,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: 'black',
     backgroundColor: 'white',
-  },
-  modalButton: {
-    backgroundColor: 'gold',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 10,
-    width: '70%',
-    alignSelf: 'center',
-    borderColor: 'gold',
-    borderWidth: 2,
-  },
-  modalButtonText: {
-    color: 'black',
-    fontWeight: 'bold',
   },
   takenBadge: {
     backgroundColor: 'rgba(218, 165, 32, 0.9)',
@@ -1409,46 +1893,6 @@ const styles = StyleSheet.create({
   currentUserBadge: {
     backgroundColor: 'rgba(218, 165, 32, 0.7)',
   },
-  timeText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 5,
-    flexShrink: 1,
-    flexWrap: 'nowrap',
-    width: '100%',
-    overflow: 'hidden',
-  },
-  signUpButton: {
-    backgroundColor: 'gold',
-    padding: 8,
-    borderRadius: 5,
-    marginTop: 5,
-    alignSelf: 'center',
-    borderColor: 'gold',
-    borderWidth: 2,
-  },
-  signUpButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  reminderOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-    paddingHorizontal: 5,
-  },
-  reminderText: {
-    flex: 1,
-    marginRight: 10,
-  },
-  inputLabel: {
-    fontWeight: '600',
-    marginBottom: 5,
-    color: '#333',
-    fontSize: 16,
-    marginTop: 5,
-  },
   takenSlot: {
     backgroundColor: 'rgba(200, 200, 200, 0.5)',
     borderColor: '#ccc',
@@ -1460,13 +1904,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     color: '#666',
   },
-  cancelButton: {
-    backgroundColor: '#ff6b6b',
-    padding: 5,
-    borderRadius: 5,
-    marginTop: 5,
-    alignSelf: 'center',
-  },
   cancelButtonText: {
     color: 'white',
     fontWeight: 'bold',
@@ -1476,88 +1913,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
   },
-  tileText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 5,
+  slot: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
   },
-  signupInfo: {
-    marginTop: 5,
-    width: '100%',
-    alignItems: 'center',
-  },
-  signupName: {
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 5,
-  },
-  headerContainer: {
-    alignItems: 'center',
-    paddingTop: 80,
-    marginBottom: 20,
-  },
-  signedUpOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
-    borderRadius: 10,
-    zIndex: 1,
-  },
-  tileContent: {
-    position: 'relative',
-    zIndex: 2,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dateHeader: {
-    padding: 8,
-    borderRadius: 25,
-    overflow: 'hidden',
-    borderColor: 'gold',
-    borderWidth: 2,
-    marginBottom: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  attendeeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  tileRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    width: '100%',
-    gap: 10,
-  },
-  slotTile: {
-    width: '45%',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 15,
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    opacity: 0.5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    borderWidth: 2,
-    borderColor: 'gold',
-  },
-  slotHeading: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 5,
+  slot: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
   },
 });
 

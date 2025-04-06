@@ -41,6 +41,18 @@ type RootStackParamList = {
     tileColor?: string;
     backgroundImage?: string | null;
     index?: string;
+    headerTileColor?: string;
+    headerFontColor?: string;
+    textNotificationsEnabled?: boolean;
+    organizerPhone?: string;
+    emailNotificationsEnabled?: boolean;
+    organizerEmail?: string;
+    globalNote?: string;
+    slotLabels?: Record<string, string>;
+    textShadowEnabled?: boolean;
+    isTimeSlot?: boolean;
+    isPreview?: boolean;
+    isEditing?: boolean;
   };
   UserProfile: undefined;
   EventSignUp: { eventId: string };
@@ -93,7 +105,14 @@ type Event = {
   editedTiles?: Record<string, boolean>;
   createdAt?: string | number;
   eventTime?: string;
-  currentTheme?: string;
+  currentTheme?: {
+    bgColor: string;
+    fontColor: string;
+    fontSize: number;
+    fontType: string;
+    tileColor: string;
+  };
+  currentThemeName?: string;
   customTileNames?: Record<string, string>;
   participantNames?: string[];
 };
@@ -228,7 +247,19 @@ const MyEventsScreen = () => {
       fontType: event.fontType,
       tileColor: event.tileColor,
       backgroundImage: event.backgroundImage,
-      index: event.eventId // Pass the event ID to identify which event to update
+      index: event.eventId,
+      headerTileColor: event.headerTileColor || event.tileColor,
+      headerFontColor: event.headerFontColor || event.fontColor,
+      textNotificationsEnabled: event.textNotificationsEnabled,
+      organizerPhone: event.organizerPhone,
+      emailNotificationsEnabled: event.emailNotificationsEnabled,
+      organizerEmail: event.organizerEmail,
+      globalNote: event.globalNote,
+      slotLabels: event.slotLabels,
+      textShadowEnabled: event.textShadowEnabled,
+      isTimeSlot: event.isTimeSlot,
+      isPreview: false,
+      isEditing: true
     });
   };
 
@@ -322,7 +353,9 @@ const MyEventsScreen = () => {
         fontType: event.fontType,
         tileColor: event.tileColor,
         backgroundImage: event.backgroundImage,
-        index: event.eventId
+        index: event.eventId,
+        headerTileColor: event.headerTileColor || event.tileColor,
+        headerFontColor: event.headerFontColor || event.fontColor
       });
     } else {
       // If it's a submitted event, navigate to EventDetailsScreen for viewing
@@ -423,6 +456,7 @@ const MyEventsScreen = () => {
       console.log('Event tileColor:', event.tileColor);
       console.log('Event currentTheme:', event.currentTheme);
       
+      // First check if there's a specific tileColor set
       if (event.tileColor) {
         console.log('Using event tileColor:', event.tileColor);
         
@@ -432,6 +466,12 @@ const MyEventsScreen = () => {
       
       // If no tileColor, check if there's a theme we can use
       if (event.currentTheme) {
+        console.log('Using currentTheme:', event.currentTheme);
+        return `rgba(${hexToRgb(event.currentTheme.tileColor)}, 0.8)`;
+      }
+      
+      // If no theme, check if there's a theme name we can use
+      if (event.currentThemeName) {
         const themeColors: {[key: string]: string} = {
           'Classic': 'rgba(255, 215, 0, 0.8)', // gold
           'Teacher': 'rgba(173, 216, 230, 0.8)', // lightblue
@@ -443,7 +483,11 @@ const MyEventsScreen = () => {
           'Dark Mode': 'rgba(66, 66, 66, 0.8)', // #424242
         };
         
-        return themeColors[event.currentTheme] || 'rgba(255, 255, 255, 0.8)';
+        const color = themeColors[event.currentThemeName];
+        if (color) {
+          console.log('Using theme name color:', color);
+          return color;
+        }
       }
       
       // Default fallback
@@ -458,6 +502,7 @@ const MyEventsScreen = () => {
   const renderEvent = (event: Event, isDraft = false) => {
     const backgroundImageSource = getBackgroundImageSource(event);
     const tileColor = getTileColor(event);
+    const headerTileColor = event.headerTileColor || tileColor;
 
     return (
       <View style={styles.eventCard}>
@@ -465,31 +510,31 @@ const MyEventsScreen = () => {
           source={backgroundImageSource}
           style={[styles.eventCardBackground, { backgroundColor: event.bgColor || 'white' }]}
         >
-          <View style={[styles.eventCardContent, { backgroundColor: tileColor }]}>
+          <View style={[styles.eventCardContent, { backgroundColor: headerTileColor }]}>
             <View style={styles.eventHeader}>
               <Text style={[styles.eventTitle, { 
                 fontFamily: event.fontType || 'sans-serif',
-                color: event.fontColor || 'black'
+                color: event.headerFontColor || event.fontColor || 'black'
               }]}>
                 {event.eventName}
               </Text>
             </View>
             <Text style={[styles.eventDetail, { 
               fontFamily: event.fontType || 'sans-serif',
-              color: event.fontColor || 'black'
+              color: event.headerFontColor || event.fontColor || 'black'
             }]}>
               Location: {event.location}
             </Text>
             <Text style={[styles.eventDetail, { 
               fontFamily: event.fontType || 'sans-serif',
-              color: event.fontColor || 'black'
+              color: event.headerFontColor || event.fontColor || 'black'
             }]}>
               Organizer: {event.organizer}
             </Text>
             {event.eventTime && (
               <Text style={[styles.eventDetail, { 
                 fontFamily: event.fontType || 'sans-serif',
-                color: event.fontColor || 'black'
+                color: event.headerFontColor || event.fontColor || 'black'
               }]}>
                 Time: {event.eventTime}
               </Text>

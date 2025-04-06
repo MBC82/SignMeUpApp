@@ -490,9 +490,9 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
         neededItems: neededItems.map(item => item.value),
         dates: dates.map(date => ({
           ...date,
-          labels: date.notes?.map(note => note || '') || []
+          notes: date.notes || []
         })),
-        timeSlots: formattedTimeSlots, // Use the formatted time slots
+        timeSlots: formattedTimeSlots,
         bgColor: customBgColor || '#FFFFFF',
         fontColor: customFontColor || '#000000',
         fontSize: customFontSize || 16,
@@ -602,7 +602,7 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
         neededItems: neededItems.map(item => item.value),
         dates: dates.map(date => ({
           ...date,
-          labels: date.notes?.map(note => note || '') || []
+          notes: date.notes || []
         })),
         timeSlots: Object.keys(timeSlots).map(dateIndex => {
           return timeSlots[dateIndex].map(slot => ({
