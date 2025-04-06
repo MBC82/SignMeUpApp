@@ -28,70 +28,25 @@ export type RootStackParamList = {
   EventDetails: { eventId: string };
   CreateEvent: undefined;
   MyEvents: undefined;
-  ProfileSetup: undefined;
-  EnhancedSignUp: {
-    eventId: string;
-    id: string;
-    username: string;
-    eventName: string;
-    location: string;
-    organizer: string;
-    address: string;
-    eventTime: string;
-    neededItems: string[];
-    dates: EventDate[];
-    timeSlots: any[];
-    bgColor: string;
-    fontColor: string;
-    fontSize: number;
-    fontType: string;
-    tileColor: string;
-    textNotificationsEnabled: boolean;
-    organizerPhone: string;
-    emailNotificationsEnabled: boolean;
-    organizerEmail: string;
-    globalNote: string;
-    slotLabels: Record<string, string>;
-    backgroundImage: string | null;
-    textShadowEnabled: boolean;
-    isTimeSlot: boolean;
-    isNewEvent: boolean;
-    isPreview: boolean;
-    showThemes: boolean;
-  };
+  ProfileSetup: { skipWelcome?: boolean };
+  UserProfile: undefined;
+  EnhancedSignUp: undefined;
   SignUpScreen: {
-    eventId: string;
-    id: string;
-    username: string;
     eventName: string;
     location: string;
     organizer: string;
     address: string;
-    eventTime: string;
-    neededItems: string[];
-    dates: EventDate[];
-    timeSlots: any[];
-    bgColor: string;
-    fontColor: string;
-    fontSize: number;
-    fontType: string;
-    tileColor: string;
-    textNotificationsEnabled: boolean;
-    organizerPhone: string;
-    emailNotificationsEnabled: boolean;
-    organizerEmail: string;
-    globalNote: string;
-    slotLabels: Record<string, string>;
-    backgroundImage: string | null;
-    textShadowEnabled: boolean;
-    isTimeSlot: boolean;
-    isNewEvent: boolean;
-    isPreview: boolean;
-    showThemes: boolean;
-  };
-  UserProfile: {
-    username?: string;
-    isOwnProfile?: boolean;
+    eventTime?: string;
+    neededItems?: string[];
+    dates?: EventDate[];
+    timeSlots?: any[];
+    bgColor?: string;
+    fontColor?: string;
+    fontSize?: number;
+    fontType?: string;
+    tileColor?: string;
+    backgroundImage?: string | null;
+    index?: string;
   };
   EventSignUp: { eventId: string };
 };
@@ -303,6 +258,7 @@ const App = () => {
                   options={{
                     title: 'Profile'
                   }}
+                  initialParams={{ skipWelcome: false }}
                 />
                 <Stack.Screen 
                   name="UserProfile" 

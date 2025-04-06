@@ -1259,14 +1259,14 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
         {/* Action Buttons */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.95)' }]} 
+            style={styles.actionButton} 
             onPress={handlePreviewEvent}
           >
             <Text style={styles.actionButtonText}>Preview Event</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.95)' }]} 
+            style={styles.actionButton} 
             onPress={handleSaveDraft}
           >
             <Text style={styles.actionButtonText}>Save as Draft</Text>

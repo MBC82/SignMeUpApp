@@ -24,7 +24,7 @@ type RootStackParamList = {
   EventDetails: { eventId: string };
   CreateEvent: undefined;
   MyEvents: undefined;
-  ProfileSetup: undefined;
+  ProfileSetup: { skipWelcome?: boolean };
   SignUpScreen: {
     eventName: string;
     location: string;
@@ -540,7 +540,9 @@ const MyEventsScreen = () => {
           <Text style={styles.message}>Please log in to view your events</Text>
           <TouchableOpacity
             style={styles.button}
-            onPress={() => navigation.navigate('ProfileSetup')}
+            onPress={() => {
+              navigation.navigate('ProfileSetup', { skipWelcome: true });
+            }}
           >
             <Text style={styles.createButtonText}>Log In</Text>
           </TouchableOpacity>
@@ -620,7 +622,7 @@ const MyEventsScreen = () => {
                       { text: 'Cancel', style: 'cancel' },
                       { 
                         text: 'Log In', 
-                        onPress: () => navigation.navigate('ProfileSetup')
+                        onPress: () => navigation.navigate('ProfileSetup', { skipWelcome: true })
                       }
                     ]
                   );

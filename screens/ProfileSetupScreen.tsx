@@ -39,7 +39,7 @@ type RootStackParamList = {
   Home: undefined;
   MyEvents: undefined;
   CreateEvent: undefined;
-  ProfileSetup: undefined;
+  ProfileSetup: { skipWelcome?: boolean };
   UserProfile: undefined;
 };
 
@@ -57,7 +57,7 @@ declare module 'react-native-recaptcha-v3' {
   export default ReCAPTCHA;
 }
 
-const ProfileSetupScreen = () => {
+const ProfileSetupScreen = ({ route }: { route: { params?: { skipWelcome?: boolean } } }) => {
   const navigation = useNavigation<ProfileSetupScreenNavigationProp>();
   const { profile, updateProfile, signOut } = useContext(ProfileContext); // Access ProfileContext
   const { language, setLanguage, t } = useLanguage();
@@ -65,6 +65,13 @@ const ProfileSetupScreen = () => {
   useEffect(() => {
     loadProfile();
   }, [navigation]);
+
+  useEffect(() => {
+    if (route.params?.skipWelcome) {
+      setShowLandingPage(false);
+      setIsLoginMode(true);
+    }
+  }, [route.params]);
 
   useEffect(() => {
     console.log('Current language:', language);

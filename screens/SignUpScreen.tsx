@@ -110,7 +110,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
     address,
     eventTime,
     neededItems,
-    dates,
+    dates: initialDates,
     timeSlots,
     bgColor,
     fontColor,
@@ -119,6 +119,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
     tileColor,
   } = route.params;
 
+  const [dates, setDates] = useState(route.params?.dates || []);
   const [isModalVisible, setModalVisible] = useState(false);
   const [isThemesModalVisible, setThemesModalVisible] = useState(false);
   const [isEditModalVisible, setEditModalVisible] = useState(false);
@@ -148,6 +149,9 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
     address,
     eventTime,
   });
+  const [tileNames, setTileNames] = useState<Array<Array<string>>>([]);
+  const [notes, setNotes] = useState<Array<Array<string>>>([]);
+  const [showNotes, setShowNotes] = useState<Array<Array<boolean>>>([]);
 
   const themes = [
     { name: 'Classic', tileColor: 'gold', fontColor: 'navy', bgColor: '#f0f0f0', fontType: 'Roboto', bgImage: localBackgrounds.classic },
@@ -440,6 +444,54 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                 </Text>
   );
 
+  // Initialize notes state
+  useEffect(() => {
+    if (dates.length > 0) {
+      // Initialize tile names with default values
+      const initialTileNames = dates.map(date => 
+        Array(date.signups || 1).fill(date.isTimeSlot ? 'Time Slot' : 'Attendee')
+      );
+      setTileNames(initialTileNames);
+
+      // Initialize notes array with empty strings
+      const initialNotes = dates.map(date => Array(date.signups || 1).fill(''));
+      setNotes(initialNotes);
+
+      // Initialize showNotes based on whether a note was added in create event screen
+      const initialShowNotes = dates.map(date => {
+        const dateShowNotes = Array(date.signups || 1).fill(false);
+        if (date.notes) {
+          date.notes.forEach((note: string | null | undefined, index: number) => {
+            // Only show note if it was explicitly added in create event screen
+            if (note !== undefined && note !== null && note !== '') {
+              dateShowNotes[index] = true;
+            }
+          });
+        }
+        return dateShowNotes;
+      });
+      setShowNotes(initialShowNotes);
+    }
+  }, [dates]);
+
+  const handleNoteChange = (dateIndex: number, slotIndex: number, text: string) => {
+    const updatedNotes = [...notes];
+    if (!updatedNotes[dateIndex]) {
+      updatedNotes[dateIndex] = [];
+    }
+    updatedNotes[dateIndex][slotIndex] = text;
+    setNotes(updatedNotes);
+  };
+
+  const handleTileNameChange = (dateIndex: number, slotIndex: number, name: string) => {
+    const updatedTileNames = [...tileNames];
+    if (!updatedTileNames[dateIndex]) {
+      updatedTileNames[dateIndex] = [];
+    }
+    updatedTileNames[dateIndex][slotIndex] = name;
+    setTileNames(updatedTileNames);
+  };
+
   const renderSlotsOrAttendees = (dateIndex: number) => {
     const signups = dates[dateIndex].signups || 1;
 
@@ -447,7 +499,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
       const slot = timeSlots?.[dateIndex]?.[i] || {};
       const start = slot.start ? String(slot.start) : null;
       const end = slot.end ? String(slot.end) : null;
-      const attendeeName = dates[dateIndex].notes?.[i] || (dates[dateIndex].isTimeSlot ? 'Time Slot' : `Attendee ${i + 1}`);
+      const attendeeName = tileNames[dateIndex]?.[i] || (dates[dateIndex].isTimeSlot ? 'Time Slot' : `Attendee ${i + 1}`);
 
       return (
         <View key={i} style={[styles.slotTile, { backgroundColor: modalTileColor, opacity: 0.9 }]}>
@@ -460,18 +512,27 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
               style={styles.editIconButton}
             >
               <MaterialIcons name="edit" size={16} color="navy" />
-                  </TouchableOpacity>
-                </View>
+            </TouchableOpacity>
+          </View>
           {dates[dateIndex].isTimeSlot && start && end && (
             <Text style={[styles.timeText, { color: modalFontColor }]}>
               {start} - {end}
             </Text>
           )}
+          {showNotes[dateIndex]?.[i] && (
+            <TextInput
+              style={[styles.noteInput, { color: modalFontColor }]}
+              placeholder="Add a note (optional)"
+              placeholderTextColor="gray"
+              value={notes[dateIndex]?.[i] || ''}
+              onChangeText={(text) => handleNoteChange(dateIndex, i, text)}
+            />
+          )}
           <TouchableOpacity style={styles.rsvpButton}>
             <Text style={styles.rsvpButtonText}>Sign Me Up</Text>
-              </TouchableOpacity>
-            </View>
-          );
+          </TouchableOpacity>
+        </View>
+      );
     });
   };
 
@@ -984,12 +1045,12 @@ const styles = StyleSheet.create({
   tileRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     width: '100%',
     gap: 10,
   },
   slotTile: {
-    width: '45%',
+    width: '48%',
     borderRadius: 10,
     padding: 12,
     marginBottom: 15,
@@ -1026,11 +1087,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 5,
   },
-  noteText: {
-    fontSize: 14,
-    color: 'gray',
-    textAlign: 'center',
-    marginBottom: 5,
+  noteInput: {
+    width: '90%',
+    borderWidth: 1,
+    borderColor: 'navy',
+    padding: 10,
+    fontSize: 16,
+    backgroundColor: 'white',
+    borderRadius: 5,
+    marginTop: 8,
+    marginBottom: 8,
   },
   rsvpButton: {
     backgroundColor: 'gold',
