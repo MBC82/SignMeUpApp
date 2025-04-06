@@ -184,12 +184,29 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
   const handleBackgroundColorChange = (value: string) => {
     console.log('Selected background color:', value);
     if (value) {
-      // Clear any existing background image
       setBackgroundImage(null);
-      // Set the new background color
       setScreenBgColor(value);
-      // Don't modify the tile color - it should remain independent
     }
+  };
+
+  const handleFontColorChange = (value: string) => {
+    console.log('Selected font color:', value);
+    setModalFontColor(value);
+  };
+
+  const handleFontSizeChange = (value: string) => {
+    console.log('Selected font size:', value);
+    setModalFontSize(parseInt(value));
+  };
+
+  const handleFontTypeChange = (value: string) => {
+    console.log('Selected font type:', value);
+    setModalFontType(value);
+  };
+
+  const handleTileColorChange = (value: string) => {
+    console.log('Selected tile color:', value);
+    setModalTileColor(value);
   };
 
   useEffect(() => {
@@ -365,7 +382,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
   const handleEditName = (dateIndex: number, slotIndex: number) => {
     setEditingDateIndex(dateIndex);
     setEditingSlotIndex(slotIndex);
-    setEditName(dates[dateIndex].notes?.[slotIndex] || '');
+    setEditName(tileNames[dateIndex]?.[slotIndex] || '');
     setIsEditingDate(false);
     setEditModalVisible(true);
   };
@@ -377,48 +394,17 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
     setEditModalVisible(true);
   };
 
-  const applyNameEdit = () => {
+  const handleEditConfirm = () => {
     if (editingDateIndex === null) return;
-
+    
     if (isEditingDate) {
-      // Update the date
-      dates[editingDateIndex].date = editingDate;
+      const updatedDates = [...dates];
+      updatedDates[editingDateIndex].date = editingDate;
+      setDates(updatedDates);
     } else if (editingSlotIndex !== null) {
-      // Update attendee name
-      if (applyToAll) {
-        // Apply to all slots across all dates with sequential numbering
-        let counter = 1;
-        dates.forEach((date, dateIdx) => {
-          const signups = date.signups || 1;
-          if (!date.notes) date.notes = [];
-          for (let i = 0; i < signups; i++) {
-            if (applyNumbers) {
-              date.notes[i] = `${editName} ${counter}`;
-              counter++;
-            } else {
-              date.notes[i] = editName;
-            }
-          }
-        });
-          } else {
-        // Apply only to the current slot
-        if (!dates[editingDateIndex].notes) dates[editingDateIndex].notes = [];
-        if (applyNumbers) {
-          dates[editingDateIndex].notes[editingSlotIndex] = `${editName} ${editingSlotIndex + 1}`;
-            } else {
-          dates[editingDateIndex].notes[editingSlotIndex] = editName;
-        }
-      }
+      handleTileNameChange(editingDateIndex, editingSlotIndex, editName);
     }
-
     setEditModalVisible(false);
-    setEditingDateIndex(null);
-    setEditingSlotIndex(null);
-    setEditName('');
-    setEditingDate('');
-    setIsEditingDate(false);
-    setApplyToAll(false);
-    setApplyNumbers(false);
   };
 
   const handleEditHeader = () => {
@@ -459,17 +445,20 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
 
       // Initialize showNotes based on whether a note was added in create event screen
       const initialShowNotes = dates.map(date => {
-        const dateShowNotes = Array(date.signups || 1).fill(false);
+        const numSlots = date.signups || 1;
+        const dateShowNotes = Array(numSlots).fill(false);
+        
         if (date.notes) {
           date.notes.forEach((note: string | null | undefined, index: number) => {
-            // Only show note if it was explicitly added in create event screen
             if (note !== undefined && note !== null && note !== '') {
               dateShowNotes[index] = true;
             }
           });
         }
+        
         return dateShowNotes;
       });
+      
       setShowNotes(initialShowNotes);
     }
   }, [dates]);
@@ -558,7 +547,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
         }
         style={[styles.container, { backgroundColor: screenBgColor }]}
       >
-        <ScrollView contentContainerStyle={{ paddingBottom: 150 }}>
+        <ScrollView contentContainerStyle={[styles.scrollContent, { backgroundColor: screenBgColor }]}>
           <View style={styles.header}>
             <View style={[styles.headerTextContainer, { backgroundColor: modalTileColor }]}>
               <View style={styles.headerFieldContainer}>
@@ -701,10 +690,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                     <View style={styles.pickerContainer}>
                       <Text style={styles.selectLabel}>Font Color</Text>
                       <RNPickerSelect
-                        onValueChange={(value) => {
-                          console.log('Selected font color:', value);
-                          setModalFontColor(value);
-                        }}
+                        onValueChange={handleFontColorChange}
                         items={[
                           { label: 'Black', value: 'black' },
                           { label: 'Gold', value: 'gold' },
@@ -727,10 +713,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                     <View style={styles.pickerContainer}>
                       <Text style={styles.selectLabel}>Font Size</Text>
                       <RNPickerSelect
-                        onValueChange={(value) => {
-                          console.log('Selected font size:', value);
-                          setModalFontSize(parseInt(value));
-                        }}
+                        onValueChange={handleFontSizeChange}
                         items={[
                           { label: 'Small', value: '14' },
                           { label: 'Medium', value: '16' },
@@ -746,10 +729,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                     <View style={styles.pickerContainer}>
                       <Text style={styles.selectLabel}>Font Type</Text>
                       <RNPickerSelect
-                        onValueChange={(value) => {
-                          console.log('Selected font type:', value);
-                          setModalFontType(value);
-                        }}
+                        onValueChange={handleFontTypeChange}
                         items={[
                           { label: 'Arial', value: 'Arial' },
                           { label: 'Georgia', value: 'Georgia' },
@@ -770,10 +750,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                     <View style={styles.pickerContainer}>
                       <Text style={styles.selectLabel}>Tile Color</Text>
                       <RNPickerSelect
-                        onValueChange={(value) => {
-                          console.log('Selected tile color:', value);
-                          setModalTileColor(value);
-                        }}
+                        onValueChange={handleTileColorChange}
                         items={[
                           { label: 'White', value: '#ffffff' },
                           { label: 'Black', value: 'black' },
@@ -898,7 +875,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
               </TouchableOpacity>
               <TouchableOpacity
                       style={[styles.modalButton, styles.confirmButton]}
-                      onPress={isEditingHeader ? applyHeaderEdit : applyNameEdit}
+                      onPress={isEditingHeader ? applyHeaderEdit : handleEditConfirm}
                     >
                       <Text style={styles.modalButtonText}>Apply</Text>
               </TouchableOpacity>
@@ -940,6 +917,9 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 150,
   },
   header: {
     marginBottom: -5,

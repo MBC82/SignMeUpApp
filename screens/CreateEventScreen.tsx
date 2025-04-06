@@ -326,7 +326,7 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
     while (updatedDates[dateIndex].notes.length <= slotIndex) {
       updatedDates[dateIndex].notes.push(undefined);
     }
-    updatedDates[dateIndex].notes[slotIndex] = '';
+    updatedDates[dateIndex].notes[slotIndex] = undefined;
     setDates(updatedDates);
   };
 
@@ -1259,14 +1259,14 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
         {/* Action Buttons */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity 
-            style={styles.actionButton} 
+            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.95)' }]} 
             onPress={handlePreviewEvent}
           >
             <Text style={styles.actionButtonText}>Preview Event</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={styles.actionButton} 
+            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.95)' }]} 
             onPress={handleSaveDraft}
           >
             <Text style={styles.actionButtonText}>Save as Draft</Text>
