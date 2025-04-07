@@ -208,6 +208,7 @@ const EventSignUpScreen: React.FC<{
   const [signups, setSignups] = useState<Record<number, Record<number, SignupData>>>({});
   const [currentUserName, setCurrentUserName] = useState<string>('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [wantsReminders, setWantsReminders] = useState(false);
   const [participantNames, setParticipantNames] = useState<string[][]>(
     dates.map(date => Array(date.signups).fill(''))
@@ -225,6 +226,8 @@ const EventSignUpScreen: React.FC<{
   const [editDateIndex, setEditDateIndex] = useState<number | null>(null);
   const [editSlotIndex, setEditSlotIndex] = useState<number | null>(null);
   const [currentBackgroundImage, setCurrentBackgroundImage] = useState<number | null>(null);
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [reminderType, setReminderType] = useState<'text' | 'email' | null>(null);
 
   // Initialize timeSlots from route params
   const timeSlots = initialTimeSlots;
@@ -632,22 +635,32 @@ const EventSignUpScreen: React.FC<{
               {tileName || (dates[dateIndex].isTimeSlot ? 'Time Slot' : 'Available')}
             </Text>
             {isTaken ? (
-              <Text style={[
-                styles.attendeeName,
-                {
-                  fontSize: currentModalFontSize,
-                  fontFamily: currentModalFontType,
-                  color: currentModalFontColor,
-                  marginTop: 10,
-                  ...(textShadowEnabled ? {
-                    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-                    textShadowOffset: { width: 1, height: 1 },
-                    textShadowRadius: 2,
-                  } : {})
-                }
-              ]}>
-                {attendeeName}
-              </Text>
+              <View style={styles.takenSlotInfo}>
+                <Text style={[
+                  styles.attendeeName,
+                  {
+                    fontSize: currentModalFontSize,
+                    fontFamily: currentModalFontType,
+                    color: currentModalFontColor,
+                    marginTop: 10,
+                    ...(textShadowEnabled ? {
+                      textShadowColor: 'rgba(0, 0, 0, 0.75)',
+                      textShadowOffset: { width: 1, height: 1 },
+                      textShadowRadius: 2,
+                    } : {})
+                  }
+                ]}>
+                  {attendeeName}
+                </Text>
+                {isCurrentUserSlot && (
+                  <TouchableOpacity
+                    style={[styles.cancelButton, { backgroundColor: 'navy' }]}
+                    onPress={() => handleCancelSignup(dateIndex, slotIndex)}
+                  >
+                    <Text style={[styles.cancelButtonText, { color: 'white' }]}>Cancel Signup</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             ) : (
               <TouchableOpacity
                 style={[styles.signUpButton, { backgroundColor: 'gold' }]}
@@ -888,18 +901,40 @@ const EventSignUpScreen: React.FC<{
   // Add this function to handle canceling a signup
   const handleCancelSignup = async (dateId: number, slotId: number) => {
     try {
-      const updatedSignups = { ...signups };
-      
-      if (updatedSignups[dateId] && updatedSignups[dateId][slotId]) {
-        delete updatedSignups[dateId][slotId];
-        
-        // If there are no more signups for this date, remove the date entry
-        if (Object.keys(updatedSignups[dateId]).length === 0) {
-          delete updatedSignups[dateId];
-        }
-        
-        setSignups(updatedSignups);
-      }
+      // Show confirmation dialog
+      Alert.alert(
+        'Cancel Signup',
+        'Are you sure you want to cancel your signup?',
+        [
+          {
+            text: 'No',
+            style: 'cancel'
+          },
+          {
+            text: 'Yes',
+            onPress: async () => {
+              const updatedSignups = { ...signups };
+              
+              if (updatedSignups[dateId] && updatedSignups[dateId][slotId]) {
+                delete updatedSignups[dateId][slotId];
+                
+                // If there are no more signups for this date, remove the date entry
+                if (Object.keys(updatedSignups[dateId]).length === 0) {
+                  delete updatedSignups[dateId];
+                }
+                
+                // Save to AsyncStorage
+                await AsyncStorage.setItem(`eventSignups_${eventId}`, JSON.stringify(updatedSignups));
+                
+                // Update local state
+                setSignups(updatedSignups);
+                
+                Alert.alert('Success', 'Your signup has been cancelled');
+              }
+            }
+          }
+        ]
+      );
     } catch (error) {
       console.error('Error canceling signup:', error);
       Alert.alert('Error', 'Failed to cancel signup');
@@ -1065,7 +1100,94 @@ const EventSignUpScreen: React.FC<{
     }
   };
 
-  const handleSignUp = async () => {
+  const handleEditConfirm = () => {
+    if (editName && editDateIndex !== null && editSlotIndex !== null) {
+      // Check if this is a live event (has signups)
+      const hasSignups = Object.keys(signups).length > 0;
+      
+      if (hasSignups) {
+        Alert.alert(
+          'Confirm Edit',
+          'This event has active signups. Are you sure you want to make this change?',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel'
+            },
+            {
+              text: 'Yes, Edit',
+              onPress: () => {
+                const updatedTileNames = [...tileNames];
+                if (!updatedTileNames[editDateIndex]) {
+                  updatedTileNames[editDateIndex] = [];
+                }
+                updatedTileNames[editDateIndex][editSlotIndex] = editName;
+                
+                // If applyToAll is true and isTimeSlot is true, apply to all dates
+                if (applyToAll && isTimeSlot) {
+                  dates.forEach((_, index) => {
+                    if (!updatedTileNames[index]) {
+                      updatedTileNames[index] = [];
+                    }
+                    updatedTileNames[index][editSlotIndex] = editName;
+                  });
+                }
+                
+                setTileNames(updatedTileNames);
+                
+                // Save the updated tile names to AsyncStorage
+                const saveTileNames = async () => {
+                  try {
+                    const eventKey = `event_${eventId}_tileNames`;
+                    await AsyncStorage.setItem(eventKey, JSON.stringify(updatedTileNames));
+                  } catch (error) {
+                    console.error('Error saving tile names:', error);
+                  }
+                };
+                saveTileNames();
+                
+                setModalVisible(false);
+              }
+            }
+          ]
+        );
+      } else {
+        // No signups, proceed with edit
+        const updatedTileNames = [...tileNames];
+        if (!updatedTileNames[editDateIndex]) {
+          updatedTileNames[editDateIndex] = [];
+        }
+        updatedTileNames[editDateIndex][editSlotIndex] = editName;
+        
+        // If applyToAll is true and isTimeSlot is true, apply to all dates
+        if (applyToAll && isTimeSlot) {
+          dates.forEach((_, index) => {
+            if (!updatedTileNames[index]) {
+              updatedTileNames[index] = [];
+            }
+            updatedTileNames[index][editSlotIndex] = editName;
+          });
+        }
+        
+        setTileNames(updatedTileNames);
+        
+        // Save the updated tile names to AsyncStorage
+        const saveTileNames = async () => {
+          try {
+            const eventKey = `event_${eventId}_tileNames`;
+            await AsyncStorage.setItem(eventKey, JSON.stringify(updatedTileNames));
+          } catch (error) {
+            console.error('Error saving tile names:', error);
+          }
+        };
+        saveTileNames();
+        
+        setModalVisible(false);
+      }
+    }
+  };
+
+  const handleReminderSignup = async () => {
     if (!attendeeName.trim()) {
       Alert.alert('Error', 'Please enter your name');
       return;
@@ -1085,6 +1207,7 @@ const EventSignUpScreen: React.FC<{
         newSignups[selectedDateIndex][selectedSlot] = signupData;
         setSignups(newSignups);
         setModalVisible(false);
+        setShowReminderModal(true);
       }
     } catch (error) {
       console.error('Error signing up:', error);
@@ -1092,27 +1215,20 @@ const EventSignUpScreen: React.FC<{
     }
   };
 
-  const handleEditConfirm = () => {
-    if (editName && editDateIndex !== null && editSlotIndex !== null) {
-      const updatedTileNames = [...tileNames];
-      if (!updatedTileNames[editDateIndex]) {
-        updatedTileNames[editDateIndex] = [];
+  const handleReminderConfirm = async () => {
+    try {
+      if (reminderType === 'text' && phoneNumber) {
+        // Save phone number for text reminders
+        await AsyncStorage.setItem(`event_${eventId}_phone_${selectedDateIndex}_${selectedSlot}`, phoneNumber);
+      } else if (reminderType === 'email' && email) {
+        // Save email for email reminders
+        await AsyncStorage.setItem(`event_${eventId}_email_${selectedDateIndex}_${selectedSlot}`, email);
       }
-      updatedTileNames[editDateIndex][editSlotIndex] = editName;
-      setTileNames(updatedTileNames);
-      
-      // Save the updated tile names to AsyncStorage
-      const saveTileNames = async () => {
-        try {
-          const eventKey = `event_${eventId}_tileNames`;
-          await AsyncStorage.setItem(eventKey, JSON.stringify(updatedTileNames));
-        } catch (error) {
-          console.error('Error saving tile names:', error);
-        }
-      };
-      saveTileNames();
-      
-      setModalVisible(false);
+      setShowReminderModal(false);
+      Alert.alert('Success', 'Your reminder preferences have been saved!');
+    } catch (error) {
+      console.error('Error saving reminder preferences:', error);
+      Alert.alert('Error', 'Failed to save reminder preferences');
     }
   };
 
@@ -1380,8 +1496,8 @@ const EventSignUpScreen: React.FC<{
                       />
 
                       <TouchableOpacity
-                        style={[styles.modalButton, { backgroundColor: 'gold' }]}
-                        onPress={handleSignUp}
+                        style={[styles.modalButton, { backgroundColor: 'navy' }]}
+                        onPress={handleReminderSignup}
                       >
                         <Text style={[
                           styles.modalButtonText,
@@ -1396,6 +1512,119 @@ const EventSignUpScreen: React.FC<{
                       </TouchableOpacity>
                     </>
                   )}
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
+        {/* Reminder Modal */}
+        <Modal
+          visible={showReminderModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowReminderModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setShowReminderModal(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback>
+                <View style={[styles.modalContent, { backgroundColor: currentModalTileColor }]}>
+                  <Text style={[
+                    styles.modalTitle,
+                    {
+                      fontSize: currentModalFontSize + 2,
+                      fontFamily: currentModalFontType,
+                      color: currentModalFontColor,
+                    }
+                  ]}>
+                    Would you like reminders?
+                  </Text>
+
+                  <View style={styles.reminderOptions}>
+                    {textNotificationsEnabled && (
+                      <TouchableOpacity
+                        style={[styles.reminderButton, { backgroundColor: 'navy' }]}
+                        onPress={() => {
+                          setReminderType('text');
+                          setShowReminderModal(false);
+                          Alert.prompt(
+                            'Text Reminders',
+                            'Enter your phone number for text reminders:',
+                            [
+                              {
+                                text: 'Cancel',
+                                style: 'cancel',
+                              },
+                              {
+                                text: 'Save',
+                                onPress: (phone) => {
+                                  if (phone) {
+                                    setPhoneNumber(phone);
+                                    handleReminderConfirm();
+                                  }
+                                },
+                              },
+                            ],
+                            'plain-text',
+                            '',
+                            'phone-pad'
+                          );
+                        }}
+                      >
+                        <Text style={[styles.reminderButtonText, { color: 'white' }]}>
+                          Text Reminders
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {emailNotificationsEnabled && (
+                      <TouchableOpacity
+                        style={[styles.reminderButton, { backgroundColor: 'navy' }]}
+                        onPress={() => {
+                          setReminderType('email');
+                          setShowReminderModal(false);
+                          Alert.prompt(
+                            'Email Reminders',
+                            'Enter your email for email reminders:',
+                            [
+                              {
+                                text: 'Cancel',
+                                style: 'cancel',
+                              },
+                              {
+                                text: 'Save',
+                                onPress: (email) => {
+                                  if (email) {
+                                    setEmail(email);
+                                    handleReminderConfirm();
+                                  }
+                                },
+                              },
+                            ],
+                            'plain-text',
+                            '',
+                            'email-address'
+                          );
+                        }}
+                      >
+                        <Text style={[styles.reminderButtonText, { color: 'white' }]}>
+                          Email Reminders
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                    <TouchableOpacity
+                      style={[styles.reminderButton, { backgroundColor: 'gray' }]}
+                      onPress={() => {
+                        setShowReminderModal(false);
+                        handleReminderConfirm();
+                      }}
+                    >
+                      <Text style={[styles.reminderButtonText, { color: 'white' }]}>
+                        No Reminders
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </TouchableWithoutFeedback>
             </View>
@@ -1717,6 +1946,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 120,
     maxWidth: '48%',
+    backgroundColor: 'navy',
   },
   cancelButton: {
     backgroundColor: 'navy',
@@ -1896,6 +2126,21 @@ const styles = StyleSheet.create({
   },
   attendeeName: {
     marginTop: 10,
+  },
+  reminderOptions: {
+    width: '100%',
+    gap: 10,
+    marginTop: 20,
+  },
+  reminderButton: {
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
+  },
+  reminderButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
