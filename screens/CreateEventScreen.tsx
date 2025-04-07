@@ -1420,7 +1420,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     paddingBottom: 10,
     textDecorationLine: 'underline',
-    backgroundColor: 'rgba(0, 0, 128, 0.05)',
+    backgroundColor: 'gold',
     padding: 10,
     borderRadius: 8,
   },
@@ -1457,7 +1457,7 @@ const styles = StyleSheet.create({
   },
   timeSlotContainer: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     marginBottom: 10,
     backgroundColor: 'rgba(252, 252, 252, 0.95)',
     padding: 10,
@@ -1468,6 +1468,7 @@ const styles = StyleSheet.create({
   timeSlotToggle: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 10,
   },
   toggleText: {
