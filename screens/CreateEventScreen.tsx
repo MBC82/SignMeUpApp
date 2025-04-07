@@ -1415,9 +1415,14 @@ const styles = StyleSheet.create({
   dateHeader: {
     fontSize: 18,
     color: 'navy',
-    marginBottom: 8,
+    marginBottom: 20,
     textAlign: 'center',
     fontWeight: 'bold',
+    paddingBottom: 10,
+    textDecorationLine: 'underline',
+    backgroundColor: 'rgba(0, 0, 128, 0.05)',
+    padding: 10,
+    borderRadius: 8,
   },
   addButton: {
     backgroundColor: 'rgba(253, 253, 253, 0.95)',
@@ -1538,6 +1543,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
+    marginBottom: 15,
+    paddingBottom: 10,
   },
   timeSlotRow: {
     flexDirection: 'row',
@@ -1546,6 +1553,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 10,
     width: '100%',
+    marginBottom: 10,
   },
   timeButton: {
     borderWidth: 1,
@@ -1573,6 +1581,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 8,
     width: '100%',
+    marginTop: -15,
   },
   addNoteText: {
     color: '#007bff',
@@ -1681,7 +1690,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'navy',
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 20,
+    marginTop: 10,
   },
   buttonContainer: {
     marginTop: 20,
