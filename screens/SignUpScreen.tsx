@@ -247,6 +247,11 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
       const storedEvents = await AsyncStorage.getItem(`submittedEvents_${username}`);
       const submittedEvents = storedEvents ? JSON.parse(storedEvents) : [];
       
+      // Initialize tileNames array based on dates
+      const tileNames = dates.map(date => 
+        Array(date.signups || 1).fill('')
+      );
+      
       const updatedEvent = {
         id: Date.now().toString(),
         eventId: Date.now().toString(),
@@ -286,7 +291,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
         modalFontSize: modalFontSize,
         modalFontType: modalFontType,
         modalTileColor: modalTileColor,
-        tileNames: [],
+        tileNames: tileNames,
         editedTiles: {}
       };
 
@@ -464,9 +469,11 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
   // Initialize notes state
   useEffect(() => {
     if (dates.length > 0) {
-      // Initialize tile names with default values
-      const initialTileNames = dates.map(date => 
-        Array(date.signups || 1).fill('')
+      // Initialize tile names only if they don't exist
+      const initialTileNames = dates.map((date, dateIndex) => 
+        Array(date.signups || 1).fill('').map((_, slotIndex) => 
+          tileNames[dateIndex]?.[slotIndex] || ''
+        )
       );
       setTileNames(initialTileNames);
 

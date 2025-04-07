@@ -322,8 +322,6 @@ const MyEventsScreen = () => {
                 } else {
                   setSubmittedEvents(updatedEvents);
                 }
-                
-                Alert.alert('Success', `Event ${isDraft ? 'draft ' : ''}deleted successfully`);
               }
             } catch (error) {
               console.error('Error deleting event:', error);
@@ -701,7 +699,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 5,
   },
   scrollView: {
     flex: 1,
@@ -716,23 +714,23 @@ const styles = StyleSheet.create({
   },
   centeredTitleContainer: {
     alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 10,
-    paddingTop: 10,
+    marginBottom: 10,
+    marginTop: 5,
+    paddingTop: 5,
   },
   centeredTitle: {
     fontSize: 36,
-    marginTop: 60,
+    marginTop: 5,
     alignSelf: 'center',
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   usernameText: {
     fontSize: 14,
     color: 'navy',
     marginTop: 5,
-    marginBottom: 10,
+    marginBottom: -5,
     textAlign: 'center',
   },
   emptyMessage: {

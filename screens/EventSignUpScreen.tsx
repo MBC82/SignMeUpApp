@@ -67,6 +67,7 @@ type RootStackParamList = {
     modalFontType?: string;
     modalTileColor?: string;
   };
+  SignUpScreen: RouteParams;
 };
 
 // Add local backgrounds at the top of the file
@@ -119,7 +120,7 @@ type RouteParams = {
   organizerEmail?: string;
   globalNote?: string;
   slotLabels?: Record<string, string>;
-  backgroundImage?: string | null;
+  backgroundImage?: number | { uri: string } | string | null;
   textShadowEnabled?: boolean;
   isTimeSlot?: boolean;
   isNewEvent?: boolean;
@@ -133,6 +134,8 @@ type RouteParams = {
   modalFontType?: string;
   modalTileColor?: string;
   onSubmit?: (data: any) => void;
+  tileNames?: string[][];
+  editedTiles?: boolean[][];
 };
 
 type SignupData = {
@@ -146,7 +149,10 @@ type SignupsState = {
   };
 };
 
-const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route }) => {
+const EventSignUpScreen: React.FC<{ 
+  route: { params: RouteParams };
+  navigation: StackNavigationProp<RootStackParamList, 'EventSignUpScreen'>;
+}> = ({ route, navigation }) => {
   // Extract parameters safely using optional chaining
   const params = route?.params || {};
   
@@ -185,21 +191,21 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
     modalFontColor = 'black',
     modalFontSize = 16,
     modalFontType = 'sans-serif',
-    modalTileColor = '#f0f0f0'
+    modalTileColor = '#f0f0f0',
   } = params;
 
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [selectedDateIndex, setSelectedDateIndex] = useState<number | null>(null);
   const [attendeeName, setAttendeeName] = useState('');
-  const [currentScreenBgColor, setCurrentScreenBgColor] = useState(screenBgColor);
+  const [currentScreenBgColor, setCurrentScreenBgColor] = useState('white');
   const [currentModalFontColor, setCurrentModalFontColor] = useState(modalFontColor);
   const [currentModalFontSize, setCurrentModalFontSize] = useState(modalFontSize);
   const [currentModalFontType, setCurrentModalFontType] = useState(modalFontType);
   const [currentModalTileColor, setCurrentModalTileColor] = useState(modalTileColor);
   const [currentHeaderTileColor, setCurrentHeaderTileColor] = useState(headerTileColor);
   const [currentHeaderFontColor, setCurrentHeaderFontColor] = useState(headerFontColor);
-  const [signups, setSignups] = useState<SignupsState>({});
+  const [signups, setSignups] = useState<Record<number, Record<number, SignupData>>>({});
   const [currentUserName, setCurrentUserName] = useState<string>('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [wantsReminders, setWantsReminders] = useState(false);
@@ -218,6 +224,7 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
   const [editName, setEditName] = useState('');
   const [editDateIndex, setEditDateIndex] = useState<number | null>(null);
   const [editSlotIndex, setEditSlotIndex] = useState<number | null>(null);
+  const [currentBackgroundImage, setCurrentBackgroundImage] = useState<number | null>(null);
 
   // Initialize timeSlots from route params
   const timeSlots = initialTimeSlots;
@@ -225,10 +232,11 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
   // Add useEffect to load tileNames from route params
   useEffect(() => {
     if (route.params?.dates) {
-      const initialTileNames = route.params.dates.map((date: DateData) => 
+      // Initialize arrays based on route params
+      const initialTileNames = route.params.tileNames || route.params.dates.map((date: DateData) => 
         Array(date.signups || 1).fill('')
       );
-      const initialEditedTiles = route.params.dates.map((date: DateData) => 
+      const initialEditedTiles = route.params.editedTiles || route.params.dates.map((date: DateData) => 
         Array(date.signups || 1).fill(false)
       );
       const initialNotes = route.params.dates.map((date: DateData) => 
@@ -237,23 +245,89 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
       const initialShowNotes = route.params.dates.map((date: DateData) => 
         Array(date.signups || 1).fill(false)
       );
+      
       setTileNames(initialTileNames);
       setEditedTiles(initialEditedTiles);
       setNotes(initialNotes);
       setShowNotes(initialShowNotes);
     }
-  }, [route.params?.dates]);
+  }, [route.params]);
 
   // Apply theme styling from route params
   useEffect(() => {
     if (route.params) {
-      setCurrentScreenBgColor(route.params.screenBgColor || screenBgColor);
-      setCurrentModalFontColor(route.params.modalFontColor || modalFontColor);
-      setCurrentModalFontSize(route.params.modalFontSize || modalFontSize);
-      setCurrentModalFontType(route.params.modalFontType || modalFontType);
-      setCurrentModalTileColor(route.params.modalTileColor || modalTileColor);
-      setCurrentHeaderTileColor(route.params.headerTileColor || headerTileColor);
-      setCurrentHeaderFontColor(route.params.headerFontColor || headerFontColor);
+      // Handle background image
+      if (route.params.backgroundImage) {
+        if (typeof route.params.backgroundImage === 'number') {
+          setCurrentBackgroundImage(route.params.backgroundImage);
+        } else if (typeof route.params.backgroundImage === 'object' && 'uri' in route.params.backgroundImage) {
+          // Convert URI to number if it's a local image
+          const uri = route.params.backgroundImage.uri;
+          if (uri.startsWith('file://')) {
+            setCurrentBackgroundImage(1); // Use a default number for local images
+          } else {
+            setCurrentBackgroundImage(1); // Use a default number for remote images
+          }
+        } else if (typeof route.params.backgroundImage === 'string') {
+          setCurrentBackgroundImage(1); // Use a default number for string URIs
+        }
+      }
+      
+      // Handle background color
+      if (route.params.screenBgColor) {
+        setCurrentScreenBgColor(route.params.screenBgColor);
+      }
+      
+      // Apply font color
+      if (route.params.fontColor) {
+        setCurrentModalFontColor(route.params.fontColor);
+      }
+      
+      // Apply font size
+      if (route.params.fontSize) {
+        setCurrentModalFontSize(route.params.fontSize);
+      }
+      
+      // Apply font type
+      if (route.params.fontType) {
+        setCurrentModalFontType(route.params.fontType);
+      }
+      
+      // Apply tile color
+      if (route.params.tileColor) {
+        setCurrentModalTileColor(route.params.tileColor);
+      }
+      
+      // Apply header tile color if available
+      if (route.params.headerTileColor) {
+        setCurrentHeaderTileColor(route.params.headerTileColor);
+      } else if (route.params.tileColor) {
+        // Fall back to regular tile color if header tile color is not available
+        setCurrentHeaderTileColor(route.params.tileColor);
+      }
+      
+      // Apply header font color if available
+      if (route.params.headerFontColor) {
+        setCurrentHeaderFontColor(route.params.headerFontColor);
+      } else if (route.params.fontColor) {
+        // Fall back to regular font color if header font color is not available
+        setCurrentHeaderFontColor(route.params.fontColor);
+      }
+      
+      // Text shadow is already set via route params and applied directly in the JSX
+      console.log('Theme applied from route params:', {
+        bgColor: route.params.bgColor,
+        fontColor: route.params.fontColor,
+        fontSize: route.params.fontSize,
+        fontType: route.params.fontType,
+        tileColor: route.params.tileColor,
+        textShadowEnabled: route.params.textShadowEnabled
+      });
+
+      // Handle tile names
+      if (route.params.tileNames) {
+        setTileNames(route.params.tileNames);
+      }
     }
   }, [route.params]);
 
@@ -516,6 +590,7 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
       const signupUsername = signupData?.username;
       const isCurrentUserSlot = signupUsername === currentUserName;
       const attendeeName = signupData?.name || '';
+      const tileName = tileNames[dateIndex]?.[slotIndex] || '';
 
       return (
         <View key={slotId} style={[styles.slotTile, { backgroundColor: modalTileColor, opacity: 0.9 }]}>
@@ -533,7 +608,7 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
                 } : {})
               }
             ]}>
-              {attendeeName || 'Available'}
+              {tileName || attendeeName || 'Available'}
             </Text>
             {isTaken ? (
               <TouchableOpacity
@@ -546,10 +621,10 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
-                style={styles.signUpButton}
+                style={[styles.signUpButton, { backgroundColor: 'gold' }]}
                 onPress={() => handleSlotPress(dateIndex, slotIndex)}
               >
-                <Text style={styles.signUpButtonText}>Sign Up</Text>
+                <Text style={[styles.signUpButtonText, { color: 'navy' }]}>Sign Me Up</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -722,38 +797,11 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
     }
   }, [route.params]);
 
-  // Add this function to handle different types of backgroundImage
   const getBackgroundImageSource = () => {
-    if (!backgroundImage) {
-      return localBackgrounds.classic;
-    }
-    
-    if (typeof backgroundImage === 'string') {
-      return { uri: backgroundImage };
-    }
-    
-    if (typeof backgroundImage === 'number') {
-      // Map the theme number to the correct background
-      switch (backgroundImage) {
-        case 1:
-          return localBackgrounds.classic;
-        case 2:
-          return localBackgrounds.modern;
-        case 3:
-          return localBackgrounds.playful;
-        case 4:
-          return localBackgrounds.elegant;
-        case 5:
-          return localBackgrounds.sporty;
-        case 6:
-          return localBackgrounds.darkmode;
-        default:
-          return localBackgrounds.classic;
-      }
-    }
-    
-    // If it's already an object with a uri property, use it as is
-    return backgroundImage;
+    if (!currentBackgroundImage) return undefined;
+    if (typeof currentBackgroundImage === 'number') return currentBackgroundImage;
+    if (typeof currentBackgroundImage === 'object' && 'uri' in currentBackgroundImage) return currentBackgroundImage;
+    return undefined;
   };
 
   // Update the renderSlot function to show if a slot is taken
@@ -801,7 +849,7 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
             style={styles.signUpButton}
             onPress={() => handleSignUpPress(numericDateId, numericSlotId, attendeeName)}
           >
-            <Text style={styles.signUpButtonText}>Sign Up</Text>
+            <Text style={styles.signUpButtonText}>Sign Me Up</Text>
           </TouchableOpacity>
         )}
       </TouchableOpacity>
@@ -809,9 +857,8 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
   };
 
   // Add this function to handle canceling a signup
-  const handleCancelSignup = async (dateId: string | number, slotId: string | number) => {
+  const handleCancelSignup = async (dateId: number, slotId: number) => {
     try {
-      // Remove the signup
       const updatedSignups = { ...signups };
       
       if (updatedSignups[dateId] && updatedSignups[dateId][slotId]) {
@@ -823,15 +870,10 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
         }
         
         setSignups(updatedSignups);
-        
-        // Save updated signups to AsyncStorage
-        await AsyncStorage.setItem(`eventSignups_${eventId}`, JSON.stringify(updatedSignups));
-        
-        Alert.alert('Success', 'The signup has been canceled.');
       }
     } catch (error) {
       console.error('Error canceling signup:', error);
-      Alert.alert('Error', 'Failed to cancel signup. Please try again.');
+      Alert.alert('Error', 'Failed to cancel signup');
     }
   };
 
@@ -878,58 +920,21 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
     );
   };
 
-  const navigation = useNavigation();
-
   const handleSubmit = async (isDraft = false) => {
     try {
-      // Prepare the event data
       const eventData = {
-        eventId,
-        id,
-        username,
-        eventName,
-        location,
-        organizer,
-        address,
-        eventTime,
-        neededItems,
-        dates,
-        timeSlots,
-        bgColor,
-        fontColor,
-        fontSize,
-        fontType,
-        tileColor,
-        textNotificationsEnabled,
-        organizerPhone,
-        emailNotificationsEnabled,
-        organizerEmail,
-        globalNote,
-        slotLabels,
-        backgroundImage,
-        textShadowEnabled,
-        isTimeSlot,
-        isNewEvent,
-        isPreview,
-        isEditing,
-        headerTileColor,
-        headerFontColor,
-        updatedTimeSlots: timeSlots // Pass the updated time slots
+        ...route.params,
+        updatedTimeSlots: timeSlots
       };
 
-      // Check if onSubmit function exists before calling it
       if (route.params.onSubmit && typeof route.params.onSubmit === 'function') {
-        console.log('Calling onSubmit callback function');
-        await route.params.onSubmit(eventData, isDraft);
-      } else {
-        console.log('No onSubmit callback function provided');
+        await route.params.onSubmit(eventData);
       }
 
-      // Navigate back to the SignUpScreen
       navigation.navigate('SignUpScreen', {
         ...route.params,
-        updatedTimeSlots: timeSlots // Pass the updated time slots
-      });
+        updatedTimeSlots: timeSlots
+      } as RouteParams);
     } catch (error) {
       console.error('Error submitting event:', error);
       Alert.alert('Error', 'Failed to submit event');
@@ -1031,7 +1036,7 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
     }
   };
 
-  const handleSignUp = async (dateIndex: number, slotIndex: number) => {
+  const handleSignUp = async () => {
     if (!attendeeName.trim()) {
       Alert.alert('Error', 'Please enter your name');
       return;
@@ -1040,29 +1045,41 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
     try {
       const signupData: SignupData = {
         name: attendeeName,
-        username: await EncryptedStorage.getItem('username') || 'guest',
-        phoneNumber: phoneNumber,
-        wantsReminders: wantsReminders
+        username: await EncryptedStorage.getItem('username') || 'guest'
       };
 
-      const newSignups = { ...signups };
-      if (!newSignups[dateIndex]) {
-        newSignups[dateIndex] = {};
+      if (selectedDateIndex !== null && selectedSlot !== null) {
+        const newSignups = { ...signups };
+        if (!newSignups[selectedDateIndex]) {
+          newSignups[selectedDateIndex] = {};
+        }
+        newSignups[selectedDateIndex][selectedSlot] = signupData;
+        setSignups(newSignups);
+        setModalVisible(false);
       }
-      newSignups[dateIndex][slotIndex] = signupData;
-      setSignups(newSignups);
-      setModalVisible(false);
     } catch (error) {
       console.error('Error signing up:', error);
       Alert.alert('Error', 'Failed to sign up');
     }
   };
 
+  const handleEditConfirm = () => {
+    if (editName && editDateIndex !== null && editSlotIndex !== null) {
+      const updatedTileNames = [...tileNames];
+      if (!updatedTileNames[editDateIndex]) {
+        updatedTileNames[editDateIndex] = [];
+      }
+      updatedTileNames[editDateIndex][editSlotIndex] = editName;
+      setTileNames(updatedTileNames);
+      setModalVisible(false);
+    }
+  };
+
   return (
-    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
+    <View style={{ flex: 1 }}>
       <ImageBackground
-        source={backgroundImage ? { uri: backgroundImage } : undefined}
-        style={[styles.container, { backgroundColor: screenBgColor }]}
+        source={getBackgroundImageSource()}
+        style={[styles.container, { backgroundColor: currentScreenBgColor }]}
         resizeMode="cover"
       >
         <ScrollView contentContainerStyle={[styles.scrollContent, styles.headerContainer]}>
