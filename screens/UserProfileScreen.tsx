@@ -129,6 +129,8 @@ const UserProfileScreen = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
+  const [isProfileInfoExpanded, setIsProfileInfoExpanded] = useState(true);
+
   useEffect(() => {
     if (!profile.username) {
       navigation.navigate('ProfileSetup');
@@ -516,146 +518,162 @@ const UserProfileScreen = () => {
 
           {/* Profile Info Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Profile Info</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Profile Info</Text>
+              <TouchableOpacity 
+                onPress={() => setIsProfileInfoExpanded(!isProfileInfoExpanded)}
+                style={styles.expandButton}
+              >
+                <MaterialIcons 
+                  name={isProfileInfoExpanded ? "expand-less" : "expand-more"} 
+                  size={24} 
+                  color="navy" 
+                />
+              </TouchableOpacity>
+            </View>
             
-            {/* Username Field */}
-            <View style={styles.infoField}>
-              <Text style={styles.fieldLabel}>Username</Text>
-              {isEditingUsername ? (
-                <View style={styles.editContainer}>
-                  <TextInput
-                    style={styles.input}
-                    value={newUsername}
-                    onChangeText={setNewUsername}
-                    placeholder="Enter new username"
-                  />
-                  <View style={styles.editButtons}>
-                    <TouchableOpacity 
-                      style={[styles.editButton, styles.cancelButton]}
-                      onPress={() => {
-                        setIsEditingUsername(false);
-                        setNewUsername(profile.username || '');
-                      }}
-                    >
-                      <Text style={styles.buttonText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.editButton, styles.saveButton]}
-                      onPress={handleUpdateUsername}
-                    >
-                      <Text style={styles.buttonText}>Save</Text>
-                    </TouchableOpacity>
-                  </View>
+            {isProfileInfoExpanded && (
+              <>
+                {/* Username Field */}
+                <View style={styles.infoField}>
+                  <Text style={styles.fieldLabel}>Username</Text>
+                  {isEditingUsername ? (
+                    <View style={styles.editContainer}>
+                      <TextInput
+                        style={styles.input}
+                        value={newUsername}
+                        onChangeText={setNewUsername}
+                        placeholder="Enter new username"
+                      />
+                      <View style={styles.editButtons}>
+                        <TouchableOpacity 
+                          style={[styles.editButton, styles.cancelButton]}
+                          onPress={() => {
+                            setIsEditingUsername(false);
+                            setNewUsername(profile.username || '');
+                          }}
+                        >
+                          <Text style={styles.buttonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={[styles.editButton, styles.saveButton]}
+                          onPress={handleUpdateUsername}
+                        >
+                          <Text style={styles.buttonText}>Save</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={styles.infoContainer}>
+                      <Text style={styles.infoText}>{profile.username}</Text>
+                      <TouchableOpacity 
+                        style={styles.editButton}
+                        onPress={() => setIsEditingUsername(true)}
+                      >
+                        <MaterialIcons name="edit" size={24} color="#007bff" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
-              ) : (
-                <View style={styles.infoContainer}>
-                  <Text style={styles.infoText}>{profile.username}</Text>
-                  <TouchableOpacity 
-                    style={styles.editButton}
-                    onPress={() => setIsEditingUsername(true)}
-                  >
-                    <MaterialIcons name="edit" size={24} color="#007bff" />
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
 
-            {/* Email Field */}
-            <View style={styles.infoField}>
-              <Text style={styles.fieldLabel}>Email</Text>
-              {isEditingEmail ? (
-                <View style={styles.editContainer}>
-                  <TextInput
-                    style={styles.input}
-                    value={newEmail}
-                    onChangeText={setNewEmail}
-                    placeholder="Enter new email"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-                  <View style={styles.editButtons}>
-                    <TouchableOpacity 
-                      style={[styles.editButton, styles.cancelButton]}
-                      onPress={() => {
-                        setIsEditingEmail(false);
-                        setNewEmail(profile.email || '');
-                      }}
-                    >
-                      <Text style={styles.buttonText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.editButton, styles.saveButton]}
-                      onPress={handleUpdateEmail}
-                    >
-                      <Text style={styles.buttonText}>Save</Text>
-                    </TouchableOpacity>
-                  </View>
+                {/* Email Field */}
+                <View style={styles.infoField}>
+                  <Text style={styles.fieldLabel}>Email</Text>
+                  {isEditingEmail ? (
+                    <View style={styles.editContainer}>
+                      <TextInput
+                        style={styles.input}
+                        value={newEmail}
+                        onChangeText={setNewEmail}
+                        placeholder="Enter new email"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                      />
+                      <View style={styles.editButtons}>
+                        <TouchableOpacity 
+                          style={[styles.editButton, styles.cancelButton]}
+                          onPress={() => {
+                            setIsEditingEmail(false);
+                            setNewEmail(profile.email || '');
+                          }}
+                        >
+                          <Text style={styles.buttonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={[styles.editButton, styles.saveButton]}
+                          onPress={handleUpdateEmail}
+                        >
+                          <Text style={styles.buttonText}>Save</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={styles.infoContainer}>
+                      <Text style={styles.infoText}>{profile.email}</Text>
+                      <TouchableOpacity 
+                        style={styles.editButton}
+                        onPress={() => setIsEditingEmail(true)}
+                      >
+                        <MaterialIcons name="edit" size={24} color="#007bff" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
-              ) : (
-                <View style={styles.infoContainer}>
-                  <Text style={styles.infoText}>{profile.email}</Text>
-                  <TouchableOpacity 
-                    style={styles.editButton}
-                    onPress={() => setIsEditingEmail(true)}
-                  >
-                    <MaterialIcons name="edit" size={24} color="#007bff" />
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
 
-            {/* Phone Number Field */}
-            <View style={styles.infoField}>
-              <Text style={styles.fieldLabel}>Phone Number</Text>
-              {isEditingPhone ? (
-                <View style={styles.editContainer}>
-                  <TextInput
-                    style={styles.input}
-                    value={newPhoneNumber}
-                    onChangeText={setNewPhoneNumber}
-                    placeholder="Enter phone number"
-                    keyboardType="phone-pad"
-                  />
-                  <View style={styles.editButtons}>
-                    <TouchableOpacity 
-                      style={[styles.editButton, styles.cancelButton]}
-                      onPress={() => {
-                        setIsEditingPhone(false);
-                        setNewPhoneNumber(profile.phone || '');
-                      }}
-                    >
-                      <Text style={styles.buttonText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.editButton, styles.saveButton]}
-                      onPress={handleUpdatePhone}
-                    >
-                      <Text style={styles.buttonText}>Save</Text>
-                    </TouchableOpacity>
-                  </View>
+                {/* Phone Number Field */}
+                <View style={styles.infoField}>
+                  <Text style={styles.fieldLabel}>Phone Number</Text>
+                  {isEditingPhone ? (
+                    <View style={styles.editContainer}>
+                      <TextInput
+                        style={styles.input}
+                        value={newPhoneNumber}
+                        onChangeText={setNewPhoneNumber}
+                        placeholder="Enter phone number"
+                        keyboardType="phone-pad"
+                      />
+                      <View style={styles.editButtons}>
+                        <TouchableOpacity 
+                          style={[styles.editButton, styles.cancelButton]}
+                          onPress={() => {
+                            setIsEditingPhone(false);
+                            setNewPhoneNumber(profile.phone || '');
+                          }}
+                        >
+                          <Text style={styles.buttonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={[styles.editButton, styles.saveButton]}
+                          onPress={handleUpdatePhone}
+                        >
+                          <Text style={styles.buttonText}>Save</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={styles.infoContainer}>
+                      <Text style={styles.infoText}>{profile.phone || 'No phone number set'}</Text>
+                      <TouchableOpacity 
+                        style={styles.editButton}
+                        onPress={() => setIsEditingPhone(true)}
+                      >
+                        <MaterialIcons name="edit" size={24} color="#007bff" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
-              ) : (
-                <View style={styles.infoContainer}>
-                  <Text style={styles.infoText}>{profile.phone || 'No phone number set'}</Text>
-                  <TouchableOpacity 
-                    style={styles.editButton}
-                    onPress={() => setIsEditingPhone(true)}
-                  >
-                    <MaterialIcons name="edit" size={24} color="#007bff" />
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
 
-            {/* Privacy Setting */}
-            <View style={styles.infoField}>
-              <Text style={styles.fieldLabel}>Profile Visibility</Text>
-              <ToggleOption
-                label="Public Profile"
-                value={preferences.privacySettings.profileVisibility === 'public'}
-                onToggle={(value) => updatePrivacySetting('profileVisibility', value ? 'public' : 'private')}
-              />
-            </View>
+                {/* Privacy Setting */}
+                <View style={styles.infoField}>
+                  <Text style={styles.fieldLabel}>Profile Visibility</Text>
+                  <ToggleOption
+                    label="Public Profile"
+                    value={preferences.privacySettings.profileVisibility === 'public'}
+                    onToggle={(value) => updatePrivacySetting('profileVisibility', value ? 'public' : 'private')}
+                  />
+                </View>
+              </>
+            )}
           </View>
 
           {/* Only show these sections if it's the user's own profile */}
@@ -796,7 +814,7 @@ const styles = StyleSheet.create({
   },
   profileImageContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
     position: 'relative',
   },
   profileImage: {
@@ -896,12 +914,20 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     marginBottom: 20,
+    minHeight: 80,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+    minHeight: 40,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: 'navy',
-    marginBottom: 15,
+    marginBottom: 0,
     textAlign: 'center',
   },
   activityTitle: {
@@ -1181,6 +1207,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     fontStyle: 'italic',
+  },
+  expandButton: {
+    padding: 5,
   },
 });
 

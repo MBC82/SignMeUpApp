@@ -336,31 +336,36 @@ const MyEventsScreen = () => {
   };
 
   const handleViewEvent = (event: Event) => {
-    if (event.isDraft) {
-      // Navigate to SignUpScreen for editing drafts
-      navigation.navigate('SignUpScreen', {
-        eventName: event.eventName,
-        location: event.location,
-        organizer: event.organizer,
-        address: event.address,
-        eventTime: event.eventTime,
-        neededItems: event.neededItems || [],
-        dates: event.dates || [],
-        timeSlots: event.timeSlots || [],
-        bgColor: event.bgColor,
-        fontColor: event.fontColor,
-        fontSize: event.fontSize,
-        fontType: event.fontType,
-        tileColor: event.tileColor,
-        backgroundImage: event.backgroundImage,
-        index: event.eventId,
-        headerTileColor: event.headerTileColor || event.tileColor,
-        headerFontColor: event.headerFontColor || event.fontColor
-      });
-    } else {
-      // If it's a submitted event, navigate to EventDetailsScreen for viewing
-      navigation.navigate('EventDetails', { eventId: event.id });
-    }
+    // Navigate to SignUpScreen for both drafts and submitted events
+    navigation.navigate('SignUpScreen', {
+      eventName: event.eventName,
+      location: event.location,
+      organizer: event.organizer,
+      address: event.address,
+      eventTime: event.eventTime,
+      neededItems: event.neededItems || [],
+      dates: event.dates || [],
+      timeSlots: event.timeSlots || [],
+      bgColor: event.bgColor,
+      fontColor: event.fontColor,
+      fontSize: event.fontSize,
+      fontType: event.fontType,
+      tileColor: event.tileColor,
+      backgroundImage: event.backgroundImage,
+      index: event.eventId,
+      headerTileColor: event.headerTileColor || event.tileColor,
+      headerFontColor: event.headerFontColor || event.fontColor,
+      textNotificationsEnabled: event.textNotificationsEnabled,
+      organizerPhone: event.organizerPhone,
+      emailNotificationsEnabled: event.emailNotificationsEnabled,
+      organizerEmail: event.organizerEmail,
+      globalNote: event.globalNote,
+      slotLabels: event.slotLabels,
+      textShadowEnabled: event.textShadowEnabled,
+      isTimeSlot: event.isTimeSlot,
+      isPreview: false,
+      isEditing: true
+    });
   };
 
   // Update the getBackgroundImageSource function to handle null values correctly
@@ -510,6 +515,11 @@ const MyEventsScreen = () => {
           source={backgroundImageSource}
           style={[styles.eventCardBackground, { backgroundColor: event.bgColor || 'white' }]}
         >
+          {!isDraft && (
+            <View style={styles.liveIconContainer}>
+              <Text style={styles.liveText}>LIVE</Text>
+            </View>
+          )}
           <View style={[styles.eventCardContent, { backgroundColor: headerTileColor }]}>
             <View style={styles.eventHeader}>
               <Text style={[styles.eventTitle, { 
@@ -870,6 +880,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     borderRadius: 5,
     marginTop: 5,
+  },
+  liveIconContainer: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'red',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  liveText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
 

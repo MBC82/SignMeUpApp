@@ -422,8 +422,19 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
       updatedDates[editDateIndex].date = editingDate;
       setDates(updatedDates);
     } else if (editSlotIndex !== null) {
-      handleTileNameChange(editDateIndex, editSlotIndex, editName);
+      if (applyToAll) {
+        handleApplyToAllAttendees();
+        setApplyToAll(false);
+      } else if (applyNumbers) {
+        handleApplyNumbersToAttendees();
+        setApplyNumbers(false);
+      } else {
+        handleTileNameChange(editDateIndex, editSlotIndex, editName);
+      }
     }
+    setEditName('');
+    setEditDateIndex(null);
+    setEditSlotIndex(null);
     setEditModalVisible(false);
   };
 
@@ -455,7 +466,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
     if (dates.length > 0) {
       // Initialize tile names with default values
       const initialTileNames = dates.map(date => 
-        Array(date.signups || 1).fill(date.isTimeSlot ? 'Time Slot' : 'Attendee')
+        Array(date.signups || 1).fill('')
       );
       setTileNames(initialTileNames);
 
@@ -494,7 +505,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
       
       setShowNotes(initialShowNotes);
     }
-  }, [dates]);
+  }, [dates, timeSlots]);
 
   const handleNoteChange = (dateIndex: number, slotIndex: number, text: string) => {
     const updatedNotes = [...notes];
@@ -517,7 +528,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
   const handleApplyToAllAttendees = () => {
     if (editName !== null && editName !== '' && editDateIndex !== null) {
       const updatedTileNames = [...tileNames];
-      updatedTileNames[editDateIndex] = updatedTileNames[editDateIndex].map(() => editName);
+      updatedTileNames[editDateIndex] = updatedTileNames[editDateIndex].map((_, index) => `${editName} ${index + 1}`);
       setTileNames(updatedTileNames);
       setEditName('');
       setEditDateIndex(null);
@@ -922,7 +933,11 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
                   <View style={styles.modalButtonContainer}>
                     <TouchableOpacity
                       style={[styles.modalButton, styles.cancelButton]}
-                      onPress={() => setEditModalVisible(false)}
+                      onPress={() => {
+                        setEditModalVisible(false);
+                        setApplyToAll(false);
+                        setApplyNumbers(false);
+                      }}
                     >
                       <Text style={styles.modalButtonText}>Cancel</Text>
                     </TouchableOpacity>

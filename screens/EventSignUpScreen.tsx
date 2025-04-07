@@ -83,47 +83,68 @@ const localBackgrounds = {
 interface DateData {
   date: string;
   signups: number;
-  isTimeSlot: boolean;
-  notes?: string[];
+  isTimeSlot?: boolean;
 }
 
-interface RouteParams {
-  eventId: string;
-  id: string;
-  username: string;
-  eventName: string;
-  location: string;
-  organizer: string;
-  address: string;
-  eventTime: string;
-  neededItems: string[];
-  dates: DateData[];
-  timeSlots?: { start: string; end: string }[][];
-  bgColor: string;
-  fontColor: string;
-  fontSize: number;
-  fontType: string;
-  tileColor: string;
-  textNotificationsEnabled: boolean;
-  organizerPhone: string;
-  emailNotificationsEnabled: boolean;
-  organizerEmail: string;
-  globalNote: string;
-  slotLabels?: { [key: string]: string };
-  backgroundImage?: string;
-  textShadowEnabled: boolean;
-  isTimeSlot: boolean;
-  isNewEvent: boolean;
-  isPreview: boolean;
-  isEditing: boolean;
-  headerTileColor: string;
-  headerFontColor: string;
-  screenBgColor: string;
-  modalFontColor: string;
-  modalFontSize: number;
-  modalFontType: string;
-  modalTileColor: string;
+interface TimeSlot {
+  startTime: string;
+  endTime: string;
 }
+
+type TileNamesState = string[][];
+type NotesState = string[][];
+type ShowNotesState = boolean[][];
+type TimeSlotsState = TimeSlot[][];
+
+type RouteParams = {
+  eventId?: string;
+  id?: string;
+  username?: string;
+  eventName?: string;
+  location?: string;
+  organizer?: string;
+  address?: string;
+  eventTime?: string;
+  neededItems?: string[];
+  dates?: DateData[];
+  timeSlots?: TimeSlot[][];
+  bgColor?: string;
+  fontColor?: string;
+  fontSize?: number;
+  fontType?: string;
+  tileColor?: string;
+  textNotificationsEnabled?: boolean;
+  organizerPhone?: string;
+  emailNotificationsEnabled?: boolean;
+  organizerEmail?: string;
+  globalNote?: string;
+  slotLabels?: Record<string, string>;
+  backgroundImage?: string | null;
+  textShadowEnabled?: boolean;
+  isTimeSlot?: boolean;
+  isNewEvent?: boolean;
+  isPreview?: boolean;
+  isEditing?: boolean;
+  headerTileColor?: string;
+  headerFontColor?: string;
+  screenBgColor?: string;
+  modalFontColor?: string;
+  modalFontSize?: number;
+  modalFontType?: string;
+  modalTileColor?: string;
+  onSubmit?: (data: any) => void;
+};
+
+type SignupData = {
+  username: string;
+  name: string;
+};
+
+type SignupsState = {
+  [dateIndex: number]: {
+    [slotIndex: number]: SignupData;
+  };
+};
 
 const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route }) => {
   // Extract parameters safely using optional chaining
@@ -140,7 +161,7 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
     eventTime = '',
     neededItems = [],
     dates = [],
-    timeSlots = {},
+    timeSlots: initialTimeSlots = [],
     bgColor = 'white',
     fontColor = 'black',
     fontSize = 16,
@@ -178,22 +199,29 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
   const [currentModalTileColor, setCurrentModalTileColor] = useState(modalTileColor);
   const [currentHeaderTileColor, setCurrentHeaderTileColor] = useState(headerTileColor);
   const [currentHeaderFontColor, setCurrentHeaderFontColor] = useState(headerFontColor);
-  const [signups, setSignups] = useState<{ [key: string]: { [key: number]: string } }>({});
+  const [signups, setSignups] = useState<SignupsState>({});
   const [currentUserName, setCurrentUserName] = useState<string>('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [wantsReminders, setWantsReminders] = useState(false);
-  const [participantNames, setParticipantNames] = useState(
+  const [participantNames, setParticipantNames] = useState<string[][]>(
     dates.map(date => Array(date.signups).fill(''))
   );
   const [isCreator, setIsCreator] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Definition for tileNames with default values
-  const [tileNames, setTileNames] = useState<string[][]>([]);
-  
-  // Definition for editedTiles
+  const [tileNames, setTileNames] = useState<TileNamesState>([]);
   const [editedTiles, setEditedTiles] = useState<boolean[][]>([]);
-  
+  const [notes, setNotes] = useState<NotesState>([]);
+  const [showNotes, setShowNotes] = useState<ShowNotesState>([]);
+  const [applyToAll, setApplyToAll] = useState(false);
+  const [applyNumbers, setApplyNumbers] = useState(false);
+  const [applyToAllTimeSlots, setApplyToAllTimeSlots] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDateIndex, setEditDateIndex] = useState<number | null>(null);
+  const [editSlotIndex, setEditSlotIndex] = useState<number | null>(null);
+
+  // Initialize timeSlots from route params
+  const timeSlots = initialTimeSlots;
+
   // Add useEffect to load tileNames from route params
   useEffect(() => {
     if (route.params?.dates) {
@@ -363,7 +391,7 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
     if (!textNotificationsEnabled || !organizerPhone) return;
 
     const timeSlotText = timeSlots[dateIndex]?.[slotIndex] ? 
-      `${timeSlots[dateIndex][slotIndex].start} - ${timeSlots[dateIndex][slotIndex].end}` : 
+      `${timeSlots[dateIndex][slotIndex].startTime} - ${timeSlots[dateIndex][slotIndex].endTime}` : 
       'no specific time';
 
     // Use a standard URL format instead of createURL
@@ -479,50 +507,52 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
     }
   };
 
-  const renderSlotsOrAttendees = (dateIndex: number) => {
-    const signups = dates[dateIndex].signups || 1;
-
-    return Array.from({ length: signups }, (_, i) => {
-      const slot = timeSlots?.[dateIndex]?.[i] || {};
-      const start = slot.start ? String(slot.start) : null;
-      const end = slot.end ? String(slot.end) : null;
-      const attendeeName = tileNames[dateIndex]?.[i] || (dates[dateIndex].isTimeSlot ? 'Time Slot' : `Attendee ${i + 1}`);
-      const hasNote = notes[dateIndex]?.[i] && notes[dateIndex][i] !== '';
+  const renderSlotsOrAttendees = (date: DateData, dateIndex: number) => {
+    const slots = Array(date.signups).fill(null);
+    return slots.map((_, slotIndex: number) => {
+      const slotId = `${dateIndex}-${slotIndex}`;
+      const isTaken = signups[dateIndex]?.[slotIndex] !== undefined;
+      const signupData = signups[dateIndex]?.[slotIndex] as SignupData | undefined;
+      const signupUsername = signupData?.username;
+      const isCurrentUserSlot = signupUsername === currentUserName;
+      const attendeeName = signupData?.name || '';
 
       return (
-        <View key={i} style={[styles.slotTile, signups === 1 && styles.singleTile, { backgroundColor: modalTileColor, opacity: 0.9 }]}>
-          <View style={styles.attendeeHeader}>
-            <Text style={[styles.slotHeading, { color: modalFontColor, fontSize: modalFontSize }]}>
-              {attendeeName}
+        <View key={slotId} style={[styles.slotTile, { backgroundColor: modalTileColor, opacity: 0.9 }]}>
+          <View style={styles.slotContent}>
+            <Text style={[
+              styles.slotText,
+              {
+                fontSize: currentModalFontSize,
+                fontFamily: currentModalFontType,
+                color: currentModalFontColor,
+                ...(textShadowEnabled ? {
+                  textShadowColor: 'rgba(0, 0, 0, 0.75)',
+                  textShadowOffset: { width: 1, height: 1 },
+                  textShadowRadius: 2,
+                } : {})
+              }
+            ]}>
+              {attendeeName || 'Available'}
             </Text>
-            <TouchableOpacity 
-              onPress={() => handleEditName(dateIndex, i)}
-              style={styles.editIconButton}
-            >
-              <MaterialIcons name="edit" size={16} color="navy" />
-            </TouchableOpacity>
+            {isTaken ? (
+              <TouchableOpacity
+                style={[styles.signUpButton, { backgroundColor: isCurrentUserSlot ? 'navy' : 'gold' }]}
+                onPress={() => handleSlotPress(dateIndex, slotIndex)}
+              >
+                <Text style={[styles.signUpButtonText, { color: isCurrentUserSlot ? 'white' : 'navy' }]}>
+                  {isCurrentUserSlot ? 'Cancel' : 'Taken'}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.signUpButton}
+                onPress={() => handleSlotPress(dateIndex, slotIndex)}
+              >
+                <Text style={styles.signUpButtonText}>Sign Up</Text>
+              </TouchableOpacity>
+            )}
           </View>
-          {dates[dateIndex].isTimeSlot && start && end && (
-            <Text style={[styles.timeText, { color: modalFontColor }]}>
-              {start} - {end}
-            </Text>
-          )}
-          {hasNote ? (
-            <Text style={[styles.noteText, { color: modalFontColor }]}>
-              {notes[dateIndex][i]}
-            </Text>
-          ) : showNotes[dateIndex]?.[i] ? (
-            <TextInput
-              style={[styles.noteInput, { color: modalFontColor }]}
-              placeholder="Add a note (optional)"
-              placeholderTextColor="gray"
-              value={notes[dateIndex]?.[i] || ''}
-              onChangeText={(text) => handleNoteChange(dateIndex, i, text)}
-            />
-          ) : null}
-          <TouchableOpacity style={styles.rsvpButton}>
-            <Text style={styles.rsvpButtonText}>Sign Me Up</Text>
-          </TouchableOpacity>
         </View>
       );
     });
@@ -728,10 +758,12 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
 
   // Update the renderSlot function to show if a slot is taken
   const renderSlot = (dateId: string | number, slotId: string | number, slotData: any) => {
-    const isTaken = signups[dateId]?.[slotId] !== undefined;
-    const signupData = signups[dateId]?.[slotId];
-    const signupUsername = typeof signupData === 'object' ? signupData.username : undefined;
-    const signupName = typeof signupData === 'object' ? signupData.name : signupData;
+    const numericDateId = typeof dateId === 'string' ? parseInt(dateId) : dateId;
+    const numericSlotId = typeof slotId === 'string' ? parseInt(slotId) : slotId;
+    
+    const isTaken = signups[numericDateId]?.[numericSlotId] !== undefined;
+    const signupData = signups[numericDateId]?.[numericSlotId];
+    const signupUsername = signupData?.username;
     const isCurrentUserSlot = signupUsername === currentUserName;
     
     return (
@@ -741,24 +773,24 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
           isTaken && styles.takenSlot,
           isCurrentUserSlot && styles.currentUserSlot,
         ]}
-        onPress={() => handleSlotPress(dateId, slotId)}
+        onPress={() => handleSlotPress(numericDateId, numericSlotId)}
         disabled={isTaken && !isCurrentUserSlot}
       >
         {isTaken && <View style={styles.signedUpOverlay} />}
         
         <Text style={styles.slotTitle}>
-          {slotData.title || `Slot ${slotId}`}
+          {slotData.title || `Slot ${numericSlotId}`}
         </Text>
         
         {isTaken ? (
           <View style={styles.takenSlotInfo}>
             <Text style={styles.takenByText}>
-              Taken by: {signupName}
+              Taken by: {signupData?.name || 'Unknown'}
             </Text>
             {isCurrentUserSlot && (
               <TouchableOpacity
                 style={styles.cancelButton}
-                onPress={() => handleCancelSignup(dateId, slotId)}
+                onPress={() => handleCancelSignup(numericDateId, numericSlotId)}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
@@ -767,7 +799,7 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
         ) : (
           <TouchableOpacity
             style={styles.signUpButton}
-            onPress={() => handleSignUpPress(dateId, slotId, attendeeName)}
+            onPress={() => handleSignUpPress(numericDateId, numericSlotId, attendeeName)}
           >
             <Text style={styles.signUpButtonText}>Sign Up</Text>
           </TouchableOpacity>
@@ -804,13 +836,13 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
   };
 
   // Update the renderDate function to add more space
-  const renderDate = (date, index) => {
+  const renderDate = (date: DateData, index: number) => {
     return (
-      <View key={index} style={[styles.dateTile, { marginTop: 20 }]}> {/* Added marginTop */}
+      <View key={index} style={styles.dateTile}>
         <View style={[
           styles.dateHeader,
           {
-            backgroundColor: currentModalTileColor,
+            backgroundColor: currentHeaderTileColor,
             opacity: 0.9,
             borderColor: 'gold',
             borderWidth: 2,
@@ -840,7 +872,7 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
           </Text>
         </View>
         <View style={styles.slotsContainer}>
-          {renderSlotsOrAttendees(index)}
+          {renderSlotsOrAttendees(date, index)}
         </View>
       </View>
     );
@@ -918,9 +950,12 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
 
   // Add the handleSlotPress function
   const handleSlotPress = (dateId: string | number, slotId: string | number) => {
-    const isTaken = signups[dateId]?.[slotId] !== undefined;
-    const signupData = signups[dateId]?.[slotId];
-    const signupUsername = typeof signupData === 'object' ? signupData.username : undefined;
+    const numericDateId = typeof dateId === 'string' ? parseInt(dateId) : dateId;
+    const numericSlotId = typeof slotId === 'string' ? parseInt(slotId) : slotId;
+    
+    const isTaken = signups[numericDateId]?.[numericSlotId] !== undefined;
+    const signupData = signups[numericDateId]?.[numericSlotId];
+    const signupUsername = signupData?.username;
     const isCurrentUserSlot = signupUsername === currentUserName;
     
     if (isTaken) {
@@ -931,18 +966,18 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
           'Would you like to cancel your signup for this slot?',
           [
             { text: 'No', style: 'cancel' },
-            { text: 'Yes', onPress: () => handleCancelSignup(dateId, slotId) }
+            { text: 'Yes', onPress: () => handleCancelSignup(numericDateId, numericSlotId) }
           ]
         );
       } else {
         // Show who took the slot if it's taken by someone else
-        const name = typeof signupData === 'object' ? signupData.name : signupData;
+        const name = signupData?.name || 'Unknown';
         Alert.alert('Slot Taken', `This slot is already taken by ${name}`);
       }
     } else {
       // If not taken, show sign-up modal
-      setSelectedDateIndex(typeof dateId === 'number' ? dateId : parseInt(dateId));
-      setSelectedSlot(typeof slotId === 'number' ? slotId : parseInt(slotId));
+      setSelectedDateIndex(numericDateId);
+      setSelectedSlot(numericSlotId);
       setModalVisible(true);
     }
   };
@@ -956,74 +991,26 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
     setNotes(newNotes);
   };
 
-  const [applyToAll, setApplyToAll] = useState(false);
-  const [applyNumbers, setApplyNumbers] = useState(false);
-  const [applyToAllTimeSlots, setApplyToAllTimeSlots] = useState(false);
-  const [editName, setEditName] = useState('');
-  const [editDateIndex, setEditDateIndex] = useState<number | null>(null);
-  const [editSlotIndex, setEditSlotIndex] = useState<number | null>(null);
+  const handleTileNameChange = (dateIndex: number, slotIndex: number, text: string) => {
+    const newTileNames = [...tileNames];
+    if (!newTileNames[dateIndex]) {
+      newTileNames[dateIndex] = [];
+    }
+    newTileNames[dateIndex][slotIndex] = text;
+    setTileNames(newTileNames);
+  };
 
   const handleEditName = (dateIndex: number, slotIndex: number) => {
     setEditDateIndex(dateIndex);
     setEditSlotIndex(slotIndex);
     setEditName(tileNames[dateIndex]?.[slotIndex] || '');
-    
-    // If applyToAllTimeSlots is checked, apply the current name to all time slots across all dates
-    if (applyToAllTimeSlots) {
-      const updatedTileNames = [...tileNames];
-      const currentName = tileNames[dateIndex]?.[slotIndex] || '';
-      
-      // Apply to all time slots in all dates
-      updatedTileNames.forEach((_, dateIdx) => {
-        if (route.params.dates[dateIdx].isTimeSlot) {
-          updatedTileNames[dateIdx] = updatedTileNames[dateIdx].map(() => currentName);
-        }
-      });
-      
-      setTileNames(updatedTileNames);
-      return;
-    }
-    
-    // If applyToAll is checked, apply the current name to all attendee slots across all dates
-    if (applyToAll) {
-      const updatedTileNames = [...tileNames];
-      const currentName = tileNames[dateIndex]?.[slotIndex] || '';
-      
-      // Apply to all attendee slots in all dates
-      updatedTileNames.forEach((_, dateIdx) => {
-        if (!route.params.dates[dateIdx].isTimeSlot) {
-          updatedTileNames[dateIdx] = updatedTileNames[dateIdx].map(() => currentName);
-        }
-      });
-      
-      setTileNames(updatedTileNames);
-      return;
-    }
-    
-    // If applyNumbers is checked, apply numbered names to all slots across all dates
-    if (applyNumbers) {
-      const updatedTileNames = [...tileNames];
-      
-      // Apply numbered names to all slots in all dates
-      updatedTileNames.forEach((_, dateIdx) => {
-        const isTimeSlot = route.params.dates[dateIdx].isTimeSlot;
-        updatedTileNames[dateIdx] = updatedTileNames[dateIdx].map((_: string, slotIdx: number) => 
-          isTimeSlot ? `Time Slot ${slotIdx + 1}` : `Attendee ${slotIdx + 1}`
-        );
-      });
-      
-      setTileNames(updatedTileNames);
-      return;
-    }
-    
-    // Otherwise, show the edit modal
     setModalVisible(true);
   };
 
   const handleApplyToAllAttendees = () => {
     if (editName !== null && editName !== '' && editDateIndex !== null) {
       const updatedTileNames = [...tileNames];
-      updatedTileNames[editDateIndex] = updatedTileNames[editDateIndex].map(() => editName);
+      updatedTileNames[editDateIndex] = updatedTileNames[editDateIndex].map((_, index) => `${editName} ${index + 1}`);
       setTileNames(updatedTileNames);
       setEditName('');
       setEditDateIndex(null);
@@ -1035,9 +1022,7 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
   const handleApplyNumbersToAttendees = () => {
     if (editDateIndex !== null) {
       const updatedTileNames = [...tileNames];
-      updatedTileNames[editDateIndex] = updatedTileNames[editDateIndex].map((_: string, index: number) => 
-        route.params.dates[editDateIndex].isTimeSlot ? `Time Slot ${index + 1}` : `Attendee ${index + 1}`
-      );
+      updatedTileNames[editDateIndex] = updatedTileNames[editDateIndex].map((_: string, index: number) => `Attendee ${index + 1}`);
       setTileNames(updatedTileNames);
       setEditName('');
       setEditDateIndex(null);
@@ -1046,22 +1031,38 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
     }
   };
 
-  const handleSignUp = (dateIndex: number, slotIndex: number) => {
-    const newSignups = { ...signups };
-    const dateId = dateIndex.toString();
-    if (!newSignups[dateId]) {
-      newSignups[dateId] = {};
+  const handleSignUp = async (dateIndex: number, slotIndex: number) => {
+    if (!attendeeName.trim()) {
+      Alert.alert('Error', 'Please enter your name');
+      return;
     }
-    newSignups[dateId][slotIndex] = route.params.username;
-    setSignups(newSignups);
-    setModalVisible(false);
+
+    try {
+      const signupData: SignupData = {
+        name: attendeeName,
+        username: await EncryptedStorage.getItem('username') || 'guest',
+        phoneNumber: phoneNumber,
+        wantsReminders: wantsReminders
+      };
+
+      const newSignups = { ...signups };
+      if (!newSignups[dateIndex]) {
+        newSignups[dateIndex] = {};
+      }
+      newSignups[dateIndex][slotIndex] = signupData;
+      setSignups(newSignups);
+      setModalVisible(false);
+    } catch (error) {
+      console.error('Error signing up:', error);
+      Alert.alert('Error', 'Failed to sign up');
+    }
   };
 
   return (
     <View style={[styles.container, { backgroundColor: 'transparent' }]}>
       <ImageBackground
-        source={getBackgroundImageSource()}
-        style={[styles.container, { backgroundColor: currentScreenBgColor }]}
+        source={backgroundImage ? { uri: backgroundImage } : undefined}
+        style={[styles.container, { backgroundColor: screenBgColor }]}
         resizeMode="cover"
       >
         <ScrollView contentContainerStyle={[styles.scrollContent, styles.headerContainer]}>
@@ -1074,6 +1075,7 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
               width: '85%',
               borderColor: 'gold',
               borderWidth: 2,
+              marginBottom: 20
             }
           ]}>
             <Text style={[
@@ -1150,15 +1152,15 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
 
           {/* Share Button */}
           <TouchableOpacity 
-            style={[styles.shareButton, { marginBottom: 10 }]}
+            style={[styles.shareButton, { backgroundColor: 'gold' }]}
             onPress={handleShare}
           >
-            <MaterialIcons name="share" size={24} color="white" />
+            <MaterialIcons name="share" size={24} color="navy" />
             <Text style={[
               styles.shareButtonText,
               {
                 fontFamily: currentModalFontType,
-                color: 'white',
+                color: 'navy',
                 marginLeft: 10,
                 fontWeight: 'bold',
               }
@@ -1169,11 +1171,11 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
 
           {/* Dates and Slots */}
           {dates.map((dateData, dateIndex) => (
-            <View key={dateIndex} style={[styles.dateTile, { marginTop: 20 }]}>
+            <View key={dateIndex} style={styles.dateTile}>
               <View style={[
                 styles.dateHeader,
                 {
-                  backgroundColor: currentModalTileColor,
+                  backgroundColor: currentHeaderTileColor,
                   opacity: 0.9,
                   borderColor: 'gold',
                   borderWidth: 2,
@@ -1203,7 +1205,7 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
                 </Text>
               </View>
               <View style={styles.slotsContainer}>
-                {renderSlotsOrAttendees(dateIndex)}
+                {renderSlotsOrAttendees(dateData, dateIndex)}
               </View>
             </View>
           ))}
@@ -1280,38 +1282,12 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
                         <TouchableOpacity
                           style={[styles.modalButton, { backgroundColor: 'navy' }]}
                           onPress={() => {
-                            if (applyToAll) {
-                              handleApplyToAllAttendees();
-                            } else if (applyNumbers) {
-                              handleApplyNumbersToAttendees();
-                            } else if (applyToAllTimeSlots) {
-                              handleApplyToAllTimeSlots();
-                            } else if (editName && editDateIndex !== null && editSlotIndex !== null) {
-                              const newTileNames = [...tileNames];
-                              if (!newTileNames[editDateIndex]) {
-                                newTileNames[editDateIndex] = [];
-                              }
-                              newTileNames[editDateIndex][editSlotIndex] = editName;
-                              setTileNames(newTileNames);
-                              setEditName('');
-                              setEditDateIndex(null);
-                              setEditSlotIndex(null);
-                              setModalVisible(false);
+                            if (editName && editDateIndex !== null && editSlotIndex !== null) {
+                              handleEditConfirm();
                             }
                           }}
                         >
-                          <Text style={styles.modalButtonText}>Save</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[styles.modalButton, { backgroundColor: 'gray' }]}
-                          onPress={() => {
-                            setEditName('');
-                            setEditDateIndex(null);
-                            setEditSlotIndex(null);
-                            setModalVisible(false);
-                          }}
-                        >
-                          <Text style={styles.modalButtonText}>Cancel</Text>
+                          <Text style={styles.modalButtonText}>Apply</Text>
                         </TouchableOpacity>
                       </View>
                     </>
@@ -1347,7 +1323,7 @@ const EventSignUpScreen: React.FC<{ route: { params: RouteParams } }> = ({ route
 
                       <TouchableOpacity
                         style={[styles.modalButton, { backgroundColor: 'gold' }]}
-                        onPress={handleConfirmSignUp}
+                        onPress={handleSignUp}
                       >
                         <Text style={[
                           styles.modalButtonText,
@@ -1404,52 +1380,6 @@ const styles = StyleSheet.create({
   subHeaderText: {
     fontSize: 18,
     textAlign: 'center',
-  },
-  customizeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.5,
-    elevation: 3,
-    marginHorizontal: 5,
-    borderWidth: 1,
-    borderColor: 'black',
-  },
-  customizeButtonText: {
-    marginLeft: 6,
-    color: 'black',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  themesButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.5,
-    elevation: 3,
-    marginHorizontal: 5,
-    borderWidth: 1,
-    borderColor: 'black',
-  },
-  themesButtonText: {
-    marginLeft: 6,
-    color: 'black',
-    fontSize: 14,
-    fontWeight: '500',
   },
   dateTile: {
     borderWidth: 0,
@@ -1792,48 +1722,29 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     zIndex: 1,
   },
-  tileContent: {
-    position: 'relative',
-    zIndex: 2,
-    width: '100%',
-    alignItems: 'center',
+  slotContent: {
+    flex: 1,
     justifyContent: 'center',
-  },
-  tileText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 5,
-  },
-  signupInfo: {
-    marginTop: 5,
-    width: '100%',
     alignItems: 'center',
+    width: '100%',
   },
-  signupName: {
-    fontWeight: 'bold',
+  slotText: {
+    fontSize: 16,
     textAlign: 'center',
-    marginBottom: 5,
+    color: 'navy',
+    marginBottom: 10,
   },
   signUpButton: {
-    backgroundColor: 'gold',
-    padding: 8,
+    backgroundColor: 'navy',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
     borderRadius: 5,
-    marginTop: 5,
-    alignSelf: 'center',
-    borderColor: 'gold',
-    borderWidth: 2,
+    marginTop: 10,
   },
   signUpButtonText: {
-    color: 'white',
+    color: 'gold',
+    fontSize: 16,
     fontWeight: 'bold',
-  },
-  slotsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    width: '100%',
-    paddingHorizontal: 10,
   },
   modalOverlay: {
     flex: 1,
@@ -1842,56 +1753,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
     width: '80%',
+    backgroundColor: 'gold',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
   },
   modalTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: 20,
+    color: 'navy',
     textAlign: 'center',
-  },
-  inputLabel: {
-    fontWeight: '600',
-    marginBottom: 5,
-    color: '#333',
-    fontSize: 16,
-    marginTop: 5,
   },
   modalInput: {
     width: '100%',
     height: 40,
     borderWidth: 1,
-    borderColor: 'gold',
+    borderColor: 'navy',
     borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-    color: 'black',
+    paddingHorizontal: 10,
+    marginBottom: 20,
     backgroundColor: 'white',
   },
-  takenBadge: {
-    backgroundColor: 'rgba(218, 165, 32, 0.9)',
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 10,
-    marginTop: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.5,
-    elevation: 2,
+  inputLabel: {
+    fontSize: 16,
+    marginBottom: 5,
   },
-  takenBadgeText: {
-    color: 'white',
+  slotsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+  },
+  slotTitle: {
     fontWeight: 'bold',
+    marginBottom: 5,
   },
-  currentUserSlot: {
-    backgroundColor: 'rgba(144, 238, 144, 0.5)',
-    borderColor: 'green',
-  },
-  currentUserBadge: {
-    backgroundColor: 'rgba(218, 165, 32, 0.7)',
+  slot: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
   },
   takenSlot: {
     backgroundColor: 'rgba(200, 200, 200, 0.5)',
@@ -1909,19 +1811,30 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 12,
   },
-  slotTitle: {
+  currentUserSlot: {
+    backgroundColor: 'rgba(144, 238, 144, 0.5)',
+    borderColor: 'green',
+  },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+    elevation: 3,
+    marginBottom: 10,
+  },
+  shareButtonText: {
+    marginLeft: 10,
+    color: 'black',
+    fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  slot: {
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    borderColor: 'transparent',
-  },
-  slot: {
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    borderColor: 'transparent',
   },
 });
 
