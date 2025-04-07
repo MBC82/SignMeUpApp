@@ -228,6 +228,7 @@ const EventSignUpScreen: React.FC<{
   const [currentBackgroundImage, setCurrentBackgroundImage] = useState<number | null>(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [reminderType, setReminderType] = useState<'text' | 'email' | null>(null);
+  const [currentEncryptedUsername, setCurrentEncryptedUsername] = useState<string>('');
 
   // Initialize timeSlots from route params
   const timeSlots = initialTimeSlots;
@@ -354,6 +355,29 @@ const EventSignUpScreen: React.FC<{
     
     loadSavedTileNames();
   }, [eventId]);
+
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      try {
+        const storedName = await AsyncStorage.getItem('currentUserName');
+        if (storedName) {
+          setCurrentUserName(storedName);
+        }
+      } catch (error) {
+        console.error('Error loading current user:', error);
+      }
+    };
+
+    loadCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    const loadUsername = async () => {
+      const username = await EncryptedStorage.getItem('username') || '';
+      setCurrentEncryptedUsername(username);
+    };
+    loadUsername();
+  }, []);
 
   const handleShare = async () => {
     try {
@@ -545,13 +569,17 @@ const EventSignUpScreen: React.FC<{
       // Save the current user name for future use
       await AsyncStorage.setItem('currentUserName', attendeeName);
 
-      // Close modal and reset fields
-      setModalVisible(false);
-      setAttendeeName('');
-      setPhoneNumber('');
-      setWantsReminders(false);
-
-      Alert.alert('Success', 'You have successfully signed up!');
+      // Show reminder options if enabled
+      if (textNotificationsEnabled || emailNotificationsEnabled) {
+        setShowReminderModal(true);
+      } else {
+        // Close modal and reset fields
+        setModalVisible(false);
+        setAttendeeName('');
+        setPhoneNumber('');
+        setWantsReminders(false);
+        Alert.alert('Success', 'You have successfully signed up!');
+      }
     } catch (error) {
       console.error('Error signing up:', error);
       Alert.alert('Error', 'Failed to sign up');
@@ -605,19 +633,95 @@ const EventSignUpScreen: React.FC<{
     }
   };
 
+  const handleCancelSignup = async (dateIndex: number, slotIndex: number) => {
+    try {
+      // Show confirmation dialog
+      Alert.alert(
+        'Cancel Signup',
+        'Are you sure you want to cancel your signup?',
+        [
+          {
+            text: 'No',
+            style: 'cancel'
+          },
+          {
+            text: 'Yes',
+            onPress: async () => {
+              try {
+                // Get existing signups
+                const existingSignups = await AsyncStorage.getItem(`eventSignups_${eventId}`);
+                if (!existingSignups) {
+                  Alert.alert('Error', 'No signups found');
+                  return;
+                }
+
+                let allSignups = JSON.parse(existingSignups);
+                
+                // Remove the signup
+                if (allSignups[dateIndex] && allSignups[dateIndex][slotIndex]) {
+                  delete allSignups[dateIndex][slotIndex];
+                  
+                  // If there are no more signups for this date, remove the date entry
+                  if (Object.keys(allSignups[dateIndex]).length === 0) {
+                    delete allSignups[dateIndex];
+                  }
+                  
+                  // Save updated signups
+                  await AsyncStorage.setItem(`eventSignups_${eventId}`, JSON.stringify(allSignups));
+                  
+                  // Update local state
+                  setSignups(allSignups);
+                  
+                  Alert.alert('Success', 'Your signup has been cancelled');
+                } else {
+                  Alert.alert('Error', 'Signup not found');
+                }
+              } catch (error) {
+                console.error('Error in cancel signup:', error);
+                Alert.alert('Error', 'Failed to cancel signup');
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error showing alert:', error);
+      Alert.alert('Error', 'Failed to process cancellation');
+    }
+  };
+
   const renderSlotsOrAttendees = (date: DateData, dateIndex: number) => {
     const slots = Array(date.signups).fill(null);
     return slots.map((_, slotIndex: number) => {
       const slotId = `${dateIndex}-${slotIndex}`;
       const isTaken = signups[dateIndex]?.[slotIndex] !== undefined;
       const signupData = signups[dateIndex]?.[slotIndex] as SignupData | undefined;
-      const signupUsername = signupData?.username;
-      const isCurrentUserSlot = signupUsername === currentUserName;
       const attendeeName = signupData?.name || '';
       const tileName = tileNames[dateIndex]?.[slotIndex] || '';
+      const signupUsername = signupData?.username;
+      const isCurrentUserSlot = signupUsername === currentEncryptedUsername;
 
       return (
-        <View key={slotId} style={[styles.slotTile, { backgroundColor: modalTileColor, opacity: 0.9 }]}>
+        <View key={slotId} style={[
+          styles.slotTile,
+          {
+            backgroundColor: modalTileColor,
+            opacity: isTaken ? 0.7 : 1,
+            borderColor: 'gold',
+            width: '48%',
+            borderRadius: 10,
+            padding: 12,
+            marginBottom: 15,
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+            elevation: 5,
+            borderWidth: 2,
+            marginHorizontal: '1%'
+          }
+        ]}>
           <View style={styles.slotContent}>
             <Text style={[
               styles.slotText,
@@ -625,6 +729,8 @@ const EventSignUpScreen: React.FC<{
                 fontSize: currentModalFontSize,
                 fontFamily: currentModalFontType,
                 color: currentModalFontColor,
+                textAlign: 'center',
+                marginBottom: 10,
                 ...(textShadowEnabled ? {
                   textShadowColor: 'rgba(0, 0, 0, 0.75)',
                   textShadowOffset: { width: 1, height: 1 },
@@ -635,29 +741,40 @@ const EventSignUpScreen: React.FC<{
               {tileName || (dates[dateIndex].isTimeSlot ? 'Time Slot' : 'Available')}
             </Text>
             {isTaken ? (
-              <View style={styles.takenSlotInfo}>
+              <View>
                 <Text style={[
                   styles.attendeeName,
                   {
                     fontSize: currentModalFontSize,
                     fontFamily: currentModalFontType,
                     color: currentModalFontColor,
-                    marginTop: 10,
-                    ...(textShadowEnabled ? {
-                      textShadowColor: 'rgba(0, 0, 0, 0.75)',
-                      textShadowOffset: { width: 1, height: 1 },
-                      textShadowRadius: 2,
-                    } : {})
+                    textAlign: 'center',
+                    fontWeight: 'bold',
+                    marginTop: 5
                   }
                 ]}>
                   {attendeeName}
                 </Text>
                 {isCurrentUserSlot && (
                   <TouchableOpacity
-                    style={[styles.cancelButton, { backgroundColor: 'navy' }]}
+                    style={[styles.cancelButton, { 
+                      backgroundColor: 'gold', 
+                      marginTop: 5,
+                      paddingVertical: 4,
+                      paddingHorizontal: 8,
+                      borderRadius: 4
+                    }]}
                     onPress={() => handleCancelSignup(dateIndex, slotIndex)}
                   >
-                    <Text style={[styles.cancelButtonText, { color: 'white' }]}>Cancel Signup</Text>
+                    <Text style={[
+                      styles.cancelButtonText, 
+                      { 
+                        color: currentModalFontColor,
+                        fontSize: currentModalFontSize - 2
+                      }
+                    ]}>
+                      Remove Signup
+                    </Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -666,7 +783,7 @@ const EventSignUpScreen: React.FC<{
                 style={[styles.signUpButton, { backgroundColor: 'gold' }]}
                 onPress={() => handleSlotPress(dateIndex, slotIndex)}
               >
-                <Text style={[styles.signUpButtonText, { color: 'navy' }]}>Sign Me Up</Text>
+                <Text style={[styles.signUpButtonText, { color: currentModalFontColor }]}>Sign Me Up</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -847,14 +964,15 @@ const EventSignUpScreen: React.FC<{
   };
 
   // Update the renderSlot function to show if a slot is taken
-  const renderSlot = (dateId: string | number, slotId: string | number, slotData: any) => {
+  const renderSlot = async (dateId: string | number, slotId: string | number, slotData: any) => {
     const numericDateId = typeof dateId === 'string' ? parseInt(dateId) : dateId;
     const numericSlotId = typeof slotId === 'string' ? parseInt(slotId) : slotId;
     
     const isTaken = signups[numericDateId]?.[numericSlotId] !== undefined;
     const signupData = signups[numericDateId]?.[numericSlotId];
     const signupUsername = signupData?.username;
-    const isCurrentUserSlot = signupUsername === currentUserName;
+    const currentEncryptedUsername = await EncryptedStorage.getItem('username') || '';
+    const isCurrentUserSlot = signupUsername === currentEncryptedUsername;
     
     return (
       <TouchableOpacity
@@ -896,49 +1014,6 @@ const EventSignUpScreen: React.FC<{
         )}
       </TouchableOpacity>
     );
-  };
-
-  // Add this function to handle canceling a signup
-  const handleCancelSignup = async (dateId: number, slotId: number) => {
-    try {
-      // Show confirmation dialog
-      Alert.alert(
-        'Cancel Signup',
-        'Are you sure you want to cancel your signup?',
-        [
-          {
-            text: 'No',
-            style: 'cancel'
-          },
-          {
-            text: 'Yes',
-            onPress: async () => {
-              const updatedSignups = { ...signups };
-              
-              if (updatedSignups[dateId] && updatedSignups[dateId][slotId]) {
-                delete updatedSignups[dateId][slotId];
-                
-                // If there are no more signups for this date, remove the date entry
-                if (Object.keys(updatedSignups[dateId]).length === 0) {
-                  delete updatedSignups[dateId];
-                }
-                
-                // Save to AsyncStorage
-                await AsyncStorage.setItem(`eventSignups_${eventId}`, JSON.stringify(updatedSignups));
-                
-                // Update local state
-                setSignups(updatedSignups);
-                
-                Alert.alert('Success', 'Your signup has been cancelled');
-              }
-            }
-          }
-        ]
-      );
-    } catch (error) {
-      console.error('Error canceling signup:', error);
-      Alert.alert('Error', 'Failed to cancel signup');
-    }
   };
 
   // Update the renderDate function to add more space
@@ -1018,14 +1093,15 @@ const EventSignUpScreen: React.FC<{
   };
 
   // Add the handleSlotPress function
-  const handleSlotPress = (dateId: string | number, slotId: string | number) => {
+  const handleSlotPress = async (dateId: string | number, slotId: string | number) => {
     const numericDateId = typeof dateId === 'string' ? parseInt(dateId) : dateId;
     const numericSlotId = typeof slotId === 'string' ? parseInt(slotId) : slotId;
     
     const isTaken = signups[numericDateId]?.[numericSlotId] !== undefined;
     const signupData = signups[numericDateId]?.[numericSlotId];
     const signupUsername = signupData?.username;
-    const isCurrentUserSlot = signupUsername === currentUserName;
+    const currentEncryptedUsername = await EncryptedStorage.getItem('username') || '';
+    const isCurrentUserSlot = signupUsername === currentEncryptedUsername;
     
     if (isTaken) {
       if (isCurrentUserSlot) {
@@ -1454,7 +1530,7 @@ const EventSignUpScreen: React.FC<{
                       </View>
                       <View style={styles.modalButtonContainer}>
                         <TouchableOpacity
-                          style={[styles.modalButton, { backgroundColor: 'navy' }]}
+                          style={[styles.modalButton, { backgroundColor: 'gold' }]}
                           onPress={() => {
                             if (editName && editDateIndex !== null && editSlotIndex !== null) {
                               handleEditConfirm();
@@ -1497,17 +1573,19 @@ const EventSignUpScreen: React.FC<{
 
                       <TouchableOpacity
                         style={[styles.modalButton, { backgroundColor: 'navy' }]}
-                        onPress={handleReminderSignup}
+                        onPress={handleConfirmSignUp}
                       >
                         <Text style={[
                           styles.modalButtonText,
                           {
-                            fontSize: currentModalFontSize,
+                            fontSize: 16,
                             fontFamily: currentModalFontType,
                             color: 'white',
+                            fontWeight: 'bold',
+                            textAlign: 'center',
                           }
                         ]}>
-                          Confirm Sign Up
+                          Sign Up
                         </Text>
                       </TouchableOpacity>
                     </>
@@ -1546,7 +1624,6 @@ const EventSignUpScreen: React.FC<{
                         style={[styles.reminderButton, { backgroundColor: 'navy' }]}
                         onPress={() => {
                           setReminderType('text');
-                          setShowReminderModal(false);
                           Alert.prompt(
                             'Text Reminders',
                             'Enter your phone number for text reminders:',
@@ -1560,7 +1637,10 @@ const EventSignUpScreen: React.FC<{
                                 onPress: (phone) => {
                                   if (phone) {
                                     setPhoneNumber(phone);
-                                    handleReminderConfirm();
+                                    setWantsReminders(true);
+                                    setShowReminderModal(false);
+                                    setModalVisible(false);
+                                    Alert.alert('Success', 'You have successfully signed up with text reminders!');
                                   }
                                 },
                               },
@@ -1582,7 +1662,6 @@ const EventSignUpScreen: React.FC<{
                         style={[styles.reminderButton, { backgroundColor: 'navy' }]}
                         onPress={() => {
                           setReminderType('email');
-                          setShowReminderModal(false);
                           Alert.prompt(
                             'Email Reminders',
                             'Enter your email for email reminders:',
@@ -1596,7 +1675,10 @@ const EventSignUpScreen: React.FC<{
                                 onPress: (email) => {
                                   if (email) {
                                     setEmail(email);
-                                    handleReminderConfirm();
+                                    setWantsReminders(true);
+                                    setShowReminderModal(false);
+                                    setModalVisible(false);
+                                    Alert.alert('Success', 'You have successfully signed up with email reminders!');
                                   }
                                 },
                               },
@@ -1614,10 +1696,11 @@ const EventSignUpScreen: React.FC<{
                     )}
 
                     <TouchableOpacity
-                      style={[styles.reminderButton, { backgroundColor: 'gray' }]}
+                      style={[styles.reminderButton, { backgroundColor: 'navy' }]}
                       onPress={() => {
                         setShowReminderModal(false);
-                        handleReminderConfirm();
+                        setModalVisible(false);
+                        Alert.alert('Success', 'You have successfully signed up!');
                       }}
                     >
                       <Text style={[styles.reminderButtonText, { color: 'white' }]}>
@@ -1711,7 +1794,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     alignItems: 'center',
     backgroundColor: 'transparent',
-    opacity: 0.8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -1762,6 +1844,7 @@ const styles = StyleSheet.create({
   },
   rsvpButtonText: {
     color: 'navy',
+    fontcolor: 'white',
     fontSize: 14,
     fontWeight: 'bold',
   },
@@ -1940,21 +2023,24 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   modalButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    minWidth: 120,
-    maxWidth: '48%',
     backgroundColor: 'navy',
+    padding: 15,
+    borderRadius: 8,
+    width: '100%',
+    marginTop: 20,
   },
   cancelButton: {
     backgroundColor: 'navy',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    marginTop: 10,
   },
-  modalButtonText: {
-    color: 'white',
+  cancelButtonText: {
+    color: 'gold',
     fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   headerFieldContainer: {
     flexDirection: 'row',
@@ -2033,6 +2119,7 @@ const styles = StyleSheet.create({
     color: 'gold',
     fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   modalOverlay: {
     flex: 1,
@@ -2089,15 +2176,15 @@ const styles = StyleSheet.create({
   },
   takenSlotInfo: {
     marginTop: 5,
+    width: '100%',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 128, 0.7)',
+    padding: 8,
+    borderRadius: 5,
   },
   takenByText: {
     fontStyle: 'italic',
     color: '#666',
-  },
-  cancelButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 12,
   },
   currentUserSlot: {
     backgroundColor: 'rgba(144, 238, 144, 0.5)',
@@ -2125,7 +2212,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   attendeeName: {
-    marginTop: 10,
+    marginTop: 5,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+    textAlign: 'center',
   },
   reminderOptions: {
     width: '100%',
