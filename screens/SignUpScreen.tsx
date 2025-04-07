@@ -247,11 +247,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
       const storedEvents = await AsyncStorage.getItem(`submittedEvents_${username}`);
       const submittedEvents = storedEvents ? JSON.parse(storedEvents) : [];
       
-      // Initialize tileNames array based on dates
-      const tileNames = dates.map(date => 
-        Array(date.signups || 1).fill('')
-      );
-      
+      // Use the current tileNames state instead of initializing empty ones
       const updatedEvent = {
         id: Date.now().toString(),
         eventId: Date.now().toString(),
@@ -291,7 +287,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
         modalFontSize: modalFontSize,
         modalFontType: modalFontType,
         modalTileColor: modalTileColor,
-        tileNames: tileNames,
+        tileNames: tileNames, // Pass the current tileNames state
         editedTiles: {}
       };
 
@@ -860,7 +856,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
               <TouchableWithoutFeedback>
                 <View style={styles.customizationContainer}>
                   <Text style={styles.modalHeaderText}>
-                    {isEditingHeader ? 'Edit Header Fields' : isEditingDate ? 'Edit Date' : 'Edit Attendee Name'}
+                    {isEditingHeader ? 'Edit Header Fields' : isEditingDate ? 'Edit Date' : 'Edit Tile Name'}
                   </Text>
                   {isEditingHeader ? (
                     <>

@@ -246,12 +246,15 @@ const EventSignUpScreen: React.FC<{
         Array(date.signups || 1).fill(false)
       );
       
-      setTileNames(initialTileNames);
+      // Only update if the tileNames are different from current state
+      if (JSON.stringify(initialTileNames) !== JSON.stringify(tileNames)) {
+        setTileNames(initialTileNames);
+      }
       setEditedTiles(initialEditedTiles);
       setNotes(initialNotes);
       setShowNotes(initialShowNotes);
     }
-  }, [route.params]);
+  }, [route.params, tileNames]);
 
   // Apply theme styling from route params
   useEffect(() => {
@@ -330,6 +333,24 @@ const EventSignUpScreen: React.FC<{
       }
     }
   }, [route.params]);
+
+  // Add useEffect to load saved tile names
+  useEffect(() => {
+    const loadSavedTileNames = async () => {
+      try {
+        const eventKey = `event_${eventId}_tileNames`;
+        const savedTileNames = await AsyncStorage.getItem(eventKey);
+        if (savedTileNames) {
+          const parsedTileNames = JSON.parse(savedTileNames);
+          setTileNames(parsedTileNames);
+        }
+      } catch (error) {
+        console.error('Error loading saved tile names:', error);
+      }
+    };
+    
+    loadSavedTileNames();
+  }, [eventId]);
 
   const handleShare = async () => {
     try {
@@ -608,17 +629,25 @@ const EventSignUpScreen: React.FC<{
                 } : {})
               }
             ]}>
-              {tileName || attendeeName || 'Available'}
+              {tileName || (dates[dateIndex].isTimeSlot ? 'Time Slot' : 'Available')}
             </Text>
             {isTaken ? (
-              <TouchableOpacity
-                style={[styles.signUpButton, { backgroundColor: isCurrentUserSlot ? 'navy' : 'gold' }]}
-                onPress={() => handleSlotPress(dateIndex, slotIndex)}
-              >
-                <Text style={[styles.signUpButtonText, { color: isCurrentUserSlot ? 'white' : 'navy' }]}>
-                  {isCurrentUserSlot ? 'Cancel' : 'Taken'}
-                </Text>
-              </TouchableOpacity>
+              <Text style={[
+                styles.attendeeName,
+                {
+                  fontSize: currentModalFontSize,
+                  fontFamily: currentModalFontType,
+                  color: currentModalFontColor,
+                  marginTop: 10,
+                  ...(textShadowEnabled ? {
+                    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+                    textShadowOffset: { width: 1, height: 1 },
+                    textShadowRadius: 2,
+                  } : {})
+                }
+              ]}>
+                {attendeeName}
+              </Text>
             ) : (
               <TouchableOpacity
                 style={[styles.signUpButton, { backgroundColor: 'gold' }]}
@@ -1071,6 +1100,18 @@ const EventSignUpScreen: React.FC<{
       }
       updatedTileNames[editDateIndex][editSlotIndex] = editName;
       setTileNames(updatedTileNames);
+      
+      // Save the updated tile names to AsyncStorage
+      const saveTileNames = async () => {
+        try {
+          const eventKey = `event_${eventId}_tileNames`;
+          await AsyncStorage.setItem(eventKey, JSON.stringify(updatedTileNames));
+        } catch (error) {
+          console.error('Error saving tile names:', error);
+        }
+      };
+      saveTileNames();
+      
       setModalVisible(false);
     }
   };
@@ -1247,7 +1288,7 @@ const EventSignUpScreen: React.FC<{
                       color: currentModalFontColor,
                     }
                   ]}>
-                    {editDateIndex !== null ? 'Edit Name' : 'Sign Up for Event'}
+                    {editDateIndex !== null ? 'Edit Tile Name' : 'Sign Up for Event'}
                   </Text>
 
                   {editDateIndex !== null ? (
@@ -1852,6 +1893,9 @@ const styles = StyleSheet.create({
     color: 'black',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  attendeeName: {
+    marginTop: 10,
   },
 });
 
