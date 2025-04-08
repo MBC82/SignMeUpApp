@@ -70,6 +70,8 @@ type RootStackParamList = {
     isDesigner: boolean;
   };
   SignUpScreen: RouteParams;
+  Chat: { eventId: string };
+  ChatScreen: { eventId: string };
 };
 
 // Add local backgrounds at the top of the file
@@ -558,12 +560,14 @@ const EventSignUpScreen: React.FC<{
       const allSignups = JSON.parse(existingSignups);
 
       // Initialize date index if not exists
-      if (!allSignups[selectedDateIndex]) {
+      if (selectedDateIndex !== null && !allSignups[selectedDateIndex]) {
         allSignups[selectedDateIndex] = {};
       }
 
       // Add signup to the selected slot
-      allSignups[selectedDateIndex][selectedSlot] = signupData;
+      if (selectedDateIndex !== null && selectedSlot !== null) {
+        allSignups[selectedDateIndex][selectedSlot] = signupData;
+      }
       
       // Save updated signups
       await AsyncStorage.setItem(`eventSignups_${eventId}`, JSON.stringify(allSignups));
@@ -1353,6 +1357,8 @@ const EventSignUpScreen: React.FC<{
     }
   };
 
+  const showChatButton = isPremium || isDesigner || username === 'mbc82';
+
   return (
     <View style={{ flex: 1 }}>
       <ImageBackground
@@ -1361,18 +1367,12 @@ const EventSignUpScreen: React.FC<{
         resizeMode="cover"
       >
         <View style={styles.chatButtonContainer}>
-          {(isPremium || isDesigner || currentEncryptedUsername === 'mbc82') && (
+          {showChatButton && (
             <TouchableOpacity
               style={styles.chatButton}
-              onPress={() => {
-                // TODO: Implement chat functionality
-                Alert.alert('Chat', 'Chat functionality coming soon!');
-              }}
+              onPress={() => navigation.navigate('Chat', { params: { eventId: eventId } })}
             >
-              <View style={styles.notificationDot}>
-                <Text style={styles.notificationText}>1</Text>
-              </View>
-              <MaterialIcons name="chat" size={24} color="navy" />
+              <MaterialIcons name="chat" size={24} color="#000" />
             </TouchableOpacity>
           )}
         </View>
@@ -1598,7 +1598,7 @@ const EventSignUpScreen: React.FC<{
                             }
                           }}
                         >
-                          <Text style={styles.modalButtonText}>Apply</Text>
+                          <Text style={[styles.modalButtonText, { color: currentModalFontColor }]}>Apply</Text>
                         </TouchableOpacity>
                       </View>
                     </>
@@ -1636,18 +1636,7 @@ const EventSignUpScreen: React.FC<{
                         style={[styles.modalButton, { backgroundColor: 'navy' }]}
                         onPress={handleConfirmSignUp}
                       >
-                        <Text style={[
-                          styles.modalButtonText,
-                          {
-                            fontSize: 16,
-                            fontFamily: currentModalFontType,
-                            color: 'white',
-                            fontWeight: 'bold',
-                            textAlign: 'center',
-                          }
-                        ]}>
-                          Sign Up
-                        </Text>
+                        <Text style={[styles.modalButtonText, { color: 'white' }]}>Sign Up</Text>
                       </TouchableOpacity>
                     </>
                   )}
@@ -1904,8 +1893,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   rsvpButtonText: {
-    color: 'navy',
-    fontcolor: 'white',
+    color: 'white',
     fontSize: 14,
     fontWeight: 'bold',
   },
@@ -2084,11 +2072,16 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   modalButton: {
-    backgroundColor: 'navy',
     padding: 15,
     borderRadius: 8,
     width: '100%',
     marginTop: 20,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   cancelButton: {
     backgroundColor: 'navy',

@@ -10,6 +10,7 @@ import UserProfileScreen from './screens/UserProfileScreen';
 import { ProfileProvider, ProfileContext } from './ProfileContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { EncryptedStorageProvider } from './contexts/EncryptedStorageContext';
 import { StyleSheet, View, ActivityIndicator, Text, StatusBar, TouchableOpacity, Image } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,6 +18,7 @@ import EnhancedSignUpScreen from './screens/EnhancedSignUpScreen';
 import SignUpScreen from './screens/SignUpScreen';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import EventSignUpScreen from './screens/EventSignUpScreen';
+import { ChatScreen } from './screens/ChatScreen';
 
 type EventDate = {
   date: string;
@@ -48,7 +50,52 @@ export type RootStackParamList = {
     backgroundImage?: string | null;
     index?: string;
   };
-  EventSignUp: { eventId: string };
+  EventSignUp: { 
+    eventId: string;
+    id: string;
+    username: string;
+    eventName: string;
+    location: string;
+    organizer: string;
+    address: string;
+    eventTime: string;
+    neededItems: any[];
+    dates: any[];
+    timeSlots: any[];
+    bgColor: string;
+    fontColor: string;
+    fontSize: number;
+    fontType: string;
+    tileColor: string;
+    textNotificationsEnabled: boolean;
+    organizerPhone: string;
+    emailNotificationsEnabled: boolean;
+    organizerEmail: string;
+    globalNote: string;
+    slotLabels: {[key: number]: string};
+    backgroundImage?: { uri: string } | null;
+    textShadowEnabled: boolean;
+    isTimeSlot: boolean;
+    isNewEvent: boolean;
+    isPreview: boolean;
+    isEditing?: boolean;
+    headerTileColor?: string;
+    headerFontColor?: string;
+    tileNames?: Array<{
+      names: string[];
+      includeNumbers: boolean;
+    }>;
+    editedTiles?: {[key: string]: boolean};
+    onSubmit?: (data: any, isDraft?: boolean) => Promise<void> | void;
+    screenBgColor?: string;
+    modalFontColor?: string;
+    modalFontSize?: number;
+    modalFontType?: string;
+    modalTileColor?: string;
+    isPremium: boolean;
+    isDesigner: boolean;
+  };
+  Chat: { params: { eventId: string } };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -150,9 +197,9 @@ const BottomNavBar = () => {
 
   const handleProfilePress = () => {
     if (isLoggedIn) {
-      navigation.navigate('UserProfile', {});
+      navigation.navigate('UserProfile');
     } else {
-      navigation.navigate('ProfileSetup');
+      navigation.navigate('ProfileSetup', { skipWelcome: false });
     }
   };
 
@@ -201,90 +248,100 @@ const App = () => {
     <ThemeProvider>
       <LanguageProvider>
         <ProfileProvider>
-          <NavigationContainer>
-            <StatusBar barStyle="dark-content" />
-            <View style={styles.container}>
-              <Stack.Navigator
-                initialRouteName="Home"
-                screenOptions={{
-                  headerStyle: {
-                    backgroundColor: '#ffffff',
-                  },
-                  headerTintColor: '#000000',
-                  headerTitleStyle: {
-                    fontWeight: 'bold',
-                  },
-                  headerShown: false,
-                }}
-              >
-                <Stack.Screen 
-                  name="Home" 
-                  component={HomeScreen}
-                  options={{
-                    title: 'SignMeUp'
+          <EncryptedStorageProvider>
+            <NavigationContainer>
+              <StatusBar barStyle="dark-content" />
+              <View style={styles.container}>
+                <Stack.Navigator
+                  initialRouteName="Home"
+                  screenOptions={{
+                    headerStyle: {
+                      backgroundColor: '#ffffff',
+                    },
+                    headerTintColor: '#000000',
+                    headerTitleStyle: {
+                      fontWeight: 'bold',
+                    },
+                    headerShown: false,
                   }}
-                />
-                <Stack.Screen 
-                  name="EventDetails" 
-                  component={EventDetailsScreen as any}
-                  options={{
-                    title: 'Event Details'
-                  }}
-                />
-                <Stack.Screen 
-                  name="CreateEvent" 
-                  component={CreateEventScreen as any}
-                  options={{
-                    title: 'Create Event'
-                  }}
-                />
-                <Stack.Screen 
-                  name="MyEvents" 
-                  component={MyEventsScreen}
-                  options={{
-                    title: 'My Events'
-                  }}
-                />
-                <Stack.Screen 
-                  name="EnhancedSignUp" 
-                  component={EnhancedSignUpScreen}
-                  options={{
-                    title: 'Sign Up'
-                  }}
-                />
-                <Stack.Screen 
-                  name="ProfileSetup" 
-                  component={ProfileSetupScreen}
-                  options={{
-                    title: 'Profile'
-                  }}
-                  initialParams={{ skipWelcome: false }}
-                />
-                <Stack.Screen 
-                  name="UserProfile" 
-                  component={UserProfileScreen}
-                  options={{
-                    title: 'My Profile'
-                  }}
-                />
-                <Stack.Screen 
-                  name="SignUpScreen" 
-                  component={SignUpScreen as React.ComponentType<any>}
-                  options={{
-                    title: 'Sign Up'
-                  }}
-                />
-                <Stack.Screen 
-                  name="EventSignUp" 
-                  component={EventSignUpScreen}
-                  options={{
-                    title: 'Event Sign Up'
-                  }}
-                />
-              </Stack.Navigator>
-              <BottomNavBar />
-            </View>
-          </NavigationContainer>
+                >
+                  <Stack.Screen 
+                    name="Home" 
+                    component={HomeScreen}
+                    options={{
+                      title: 'SignMeUp'
+                    }}
+                  />
+                  <Stack.Screen 
+                    name="EventDetails" 
+                    component={EventDetailsScreen as any}
+                    options={{
+                      title: 'Event Details'
+                    }}
+                  />
+                  <Stack.Screen 
+                    name="CreateEvent" 
+                    component={CreateEventScreen as any}
+                    options={{
+                      title: 'Create Event'
+                    }}
+                  />
+                  <Stack.Screen 
+                    name="MyEvents" 
+                    component={MyEventsScreen}
+                    options={{
+                      title: 'My Events'
+                    }}
+                  />
+                  <Stack.Screen 
+                    name="EnhancedSignUp" 
+                    component={EnhancedSignUpScreen}
+                    options={{
+                      title: 'Sign Up'
+                    }}
+                  />
+                  <Stack.Screen 
+                    name="ProfileSetup" 
+                    component={ProfileSetupScreen}
+                    options={{
+                      title: 'Profile'
+                    }}
+                    initialParams={{ skipWelcome: false }}
+                  />
+                  <Stack.Screen 
+                    name="UserProfile" 
+                    component={UserProfileScreen}
+                    options={{
+                      title: 'My Profile'
+                    }}
+                  />
+                  <Stack.Screen 
+                    name="SignUpScreen" 
+                    component={SignUpScreen as React.ComponentType<any>}
+                    options={{
+                      title: 'Sign Up'
+                    }}
+                  />
+                  <Stack.Screen 
+                    name="EventSignUp" 
+                    component={EventSignUpScreen as React.ComponentType<any>}
+                    options={{
+                      title: 'Event Sign Up'
+                    }}
+                  />
+                  <Stack.Screen 
+                    name="Chat" 
+                    component={ChatScreen as React.ComponentType<any>}
+                    options={{
+                      title: 'Chat',
+                      headerShown: true,
+                    }}
+                  />
+                </Stack.Navigator>
+                <BottomNavBar />
+              </View>
+            </NavigationContainer>
+          </EncryptedStorageProvider>
         </ProfileProvider>
       </LanguageProvider>
     </ThemeProvider>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "895428834263",
+    "project_id": "signmeup-e5e0c",
+    "storage_bucket": "signmeup-e5e0c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:895428834263:android:e9c6c73c97511c36189192",
+        "android_client_info": {
+          "package_name": "com.signmeup.signmeup"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7R07zxYBkjMvLbeh-w_-j3qrvQsFvuxw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
