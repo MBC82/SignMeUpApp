@@ -17,6 +17,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { checkLoginStatus, clearLoginStatus } from '../utils/StorageUtils';
+import ChatButton from '../components/ChatButton';
 
 // Update type definitions at the top of the file
 type RootStackParamList = {
@@ -55,7 +56,39 @@ type RootStackParamList = {
     isEditing?: boolean;
   };
   UserProfile: undefined;
-  EventSignUp: { eventId: string };
+  EventSignUp: {
+    eventId: string;
+    id: string;
+    username: string;
+    eventName: string;
+    location: string;
+    organizer: string;
+    address: string;
+    eventTime?: string;
+    neededItems?: string[];
+    dates?: EventDate[];
+    timeSlots?: any[];
+    bgColor?: string;
+    fontColor?: string;
+    fontSize?: number;
+    fontType?: string;
+    tileColor?: string;
+    textNotificationsEnabled?: boolean;
+    organizerPhone?: string;
+    emailNotificationsEnabled?: boolean;
+    organizerEmail?: string;
+    globalNote?: string;
+    slotLabels?: Record<string, string>;
+    backgroundImage?: string | null;
+    textShadowEnabled?: boolean;
+    isTimeSlot?: boolean;
+    isNewEvent?: boolean;
+    isPreview?: boolean;
+    headerTileColor?: string;
+    headerFontColor?: string;
+    isPremium?: boolean;
+    isDesigner?: boolean;
+  };
 };
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
@@ -115,6 +148,8 @@ type Event = {
   currentThemeName?: string;
   customTileNames?: Record<string, string>;
   participantNames?: string[];
+  isPremium?: boolean;
+  isDesigner?: boolean;
 };
 
 const MyEventsScreen = () => {
@@ -334,8 +369,11 @@ const MyEventsScreen = () => {
   };
 
   const handleViewEvent = (event: Event) => {
-    // Navigate to SignUpScreen for both drafts and submitted events
-    navigation.navigate('SignUpScreen', {
+    // Navigate to EventSignUpScreen to view signups
+    navigation.navigate('EventSignUp', {
+      eventId: event.eventId,
+      id: event.id,
+      username: event.username,
       eventName: event.eventName,
       location: event.location,
       organizer: event.organizer,
@@ -344,25 +382,31 @@ const MyEventsScreen = () => {
       neededItems: event.neededItems || [],
       dates: event.dates || [],
       timeSlots: event.timeSlots || [],
-      bgColor: event.bgColor,
-      fontColor: event.fontColor,
-      fontSize: event.fontSize,
-      fontType: event.fontType,
-      tileColor: event.tileColor,
-      backgroundImage: event.backgroundImage,
-      index: event.eventId,
-      headerTileColor: event.headerTileColor || event.tileColor,
-      headerFontColor: event.headerFontColor || event.fontColor,
-      textNotificationsEnabled: event.textNotificationsEnabled,
-      organizerPhone: event.organizerPhone,
-      emailNotificationsEnabled: event.emailNotificationsEnabled,
-      organizerEmail: event.organizerEmail,
-      globalNote: event.globalNote,
-      slotLabels: event.slotLabels,
-      textShadowEnabled: event.textShadowEnabled,
-      isTimeSlot: event.isTimeSlot,
+      bgColor: event.bgColor || 'white',
+      fontColor: event.fontColor || 'black',
+      fontSize: event.fontSize || 16,
+      fontType: event.fontType || 'sans-serif',
+      tileColor: event.tileColor || '#f0f0f0',
+      textNotificationsEnabled: event.textNotificationsEnabled || false,
+      organizerPhone: event.organizerPhone || '',
+      emailNotificationsEnabled: event.emailNotificationsEnabled || false,
+      organizerEmail: event.organizerEmail || '',
+      globalNote: event.globalNote || '',
+      slotLabels: event.slotLabels || {},
+      backgroundImage: event.backgroundImage || null,
+      textShadowEnabled: event.textShadowEnabled || false,
+      isTimeSlot: event.isTimeSlot || false,
+      isNewEvent: false,
       isPreview: false,
-      isEditing: true
+      headerTileColor: event.headerTileColor || event.tileColor || '#f0f0f0',
+      headerFontColor: event.headerFontColor || event.fontColor || 'black',
+      screenBgColor: event.bgColor || 'white',
+      modalFontColor: event.fontColor || 'black',
+      modalFontSize: event.fontSize || 16,
+      modalFontType: event.fontType || 'sans-serif',
+      modalTileColor: event.tileColor || '#f0f0f0',
+      isPremium: event.isPremium || false,
+      isDesigner: event.isDesigner || false
     });
   };
 
@@ -550,13 +594,19 @@ const MyEventsScreen = () => {
           </View>
           <View style={styles.eventActions}>
             <TouchableOpacity 
-              style={styles.actionButton} 
+              style={[styles.actionButton, { minWidth: 80, backgroundColor: '#4CAF50' }]} 
               onPress={() => handleViewEvent(event)}
+            >
+              <MaterialIcons name="visibility" size={24} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, { minWidth: 80, backgroundColor: 'gold' }]} 
+              onPress={() => handleEditEvent(event)}
             >
               <MaterialIcons name="edit" size={24} color="navy" />
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.actionButton, styles.deleteButton]}
+              style={[styles.actionButton, styles.deleteButton, { minWidth: 80 }]}
               onPress={() => handleDeleteEvent(event.eventId, isDraft)}
             >
               <MaterialIcons name="delete" size={24} color="white" />
@@ -686,6 +736,12 @@ const MyEventsScreen = () => {
             </TouchableOpacity>
           </View>
         </ScrollView>
+        <ChatButton 
+          eventId="my-events"
+          isPremium={false}
+          isDesigner={false}
+          username={currentUsername}
+        />
       </View>
     </ImageBackground>
   );
@@ -799,18 +855,19 @@ const styles = StyleSheet.create({
   },
   eventActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginTop: 10,
-    width: '78%',
+    width: '100%',
     paddingHorizontal: 10,
-    alignSelf: 'center',
+    gap: 10,
   },
   actionButton: {
     backgroundColor: 'gold',
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 5,
-    minWidth: 90,
+    minWidth: 80,
     alignItems: 'center',
     elevation: 3,
     shadowColor: '#000',

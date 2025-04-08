@@ -1360,7 +1360,7 @@ const EventSignUpScreen: React.FC<{
   const showChatButton = isPremium || isDesigner || username === 'mbc82';
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={[styles.container, { backgroundColor: screenBgColor || 'white' }]}>
       <ImageBackground
         source={getBackgroundImageSource()}
         style={[styles.container, { backgroundColor: currentScreenBgColor }]}
@@ -1370,9 +1370,9 @@ const EventSignUpScreen: React.FC<{
           {showChatButton && (
             <TouchableOpacity
               style={styles.chatButton}
-              onPress={() => navigation.navigate('Chat', { params: { eventId: eventId } })}
+              onPress={() => navigation.navigate('Chat', { eventId })}
             >
-              <MaterialIcons name="chat" size={24} color="#000" />
+              <MaterialIcons name="chat" size={32} color="navy" />
             </TouchableOpacity>
           )}
         </View>
@@ -2295,7 +2295,7 @@ const styles = StyleSheet.create({
   },
   chatButton: {
     backgroundColor: 'gold',
-    padding: 15,
+    padding: 12,
     borderRadius: 30,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

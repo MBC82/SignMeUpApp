@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext } from 'react';
 import EncryptedStorage from 'react-native-encrypted-storage';
 
 interface EncryptedStorageContextType {
@@ -12,8 +12,7 @@ const EncryptedStorageContext = createContext<EncryptedStorageContextType | unde
 export const EncryptedStorageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const getItem = async (key: string): Promise<string | null> => {
     try {
-      const value = await EncryptedStorage.getItem(key);
-      return value;
+      return await EncryptedStorage.getItem(key);
     } catch (error) {
       console.error('Error getting item from encrypted storage:', error);
       return null;
