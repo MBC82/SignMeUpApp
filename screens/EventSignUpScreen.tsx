@@ -66,6 +66,8 @@ type RootStackParamList = {
     modalFontSize?: number;
     modalFontType?: string;
     modalTileColor?: string;
+    isPremium: boolean;
+    isDesigner: boolean;
   };
   SignUpScreen: RouteParams;
 };
@@ -136,6 +138,8 @@ type RouteParams = {
   onSubmit?: (data: any) => void;
   tileNames?: string[][];
   editedTiles?: boolean[][];
+  isPremium: boolean;
+  isDesigner: boolean;
 };
 
 type SignupData = {
@@ -192,6 +196,8 @@ const EventSignUpScreen: React.FC<{
     modalFontSize = 16,
     modalFontType = 'sans-serif',
     modalTileColor = '#f0f0f0',
+    isPremium = false,
+    isDesigner = false,
   } = params;
 
   const [isModalVisible, setModalVisible] = useState(false);
@@ -529,8 +535,13 @@ const EventSignUpScreen: React.FC<{
   };
 
   const handleConfirmSignUp = async () => {
-    if (!attendeeName.trim()) {
+    if (!attendeeName) {
       Alert.alert('Error', 'Please enter your name');
+      return;
+    }
+
+    if (selectedSlot === null) {
+      Alert.alert('Error', 'Please select a time slot');
       return;
     }
 
@@ -538,51 +549,85 @@ const EventSignUpScreen: React.FC<{
       // Create signup data
       const signupData = {
         name: attendeeName,
-        phoneNumber: phoneNumber,
-        wantsReminders: wantsReminders,
-        username: await EncryptedStorage.getItem('username') || 'guest'
+        timestamp: new Date().toISOString(),
+        username: currentEncryptedUsername
       };
 
-      // Get existing signups for THIS specific event
-      const existingSignups = await AsyncStorage.getItem(`eventSignups_${eventId}`);
-      let allSignups = existingSignups ? JSON.parse(existingSignups) : {};
+      // Get existing signups
+      const existingSignups = await AsyncStorage.getItem(`eventSignups_${eventId}`) || '{}';
+      const allSignups = JSON.parse(existingSignups);
 
-      // Initialize the date index if it doesn't exist
-      if (selectedDateIndex !== null) {
-        if (!allSignups[selectedDateIndex]) {
-          allSignups[selectedDateIndex] = {};
-        }
-
-        // Add signup to the selected slot
-        if (selectedSlot !== null) {
-          allSignups[selectedDateIndex][selectedSlot] = signupData;
-        }
-
-        // Save updated signups for THIS specific event
-        await AsyncStorage.setItem(`eventSignups_${eventId}`, JSON.stringify(allSignups));
-
-        // Update local state
-        setSignups(allSignups);
-        setCurrentUserName(attendeeName);
+      // Initialize date index if not exists
+      if (!allSignups[selectedDateIndex]) {
+        allSignups[selectedDateIndex] = {};
       }
 
-      // Save the current user name for future use
-      await AsyncStorage.setItem('currentUserName', attendeeName);
+      // Add signup to the selected slot
+      allSignups[selectedDateIndex][selectedSlot] = signupData;
+      
+      // Save updated signups
+      await AsyncStorage.setItem(`eventSignups_${eventId}`, JSON.stringify(allSignups));
 
-      // Show reminder options if enabled
-      if (textNotificationsEnabled || emailNotificationsEnabled) {
-        setShowReminderModal(true);
+      // Update local state
+      setSignups(allSignups);
+      setCurrentUserName(attendeeName);
+
+      // Show notification options based on organizer's plan
+      if (textNotificationsEnabled && organizerPhone) {
+        // For pro/elite users, show text notification option
+        Alert.alert(
+          'Text Reminders',
+          'Would you like to receive text reminders for this event?',
+          [
+            {
+              text: 'No',
+              style: 'cancel',
+              onPress: () => {
+                Alert.alert('Success', 'You have successfully signed up for this event!');
+              }
+            },
+            {
+              text: 'Yes',
+              onPress: () => {
+                // Save phone number for notifications
+                Alert.alert('Success', 'You will receive text reminders for this event!');
+              }
+            }
+          ]
+        );
+      } else if (emailNotificationsEnabled && organizerEmail) {
+        // For free users, show email notification option
+        Alert.alert(
+          'Email Reminders',
+          'Would you like to receive email reminders for this event?',
+          [
+            {
+              text: 'No',
+              style: 'cancel',
+              onPress: () => {
+                Alert.alert('Success', 'You have successfully signed up for this event!');
+              }
+            },
+            {
+              text: 'Yes',
+              onPress: () => {
+                // Save email for notifications
+                Alert.alert('Success', 'You will receive email reminders for this event!');
+              }
+            }
+          ]
+        );
       } else {
-        // Close modal and reset fields
-        setModalVisible(false);
-        setAttendeeName('');
-        setPhoneNumber('');
-        setWantsReminders(false);
-        Alert.alert('Success', 'You have successfully signed up!');
+        Alert.alert('Success', 'You have successfully signed up for this event!');
       }
+
+      // Reset form
+      setModalVisible(false);
+      setSelectedSlot(null);
+      setAttendeeName('');
     } catch (error) {
-      console.error('Error signing up:', error);
-      Alert.alert('Error', 'Failed to sign up');
+      console.error('Error submitting signup:', error);
+      Alert.alert('Error', 'Failed to submit signup. Please try again.');
     }
   };
 
@@ -1315,6 +1360,22 @@ const EventSignUpScreen: React.FC<{
         style={[styles.container, { backgroundColor: currentScreenBgColor }]}
         resizeMode="cover"
       >
+        <View style={styles.chatButtonContainer}>
+          {(isPremium || isDesigner || currentEncryptedUsername === 'mbc82') && (
+            <TouchableOpacity
+              style={styles.chatButton}
+              onPress={() => {
+                // TODO: Implement chat functionality
+                Alert.alert('Chat', 'Chat functionality coming soon!');
+              }}
+            >
+              <View style={styles.notificationDot}>
+                <Text style={styles.notificationText}>1</Text>
+              </View>
+              <MaterialIcons name="chat" size={24} color="navy" />
+            </TouchableOpacity>
+          )}
+        </View>
         <ScrollView contentContainerStyle={[styles.scrollContent, styles.headerContainer]}>
           {/* Header Section */}
           <View style={[
@@ -2083,7 +2144,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: 'center',
-    paddingTop: 80,
+    paddingTop: 140,
     marginBottom: 20,
   },
   signedUpOverlay: {
@@ -2231,6 +2292,42 @@ const styles = StyleSheet.create({
   },
   reminderButtonText: {
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  chatButtonContainer: {
+    position: 'absolute',
+    top: 60,
+    right: 30,
+    zIndex: 9999,
+  },
+  chatButton: {
+    backgroundColor: 'gold',
+    padding: 15,
+    borderRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    borderWidth: 2,
+    borderColor: 'navy',
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FF3B30',
+    zIndex: 10000,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  notificationText: {
+    color: 'white',
+    fontSize: 14,
     fontWeight: 'bold',
   },
 });
