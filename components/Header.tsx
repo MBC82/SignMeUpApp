@@ -49,21 +49,24 @@ const Header: React.FC<HeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    height: 110,
+    height: 90,
     backgroundColor: 'gold',
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     width: '100%',
     paddingHorizontal: 16,
-    paddingTop: 50,
+    paddingTop: 40,
+    paddingBottom: 0,
   },
   rightSection: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
+    paddingBottom: 0,
   },
   iconButton: {
     padding: 8,
+    marginBottom: 0,
   },
 });
 
