@@ -19,6 +19,7 @@ import SignUpScreen from './screens/SignUpScreen';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import EventSignUpScreen from './screens/EventSignUpScreen';
 import { ChatScreen } from './screens/ChatScreen';
+import { NotificationsScreen } from './screens/NotificationsScreen';
 
 type EventDate = {
   date: string;
@@ -89,6 +90,7 @@ export type RootStackParamList = {
     isDesigner?: boolean;
   };
   Chat: { params: { eventId: string } };
+  Notifications: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -330,6 +332,7 @@ const App = () => {
                       headerShown: true,
                     }}
                   />
+                  <Stack.Screen name="Notifications" component={NotificationsScreen} />
                 </Stack.Navigator>
                 <BottomNavBar />
               </View>

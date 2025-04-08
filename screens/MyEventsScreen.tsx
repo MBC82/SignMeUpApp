@@ -18,6 +18,7 @@ import EncryptedStorage from 'react-native-encrypted-storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { checkLoginStatus, clearLoginStatus } from '../utils/StorageUtils';
 import ChatButton from '../components/ChatButton';
+import Header from '../components/Header';
 
 // Update type definitions at the top of the file
 type RootStackParamList = {
@@ -676,12 +677,14 @@ const MyEventsScreen = () => {
 
   // Only show this content if logged in
   return (
-    <ImageBackground
-      source={require('../ios/assets/blue.jpg')}
-      style={styles.background}
-    >
-      <View style={[styles.container, { backgroundColor: 'transparent' }]}>
-        <ScrollView style={styles.scrollView}>
+    <View style={styles.container}>
+      <Header username={currentUsername} />
+      <ImageBackground
+        source={require('../ios/assets/blue.jpg')}
+        style={styles.background}
+        resizeMode="stretch"
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.sectionContainer}>
             <View style={styles.centeredTitleContainer}>
               <Text style={styles.centeredTitle}>My Events</Text>
@@ -732,37 +735,31 @@ const MyEventsScreen = () => {
                 }
               }}
             >
-              <MaterialIcons name="add" size={24} color="white" />
+              <MaterialIcons name="add" size={24} color="navy" />
             </TouchableOpacity>
           </View>
         </ScrollView>
-        <ChatButton 
-          eventId="my-events"
-          isPremium={false}
-          isDesigner={false}
-          username={currentUsername}
-        />
-      </View>
-    </ImageBackground>
+      </ImageBackground>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   background: {
     flex: 1,
     width: '100%',
   },
-  container: {
-    flex: 1,
-    padding: 20,
-    paddingTop: 5,
-  },
-  scrollView: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
+    paddingTop: 0,
+    paddingBottom: 20,
   },
   sectionContainer: {
     marginBottom: 20,
-    marginTop: 20,
+    marginTop: 0,
     backgroundColor: 'transparent',
     borderRadius: 10,
     padding: 15,
@@ -771,8 +768,8 @@ const styles = StyleSheet.create({
   centeredTitleContainer: {
     alignItems: 'center',
     marginBottom: 10,
-    marginTop: 5,
-    paddingTop: 5,
+    marginTop: 0,
+    paddingTop: 0,
   },
   centeredTitle: {
     fontSize: 36,

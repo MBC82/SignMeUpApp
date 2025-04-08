@@ -20,6 +20,7 @@ import { useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import EncryptedStorage from 'react-native-encrypted-storage';
+import Header from '../components/Header';
 
 // Define the types for the navigation parameters
 type RootStackParamList = {
@@ -1361,21 +1362,17 @@ const EventSignUpScreen: React.FC<{
 
   return (
     <View style={[styles.container, { backgroundColor: screenBgColor || 'white' }]}>
+      <Header 
+        eventId={eventId}
+        isPremium={isPremium}
+        isDesigner={isDesigner}
+        username={username}
+      />
       <ImageBackground
         source={getBackgroundImageSource()}
         style={[styles.container, { backgroundColor: currentScreenBgColor }]}
         resizeMode="cover"
       >
-        <View style={styles.chatButtonContainer}>
-          {showChatButton && (
-            <TouchableOpacity
-              style={styles.chatButton}
-              onPress={() => navigation.navigate('Chat', { eventId })}
-            >
-              <MaterialIcons name="chat" size={32} color="navy" />
-            </TouchableOpacity>
-          )}
-        </View>
         <ScrollView contentContainerStyle={[styles.scrollContent, styles.headerContainer]}>
           {/* Header Section */}
           <View style={[
@@ -1521,248 +1518,6 @@ const EventSignUpScreen: React.FC<{
             </View>
           ))}
         </ScrollView>
-
-        {/* Sign Up Modal */}
-        <Modal
-          visible={isModalVisible}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback>
-                <View style={[styles.modalContent, { backgroundColor: currentModalTileColor }]}>
-                  <Text style={[
-                    styles.modalTitle,
-                    {
-                      fontSize: currentModalFontSize + 2,
-                      fontFamily: currentModalFontType,
-                      color: currentModalFontColor,
-                    }
-                  ]}>
-                    {editDateIndex !== null ? 'Edit Tile Name' : 'Sign Up for Event'}
-                  </Text>
-
-                  {editDateIndex !== null ? (
-                    <>
-                      <TextInput
-                        style={[
-                          styles.modalInput,
-                          {
-                            fontSize: currentModalFontSize,
-                            fontFamily: currentModalFontType,
-                            color: 'black',
-                          }
-                        ]}
-                        placeholder="Enter name"
-                        value={editName}
-                        onChangeText={setEditName}
-                        autoCapitalize="words"
-                        autoCorrect={false}
-                        autoFocus={true}
-                      />
-                      <View style={styles.applyToAllContainer}>
-                        <TouchableOpacity
-                          style={[styles.checkbox, applyToAll && styles.checkboxChecked]}
-                          onPress={() => setApplyToAll(!applyToAll)}
-                        >
-                          {applyToAll && <MaterialIcons name="check" size={20} color="white" />}
-                        </TouchableOpacity>
-                        <Text style={styles.applyToAllText}>Apply to all attendees</Text>
-                      </View>
-                      <View style={styles.applyToAllContainer}>
-                        <TouchableOpacity
-                          style={[styles.checkbox, applyNumbers && styles.checkboxChecked]}
-                          onPress={() => setApplyNumbers(!applyNumbers)}
-                        >
-                          {applyNumbers && <MaterialIcons name="check" size={20} color="white" />}
-                        </TouchableOpacity>
-                        <Text style={styles.applyToAllText}>Apply numbers to attendees</Text>
-                      </View>
-                      <View style={styles.applyToAllContainer}>
-                        <TouchableOpacity
-                          style={[styles.checkbox, applyToAllTimeSlots && styles.checkboxChecked]}
-                          onPress={() => setApplyToAllTimeSlots(!applyToAllTimeSlots)}
-                        >
-                          {applyToAllTimeSlots && <MaterialIcons name="check" size={20} color="white" />}
-                        </TouchableOpacity>
-                        <Text style={styles.applyToAllText}>Apply to all time slots</Text>
-                      </View>
-                      <View style={styles.modalButtonContainer}>
-                        <TouchableOpacity
-                          style={[styles.modalButton, { backgroundColor: 'gold' }]}
-                          onPress={() => {
-                            if (editName && editDateIndex !== null && editSlotIndex !== null) {
-                              handleEditConfirm();
-                            }
-                          }}
-                        >
-                          <Text style={[styles.modalButtonText, { color: currentModalFontColor }]}>Apply</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </>
-                  ) : (
-                    <>
-                      <Text style={[
-                        styles.inputLabel,
-                        {
-                          fontSize: currentModalFontSize,
-                          fontFamily: currentModalFontType,
-                          color: currentModalFontColor,
-                        }
-                      ]}>
-                        Your Name *
-                      </Text>
-                      <TextInput
-                        style={[
-                          styles.modalInput,
-                          {
-                            fontSize: currentModalFontSize,
-                            fontFamily: currentModalFontType,
-                            color: 'black',
-                          }
-                        ]}
-                        placeholder="Enter your full name"
-                        value={attendeeName}
-                        onChangeText={setAttendeeName}
-                        autoCapitalize="words"
-                        autoCorrect={false}
-                        autoFocus={true}
-                        returnKeyType="next"
-                      />
-
-                      <TouchableOpacity
-                        style={[styles.modalButton, { backgroundColor: 'navy' }]}
-                        onPress={handleConfirmSignUp}
-                      >
-                        <Text style={[styles.modalButtonText, { color: 'white' }]}>Sign Up</Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-
-        {/* Reminder Modal */}
-        <Modal
-          visible={showReminderModal}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => setShowReminderModal(false)}
-        >
-          <TouchableWithoutFeedback onPress={() => setShowReminderModal(false)}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback>
-                <View style={[styles.modalContent, { backgroundColor: currentModalTileColor }]}>
-                  <Text style={[
-                    styles.modalTitle,
-                    {
-                      fontSize: currentModalFontSize + 2,
-                      fontFamily: currentModalFontType,
-                      color: currentModalFontColor,
-                    }
-                  ]}>
-                    Would you like reminders?
-                  </Text>
-
-                  <View style={styles.reminderOptions}>
-                    {textNotificationsEnabled && (
-                      <TouchableOpacity
-                        style={[styles.reminderButton, { backgroundColor: 'navy' }]}
-                        onPress={() => {
-                          setReminderType('text');
-                          Alert.prompt(
-                            'Text Reminders',
-                            'Enter your phone number for text reminders:',
-                            [
-                              {
-                                text: 'Cancel',
-                                style: 'cancel',
-                              },
-                              {
-                                text: 'Save',
-                                onPress: (phone) => {
-                                  if (phone) {
-                                    setPhoneNumber(phone);
-                                    setWantsReminders(true);
-                                    setShowReminderModal(false);
-                                    setModalVisible(false);
-                                    Alert.alert('Success', 'You have successfully signed up with text reminders!');
-                                  }
-                                },
-                              },
-                            ],
-                            'plain-text',
-                            '',
-                            'phone-pad'
-                          );
-                        }}
-                      >
-                        <Text style={[styles.reminderButtonText, { color: 'white' }]}>
-                          Text Reminders
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-
-                    {emailNotificationsEnabled && (
-                      <TouchableOpacity
-                        style={[styles.reminderButton, { backgroundColor: 'navy' }]}
-                        onPress={() => {
-                          setReminderType('email');
-                          Alert.prompt(
-                            'Email Reminders',
-                            'Enter your email for email reminders:',
-                            [
-                              {
-                                text: 'Cancel',
-                                style: 'cancel',
-                              },
-                              {
-                                text: 'Save',
-                                onPress: (email) => {
-                                  if (email) {
-                                    setEmail(email);
-                                    setWantsReminders(true);
-                                    setShowReminderModal(false);
-                                    setModalVisible(false);
-                                    Alert.alert('Success', 'You have successfully signed up with email reminders!');
-                                  }
-                                },
-                              },
-                            ],
-                            'plain-text',
-                            '',
-                            'email-address'
-                          );
-                        }}
-                      >
-                        <Text style={[styles.reminderButtonText, { color: 'white' }]}>
-                          Email Reminders
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-
-                    <TouchableOpacity
-                      style={[styles.reminderButton, { backgroundColor: 'navy' }]}
-                      onPress={() => {
-                        setShowReminderModal(false);
-                        setModalVisible(false);
-                        Alert.alert('Success', 'You have successfully signed up!');
-                      }}
-                    >
-                      <Text style={[styles.reminderButtonText, { color: 'white' }]}>
-                        No Reminders
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
       </ImageBackground>
     </View>
   );
@@ -1773,7 +1528,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 150,
+    flexGrow: 1,
+    paddingTop: 70, // Account for TopNavBar
+    paddingBottom: 20,
   },
   header: {
     marginBottom: -5,
@@ -2137,7 +1894,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: 'center',
-    paddingTop: 140,
+    paddingTop: 20,
     marginBottom: 20,
   },
   signedUpOverlay: {
