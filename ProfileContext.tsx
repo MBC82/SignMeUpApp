@@ -6,7 +6,7 @@ import { safeGetItem, safeSetItem, bypassRemoveItem } from './utils/StorageUtils
 
 type Profile = {
   name: string;
-  username: string;
+  username?: string;
   email: string;
   phone: string;
   profileImage: string | null;

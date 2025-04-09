@@ -7,9 +7,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
-interface NotificationsScreenProps {}
-
-export const NotificationsScreen: React.FC<NotificationsScreenProps> = () => {
+export const NotificationsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
 
   // Empty notifications array since there are no signups yet

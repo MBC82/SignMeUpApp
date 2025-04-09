@@ -18,7 +18,6 @@ import EncryptedStorage from 'react-native-encrypted-storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { checkLoginStatus, clearLoginStatus } from '../utils/StorageUtils';
 import ChatButton from '../components/ChatButton';
-import Header from '../components/Header';
 
 // Update type definitions at the top of the file
 type RootStackParamList = {
@@ -678,7 +677,6 @@ const MyEventsScreen = () => {
   // Only show this content if logged in
   return (
     <View style={styles.container}>
-      <Header username={currentUsername} />
       <ImageBackground
         source={require('../ios/assets/blue.jpg')}
         style={styles.background}
@@ -714,29 +712,6 @@ const MyEventsScreen = () => {
                 </React.Fragment>
               ))
             )}
-            
-            <TouchableOpacity
-              style={styles.floatingActionButton}
-              onPress={() => {
-                if (isLoggedIn) {
-                  navigation.navigate('CreateEvent');
-                } else {
-                  Alert.alert(
-                    'Login Required',
-                    'Please log in to create events',
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      { 
-                        text: 'Log In', 
-                        onPress: () => navigation.navigate('ProfileSetup', { skipWelcome: true })
-                      }
-                    ]
-                  );
-                }
-              }}
-            >
-              <MaterialIcons name="add" size={24} color="navy" />
-            </TouchableOpacity>
           </View>
         </ScrollView>
       </ImageBackground>
@@ -750,65 +725,33 @@ const styles = StyleSheet.create({
   },
   background: {
     flex: 1,
-    width: '100%',
   },
   scrollContent: {
-    flexGrow: 1,
-    paddingTop: 0,
-    paddingBottom: 20,
+    padding: 20,
+    paddingTop: 50,
   },
   sectionContainer: {
-    marginBottom: 20,
-    marginTop: 0,
-    backgroundColor: 'transparent',
-    borderRadius: 10,
-    padding: 15,
-    marginHorizontal: 10,
+    flex: 1,
   },
   centeredTitleContainer: {
     alignItems: 'center',
-    marginBottom: 10,
-    marginTop: 0,
-    paddingTop: 0,
+    marginBottom: 20,
   },
   centeredTitle: {
-    fontSize: 36,
-    marginTop: 5,
-    alignSelf: 'center',
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
+    color: 'navy',
+    marginBottom: 10,
   },
   usernameText: {
-    fontSize: 14,
+    fontSize: 16,
     color: 'navy',
-    marginTop: 5,
-    marginBottom: -5,
-    textAlign: 'center',
   },
   emptyMessage: {
     fontSize: 16,
-    color: '#666',
-    fontStyle: 'italic',
+    color: 'navy',
     textAlign: 'center',
-    padding: 10,
-  },
-  floatingActionButton: {
-    position: 'relative',
-    alignSelf: 'center',
     marginTop: 20,
-    marginBottom: 30,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'gold',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
   },
   eventCard: {
     marginVertical: 8,

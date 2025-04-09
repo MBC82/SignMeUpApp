@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet, View } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -27,9 +27,11 @@ const ChatButton: React.FC<ChatButtonProps> = ({ eventId, isPremium, isDesigner,
   return (
     <TouchableOpacity
       style={styles.chatButtonContainer}
-      onPress={() => navigation.navigate('Chat', { params: { eventId } })}
+      onPress={() => navigation.navigate('Chat', { eventId })}
     >
-      <MaterialIcons name="chat" size={32} color="navy" />
+      <View style={styles.iconWrapper}>
+        <MaterialIcons name="chat" size={32} color="#FFD700" />
+      </View>
     </TouchableOpacity>
   );
 };
@@ -43,11 +45,16 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 30,
     zIndex: 1000,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+  },
+  iconWrapper: {
+    shadowColor: 'navy',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 1,
+    shadowRadius: 2,
+    elevation: 3,
   },
 });
 

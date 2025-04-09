@@ -1367,6 +1367,7 @@ const EventSignUpScreen: React.FC<{
         isPremium={isPremium}
         isDesigner={isDesigner}
         username={username}
+        hideChat={true}
       />
       <ImageBackground
         source={getBackgroundImageSource()}

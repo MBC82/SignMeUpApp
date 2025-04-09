@@ -18,11 +18,12 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import DropDownPicker from 'react-native-dropdown-picker';
 import StatBox from '../components/StatBox';
 import ToggleOption from '../components/ToggleOption';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { StackNavigationProp } from '@react-navigation/stack';
+import Header from '../components/Header';
 
 type EventDate = {
   date: string;
@@ -78,6 +79,7 @@ type UserProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, '
 const UserProfileScreen = () => {
   const { profile, updateProfile, signOut } = useContext(ProfileContext);
   const navigation = useNavigation<UserProfileScreenNavigationProp>();
+  const isFocused = useIsFocused();
   
   const [userStats, setUserStats] = useState({
     eventsCreated: 0,
@@ -131,6 +133,11 @@ const UserProfileScreen = () => {
 
   const [isProfileInfoExpanded, setIsProfileInfoExpanded] = useState(true);
 
+  const [isPremium, setIsPremium] = useState(false);
+  const [isDesigner, setIsDesigner] = useState(false);
+
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
   useEffect(() => {
     if (!profile.username) {
       navigation.navigate('ProfileSetup');
@@ -167,24 +174,39 @@ const UserProfileScreen = () => {
   useEffect(() => {
     const loadProfileImage = async () => {
       try {
-        const username = await EncryptedStorage.getItem('username');
-        if (username) {
-          // Clear any existing profile image first to ensure we start fresh
-          updateProfile({ profileImage: null });
-          
-          // Then try to load the image specific to this username
-          const savedImage = await AsyncStorage.getItem(`profileImage_${username!}`);
-          if (savedImage) {
-            updateProfile({ profileImage: savedImage });
-          }
+        const savedImage = await AsyncStorage.getItem('profileImage');
+        if (savedImage) {
+          setProfileImage(savedImage);
         }
       } catch (error) {
-        console.error('Error loading profile image:', error);
+        console.log('Error loading profile image:', error);
       }
     };
 
     loadProfileImage();
   }, []);
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const savedImage = await AsyncStorage.getItem('profileImage');
+        if (savedImage) {
+          updateProfile({ profileImage: savedImage });
+        }
+        const username = await AsyncStorage.getItem('username');
+        if (username) {
+          setIsPremium(await AsyncStorage.getItem('isPremium') === 'true');
+          setIsDesigner(await AsyncStorage.getItem('isDesigner') === 'true');
+        }
+      } catch (error) {
+        console.log('Error loading user data:', error);
+      }
+    };
+
+    if (isFocused) {
+      loadUserData();
+    }
+  }, [isFocused, updateProfile]);
 
   const loadUserStats = async () => {
     try {
@@ -249,9 +271,13 @@ const UserProfileScreen = () => {
           // Get the username
           const username = await EncryptedStorage.getItem('username');
           if (username) {
-            // Cast username to string to satisfy TypeScript type check
-            await AsyncStorage.setItem(`profileImage_${username!}`, selectedImage);
-            console.log('Successfully saved profile image to AsyncStorage');
+            // Save to username-specific storage
+            await AsyncStorage.setItem(`profileImage_${username}`, selectedImage);
+            console.log('Saved to username-specific storage');
+            
+            // Also save to generic storage
+            await AsyncStorage.setItem('profileImage', selectedImage);
+            console.log('Saved to generic storage');
           } else {
             console.warn('Username is undefined, cannot save profile image');
           }
@@ -262,10 +288,10 @@ const UserProfileScreen = () => {
             const userProfile = JSON.parse(userProfileString);
             userProfile.profileImage = selectedImage;
             await EncryptedStorage.setItem('userProfile', JSON.stringify(userProfile));
+            console.log('Saved to encrypted storage');
           }
         } catch (storageError) {
           console.error('Error saving profile image:', storageError);
-          // Still keep the image in the UI even if storage fails
           Alert.alert(
             'Warning',
             'Your profile image has been set, but might not persist after restarting the app.',
@@ -484,9 +510,9 @@ const UserProfileScreen = () => {
         >
           <View style={styles.profileHeader}>
             <View style={styles.profileImageContainer}>
-              {profile.profileImage ? (
+              {profileImage ? (
                 <Image
-                  source={{ uri: profile.profileImage }}
+                  source={{ uri: profileImage }}
                   style={styles.profileImage}
                 />
               ) : (
@@ -803,7 +829,7 @@ const styles = StyleSheet.create({
   scrollViewContainer: {
     flex: 1,
     padding: 20,
-    paddingTop: 80,
+    paddingTop: 50,
   },
   scrollContent: {
     paddingBottom: 170,

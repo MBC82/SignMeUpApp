@@ -19,11 +19,12 @@ const Header: React.FC<HeaderProps> = ({
   eventId = 'global', 
   isPremium = false, 
   isDesigner = false, 
-  username = '',
+  username, 
   hideChat = false
 }) => {
   const navigation = useNavigation<NavigationProp>();
   const shouldShowChat = (isPremium || isDesigner || username === 'mbc82') && !hideChat;
+  const displayUsername = username || '';
 
   return (
     <View style={styles.container}>
@@ -32,14 +33,18 @@ const Header: React.FC<HeaderProps> = ({
           style={styles.iconButton}
           onPress={() => navigation.navigate('Notifications')}
         >
-          <MaterialIcons name="notifications" size={32} color="navy" />
+          <View style={styles.iconWrapper}>
+            <MaterialIcons name="notifications" size={32} color="#FFD700" />
+          </View>
         </TouchableOpacity>
         {shouldShowChat && (
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={() => navigation.navigate('Chat', { params: { eventId } })}
+            onPress={() => navigation.navigate('Chat', { eventId })}
           >
-            <MaterialIcons name="chat" size={32} color="navy" />
+            <View style={styles.iconWrapper}>
+              <MaterialIcons name="chat" size={32} color="#FFD700" />
+            </View>
           </TouchableOpacity>
         )}
       </View>
@@ -49,15 +54,20 @@ const Header: React.FC<HeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    height: 90,
+    height: 150,
     backgroundColor: 'gold',
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'flex-end',
     width: '100%',
     paddingHorizontal: 16,
-    paddingTop: 40,
+    paddingTop: 80,
     paddingBottom: 0,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
   },
   rightSection: {
     flexDirection: 'row',
@@ -67,6 +77,16 @@ const styles = StyleSheet.create({
   iconButton: {
     padding: 8,
     marginBottom: 0,
+  },
+  iconWrapper: {
+    shadowColor: 'navy',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 1,
+    shadowRadius: 2,
+    elevation: 3,
   },
 });
 

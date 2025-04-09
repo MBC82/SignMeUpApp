@@ -20,6 +20,7 @@ import EncryptedStorage from 'react-native-encrypted-storage';
 import EventSignUpScreen from './screens/EventSignUpScreen';
 import { ChatScreen } from './screens/ChatScreen';
 import { NotificationsScreen } from './screens/NotificationsScreen';
+import TopNav from './components/TopNav';
 
 type EventDate = {
   date: string;
@@ -89,7 +90,7 @@ export type RootStackParamList = {
     isPremium?: boolean;
     isDesigner?: boolean;
   };
-  Chat: { params: { eventId: string } };
+  Chat: { eventId: string };
   Notifications: undefined;
 };
 
@@ -239,113 +240,95 @@ const BottomNavBar = () => {
 };
 
 const App = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
+  const [isDesigner, setIsDesigner] = useState(false);
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const encryptedLoginStatus = await EncryptedStorage.getItem('isLoggedIn');
+        const asyncLoginStatus = await AsyncStorage.getItem('isLoggedIn');
+        const loggedIn = encryptedLoginStatus === 'true' || asyncLoginStatus === 'true';
+        setIsLoggedIn(loggedIn);
+
+        if (loggedIn) {
+          const savedUsername = await EncryptedStorage.getItem('username');
+          setUsername(savedUsername);
+          
+          const premiumStatus = await AsyncStorage.getItem('isPremium');
+          const designerStatus = await AsyncStorage.getItem('isDesigner');
+          setIsPremium(premiumStatus === 'true');
+          setIsDesigner(designerStatus === 'true');
+        }
+      } catch (error) {
+        console.log('Error checking login status:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkLoginStatus();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="gold" />
+      </View>
+    );
+  }
+
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <ProfileProvider>
-          <EncryptedStorageProvider>
-            <NavigationContainer>
+    <NavigationContainer>
+      <ProfileProvider>
+        <LanguageProvider>
+          <ThemeProvider>
+            <EncryptedStorageProvider>
               <StatusBar barStyle="dark-content" />
-              <View style={styles.container}>
+              <View style={styles.mainContainer}>
+                <TopNav 
+                  isPremium={isPremium}
+                  isDesigner={isDesigner}
+                  username={username || undefined}
+                />
                 <Stack.Navigator
-                  initialRouteName="Home"
                   screenOptions={{
-                    headerStyle: {
-                      backgroundColor: '#ffffff',
-                    },
-                    headerTintColor: '#000000',
-                    headerTitleStyle: {
-                      fontWeight: 'bold',
-                    },
                     headerShown: false,
                   }}
                 >
-                  <Stack.Screen 
-                    name="Home" 
-                    component={HomeScreen}
-                    options={{
-                      title: 'SignMeUp'
-                    }}
-                  />
-                  <Stack.Screen 
-                    name="EventDetails" 
-                    component={EventDetailsScreen as any}
-                    options={{
-                      title: 'Event Details'
-                    }}
-                  />
-                  <Stack.Screen 
-                    name="CreateEvent" 
-                    component={CreateEventScreen as any}
-                    options={{
-                      title: 'Create Event'
-                    }}
-                  />
-                  <Stack.Screen 
-                    name="MyEvents" 
-                    component={MyEventsScreen}
-                    options={{
-                      title: 'My Events'
-                    }}
-                  />
-                  <Stack.Screen 
-                    name="EnhancedSignUp" 
-                    component={EnhancedSignUpScreen}
-                    options={{
-                      title: 'Sign Up'
-                    }}
-                  />
-                  <Stack.Screen 
-                    name="ProfileSetup" 
-                    component={ProfileSetupScreen}
-                    options={{
-                      title: 'Profile'
-                    }}
-                    initialParams={{ skipWelcome: false }}
-                  />
-                  <Stack.Screen 
-                    name="UserProfile" 
-                    component={UserProfileScreen}
-                    options={{
-                      title: 'My Profile'
-                    }}
-                  />
-                  <Stack.Screen 
-                    name="SignUpScreen" 
-                    component={SignUpScreen as React.ComponentType<any>}
-                    options={{
-                      title: 'Sign Up'
-                    }}
-                  />
-                  <Stack.Screen 
-                    name="EventSignUp" 
-                    component={EventSignUpScreen as React.ComponentType<any>}
-                    options={{
-                      title: 'Event Sign Up'
-                    }}
-                  />
-                  <Stack.Screen 
-                    name="Chat" 
-                    component={ChatScreen as React.ComponentType<any>}
-                    options={{
-                      title: 'Chat',
-                      headerShown: true,
-                    }}
-                  />
+                  <Stack.Screen name="Home" component={HomeScreen} />
+                  <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
+                  <Stack.Screen name="CreateEvent" component={CreateEventScreen} />
+                  <Stack.Screen name="MyEvents" component={MyEventsScreen} />
+                  <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
+                  <Stack.Screen name="UserProfile" component={UserProfileScreen} />
+                  <Stack.Screen name="EnhancedSignUp" component={EnhancedSignUpScreen} />
+                  <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
+                  <Stack.Screen name="EventSignUp" component={EventSignUpScreen} />
+                  <Stack.Screen name="Chat" component={ChatScreen} />
                   <Stack.Screen name="Notifications" component={NotificationsScreen} />
                 </Stack.Navigator>
                 <BottomNavBar />
               </View>
-            </NavigationContainer>
-          </EncryptedStorageProvider>
-        </ProfileProvider>
-      </LanguageProvider>
-    </ThemeProvider>
+            </EncryptedStorageProvider>
+          </ThemeProvider>
+        </LanguageProvider>
+      </ProfileProvider>
+    </NavigationContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  mainContainer: {
     flex: 1,
   },
   bottomNav: {
