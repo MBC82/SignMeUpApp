@@ -8,11 +8,17 @@ import { RootStackParamList } from '../App';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
-const TopNav = () => {
+interface TopNavProps {
+  isPremium?: boolean;
+  isDesigner?: boolean;
+  username?: string;
+}
+
+const TopNav: React.FC<TopNavProps> = ({ isPremium: propIsPremium, isDesigner: propIsDesigner, username: propUsername }) => {
   const navigation = useNavigation<NavigationProp>();
-  const [isPremium, setIsPremium] = useState(false);
-  const [isDesigner, setIsDesigner] = useState(false);
-  const [currentUsername, setCurrentUsername] = useState('');
+  const [isPremium, setIsPremium] = useState(propIsPremium || false);
+  const [isDesigner, setIsDesigner] = useState(propIsDesigner || false);
+  const [currentUsername, setCurrentUsername] = useState(propUsername || '');
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
 
   useEffect(() => {
@@ -47,9 +53,11 @@ const TopNav = () => {
       }
     };
 
-    loadUserData();
+    if (!propIsPremium && !propIsDesigner && !propUsername) {
+      loadUserData();
+    }
     checkUnreadMessages();
-  }, []);
+  }, [propIsPremium, propIsDesigner, propUsername]);
 
   const shouldShowChat = isPremium || isDesigner || currentUsername === 'mbc82';
   console.log('TopNav - Chat visibility check:', {
@@ -77,7 +85,7 @@ const TopNav = () => {
           onPress={() => {
             AsyncStorage.setItem('unreadMessages', 'false');
             setHasUnreadMessages(false);
-            navigation.navigate('Chat', { eventId: 'global' });
+            navigation.navigate('RecentChats');
           }}
         >
           <View style={styles.iconWrapper}>
