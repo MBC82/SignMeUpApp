@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
   scrollViewContainer: {
     flex: 1,
     padding: 20,
-    paddingTop: 50,
+    paddingTop: 120,
   },
   scrollContent: {
     paddingBottom: 170,
@@ -889,12 +889,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: 'navy',
-    marginBottom: 0,
+    marginBottom: -5,
   },
   userInfo: {
     fontSize: 16,
     color: 'white',
-    marginBottom: 10,
+    marginBottom: 5,
   },
   statsContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',

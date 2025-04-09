@@ -68,7 +68,7 @@ const TopNav = () => {
           onPress={() => navigation.navigate('Notifications')}
         >
           <View style={styles.iconWrapper}>
-            <MaterialIcons name="notifications" size={32} color="#FFD700" />
+            <MaterialIcons name="notifications" size={28} color="navy" />
           </View>
         </TouchableOpacity>
         
@@ -81,7 +81,7 @@ const TopNav = () => {
           }}
         >
           <View style={styles.iconWrapper}>
-            <MaterialIcons name="chat" size={32} color="#FFD700" />
+            <MaterialIcons name="chat" size={28} color="navy" />
             {hasUnreadMessages && <View style={styles.notificationDot} />}
           </View>
         </TouchableOpacity>
@@ -93,31 +93,28 @@ const TopNav = () => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 60 : StatusBar.currentHeight ? StatusBar.currentHeight + 20 : 40,
+    top: 0,
     left: 0,
     right: 0,
     zIndex: 1000,
+    backgroundColor: 'gold',
   },
   navContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 5,
+    marginTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 30,
+    paddingBottom: 10,
   },
   iconButton: {
     marginLeft: 0,
     padding: 8,
+    marginBottom: -5,
   },
   iconWrapper: {
-    shadowColor: 'navy',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 1,
-    shadowRadius: 2,
-    elevation: 3,
+    // Removed shadow styles
   },
   notificationDot: {
     position: 'absolute',

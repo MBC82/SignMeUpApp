@@ -101,6 +101,7 @@ const BottomNavBar = () => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const { profile } = React.useContext(ProfileContext);
+  const currentRoute = navigation.getState().routes[navigation.getState().routes.length - 1].name;
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -230,7 +231,12 @@ const BottomNavBar = () => {
               }}
             />
           ) : (
-            <MaterialIcons name="account-circle" size={30} color="navy" style={{ marginBottom: 4 }} />
+            <MaterialIcons 
+              name="account-circle" 
+              size={30} 
+              color="navy"
+              style={{ marginBottom: 4 }} 
+            />
           )}
           <Text style={styles.iconLabel}>My Profile</Text>
         </View>
@@ -356,9 +362,10 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    marginBottom: 4,
+    marginBottom: 2,
     borderWidth: 1,
     borderColor: 'navy',
+    marginTop: 3,
   },
 });
 

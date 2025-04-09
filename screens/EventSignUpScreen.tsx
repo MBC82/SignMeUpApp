@@ -1362,13 +1362,6 @@ const EventSignUpScreen: React.FC<{
 
   return (
     <View style={[styles.container, { backgroundColor: screenBgColor || 'white' }]}>
-      <Header 
-        eventId={eventId}
-        isPremium={isPremium}
-        isDesigner={isDesigner}
-        username={username}
-        hideChat={true}
-      />
       <ImageBackground
         source={getBackgroundImageSource()}
         style={[styles.container, { backgroundColor: currentScreenBgColor }]}
@@ -1384,7 +1377,8 @@ const EventSignUpScreen: React.FC<{
               width: '85%',
               borderColor: 'gold',
               borderWidth: 2,
-              marginBottom: 20
+              marginBottom: 20,
+              marginTop: 120 // Increased from 100 to 120 to move header lower
             }
           ]}>
             <Text style={[
@@ -1535,7 +1529,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: -5,
-    marginTop: 60,
+    marginTop: 0, // Remove the old navigation margin
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,

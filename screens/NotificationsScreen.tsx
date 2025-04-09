@@ -5,13 +5,21 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
-type NavigationProp = StackNavigationProp<RootStackParamList>;
+type NavigationProp = StackNavigationProp<RootStackParamList, 'Notifications'>;
 
 export const NotificationsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
 
   // Empty notifications array since there are no signups yet
   const notifications: { id: string; message: string; timestamp: string }[] = [];
+
+  const handleBackPress = () => {
+    console.log('Back button pressed');
+    console.log('Navigation state:', navigation.getState());
+    console.log('Can go back:', navigation.canGoBack());
+    console.log('Current route:', navigation.getState().routes);
+    navigation.pop();
+  };
 
   return (
     <ImageBackground
@@ -20,14 +28,14 @@ export const NotificationsScreen: React.FC = () => {
       resizeMode="stretch"
     >
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialIcons name="arrow-back" size={28} color="navy" />
-        </TouchableOpacity>
         <Text style={styles.title}>Notifications</Text>
       </View>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={handleBackPress}
+      >
+        <MaterialIcons name="arrow-back" size={28} color="navy" />
+      </TouchableOpacity>
       <ScrollView style={styles.container}>
         {notifications.length > 0 ? (
           notifications.map((notification) => (
@@ -60,7 +68,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
     paddingTop: 60,
     paddingHorizontal: 16,
@@ -68,14 +75,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'gold',
   },
   backButton: {
+    position: 'absolute',
+    top: 100,
+    left: 16,
     padding: 8,
-    marginRight: 16,
+    zIndex: 1,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: 'navy',
-    flex: 1,
+    textAlign: 'center',
   },
   notificationCard: {
     backgroundColor: 'white',

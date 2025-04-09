@@ -994,7 +994,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: -5,
-    marginTop: 60,
+    marginTop: 100,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,

@@ -1329,6 +1329,7 @@ const CreateEventScreen: React.FC<Props> = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     padding: 25,
+    paddingTop: 80,
     marginBottom: 80,
   },
   logo: {
@@ -1336,7 +1337,7 @@ const styles = StyleSheet.create({
     height: 215,
     resizeMode: 'contain',
     marginTop: -28,
-    marginBottom: -35,
+    marginBottom: -45,
   },
   inputContainer: {
     backgroundColor: 'rgba(253, 253, 253, 0.95)',

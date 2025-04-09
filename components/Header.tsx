@@ -34,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({
           onPress={() => navigation.navigate('Notifications')}
         >
           <View style={styles.iconWrapper}>
-            <MaterialIcons name="notifications" size={32} color="#FFD700" />
+            <MaterialIcons name="notifications" size={28} color="navy" />
           </View>
         </TouchableOpacity>
         {shouldShowChat && (
@@ -43,7 +43,7 @@ const Header: React.FC<HeaderProps> = ({
             onPress={() => navigation.navigate('Chat', { eventId })}
           >
             <View style={styles.iconWrapper}>
-              <MaterialIcons name="chat" size={32} color="#FFD700" />
+              <MaterialIcons name="chat" size={28} color="navy" />
             </View>
           </TouchableOpacity>
         )}
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 16,
     paddingTop: 80,
-    paddingBottom: 0,
+    paddingBottom: 10,
     position: 'absolute',
     top: 0,
     left: 0,
@@ -76,17 +76,10 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 8,
-    marginBottom: 0,
+    marginBottom: -5,
   },
   iconWrapper: {
-    shadowColor: 'navy',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 1,
-    shadowRadius: 2,
-    elevation: 3,
+    // Removed shadow styles
   },
 });
 

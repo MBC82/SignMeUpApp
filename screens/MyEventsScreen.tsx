@@ -728,7 +728,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingTop: 50,
+    paddingTop: 100,
   },
   sectionContainer: {
     flex: 1,
@@ -736,6 +736,7 @@ const styles = StyleSheet.create({
   centeredTitleContainer: {
     alignItems: 'center',
     marginBottom: 20,
+    marginTop: 20,
   },
   centeredTitle: {
     fontSize: 24,
