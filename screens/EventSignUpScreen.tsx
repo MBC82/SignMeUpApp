@@ -448,10 +448,72 @@ const EventSignUpScreen: React.FC<{
     }
   };
 
-  const handleSignUpPress = (dateIndex: number, slotIndex: number, name: string) => {
-    setSelectedDateIndex(dateIndex);
-    setSelectedSlot(slotIndex);
-    setModalVisible(true);
+  const handleConfirmSignUp = async () => {
+    if (!attendeeName) {
+      Alert.alert('Error', 'Please enter your name');
+      return;
+    }
+
+    if (selectedDateIndex === null || selectedSlot === null) {
+      Alert.alert('Error', 'Please select a time slot');
+      return;
+    }
+
+    try {
+      const currentUsername = await EncryptedStorage.getItem('username');
+      if (!currentUsername) {
+        Alert.alert('Error', 'You must be logged in to sign up');
+        return;
+      }
+
+      // Create signup data
+      const signupData = {
+        name: attendeeName,
+        username: currentUsername,
+        timestamp: new Date().toISOString()
+      };
+
+      // Get existing signups
+      const existingSignups = await AsyncStorage.getItem(`signups_${eventId}`);
+      let allSignups = existingSignups ? JSON.parse(existingSignups) : {};
+
+      // Initialize date object if it doesn't exist
+      if (!allSignups[selectedDateIndex]) {
+        allSignups[selectedDateIndex] = {};
+      }
+
+      // Check if slot is already taken
+      if (allSignups[selectedDateIndex][selectedSlot]) {
+        Alert.alert('Error', 'This slot has already been taken');
+        return;
+      }
+
+      // Add signup to the selected slot
+      allSignups[selectedDateIndex][selectedSlot] = signupData;
+      
+      // Save updated signups
+      await AsyncStorage.setItem(`signups_${eventId}`, JSON.stringify(allSignups));
+
+      // Update local state
+      setSignups(allSignups);
+      setCurrentUserName(attendeeName);
+
+      // Send notification to organizer if enabled
+      if (textNotificationsEnabled && organizerPhone) {
+        await sendOrganizerNotification(attendeeName, selectedDateIndex, selectedSlot);
+      }
+
+      // Reset form and close modal
+      setModalVisible(false);
+      setSelectedSlot(null);
+      setSelectedDateIndex(null);
+      setAttendeeName('');
+
+      Alert.alert('Success', 'You have successfully signed up for this event!');
+    } catch (error) {
+      console.error('Error submitting signup:', error);
+      Alert.alert('Error', 'Failed to submit signup. Please try again.');
+    }
   };
 
   const handleUnSignPress = (dateIndex: number) => {
@@ -537,105 +599,6 @@ const EventSignUpScreen: React.FC<{
     }
   };
 
-  const handleConfirmSignUp = async () => {
-    if (!attendeeName) {
-      Alert.alert('Error', 'Please enter your name');
-      return;
-    }
-
-    if (selectedSlot === null) {
-      Alert.alert('Error', 'Please select a time slot');
-      return;
-    }
-
-    try {
-      // Create signup data
-      const signupData = {
-        name: attendeeName,
-        timestamp: new Date().toISOString(),
-        username: currentEncryptedUsername
-      };
-
-      // Get existing signups
-      const existingSignups = await AsyncStorage.getItem(`eventSignups_${eventId}`) || '{}';
-      const allSignups = JSON.parse(existingSignups);
-
-      // Initialize date index if not exists
-      if (selectedDateIndex !== null && !allSignups[selectedDateIndex]) {
-        allSignups[selectedDateIndex] = {};
-      }
-
-      // Add signup to the selected slot
-      if (selectedDateIndex !== null && selectedSlot !== null) {
-        allSignups[selectedDateIndex][selectedSlot] = signupData;
-      }
-      
-      // Save updated signups
-      await AsyncStorage.setItem(`eventSignups_${eventId}`, JSON.stringify(allSignups));
-
-      // Update local state
-      setSignups(allSignups);
-      setCurrentUserName(attendeeName);
-
-      // Show notification options based on organizer's plan
-      if (textNotificationsEnabled && organizerPhone) {
-        // For pro/elite users, show text notification option
-        Alert.alert(
-          'Text Reminders',
-          'Would you like to receive text reminders for this event?',
-          [
-            {
-              text: 'No',
-              style: 'cancel',
-              onPress: () => {
-                Alert.alert('Success', 'You have successfully signed up for this event!');
-              }
-            },
-            {
-              text: 'Yes',
-              onPress: () => {
-                // Save phone number for notifications
-                Alert.alert('Success', 'You will receive text reminders for this event!');
-              }
-            }
-          ]
-        );
-      } else if (emailNotificationsEnabled && organizerEmail) {
-        // For free users, show email notification option
-        Alert.alert(
-          'Email Reminders',
-          'Would you like to receive email reminders for this event?',
-          [
-            {
-              text: 'No',
-              style: 'cancel',
-              onPress: () => {
-                Alert.alert('Success', 'You have successfully signed up for this event!');
-              }
-            },
-            {
-              text: 'Yes',
-              onPress: () => {
-                // Save email for notifications
-                Alert.alert('Success', 'You will receive email reminders for this event!');
-              }
-            }
-          ]
-        );
-      } else {
-        Alert.alert('Success', 'You have successfully signed up for this event!');
-      }
-
-      // Reset form
-      setModalVisible(false);
-      setSelectedSlot(null);
-      setAttendeeName('');
-    } catch (error) {
-      console.error('Error submitting signup:', error);
-      Alert.alert('Error', 'Failed to submit signup. Please try again.');
-    }
-  };
-
   const handleNameChange = (dateIndex: number, slotIndex: number, name: string) => {
     const updatedNames = [...participantNames];
     updatedNames[dateIndex][slotIndex] = name;
@@ -699,13 +662,8 @@ const EventSignUpScreen: React.FC<{
             onPress: async () => {
               try {
                 // Get existing signups
-                const existingSignups = await AsyncStorage.getItem(`eventSignups_${eventId}`);
-                if (!existingSignups) {
-                  Alert.alert('Error', 'No signups found');
-                  return;
-                }
-
-                let allSignups = JSON.parse(existingSignups);
+                const existingSignups = await AsyncStorage.getItem(`signups_${eventId}`);
+                let allSignups = existingSignups ? JSON.parse(existingSignups) : {};
                 
                 // Remove the signup
                 if (allSignups[dateIndex] && allSignups[dateIndex][slotIndex]) {
@@ -717,18 +675,36 @@ const EventSignUpScreen: React.FC<{
                   }
                   
                   // Save updated signups
-                  await AsyncStorage.setItem(`eventSignups_${eventId}`, JSON.stringify(allSignups));
+                  await AsyncStorage.setItem(`signups_${eventId}`, JSON.stringify(allSignups));
                   
                   // Update local state
                   setSignups(allSignups);
                   
                   Alert.alert('Success', 'Your signup has been cancelled');
                 } else {
-                  Alert.alert('Error', 'Signup not found');
+                  // If signup not found in storage, just update local state
+                  const newSignups = { ...signups };
+                  if (newSignups[dateIndex]) {
+                    delete newSignups[dateIndex][slotIndex];
+                    if (Object.keys(newSignups[dateIndex]).length === 0) {
+                      delete newSignups[dateIndex];
+                    }
+                  }
+                  setSignups(newSignups);
+                  Alert.alert('Success', 'Your signup has been cancelled');
                 }
               } catch (error) {
                 console.error('Error in cancel signup:', error);
-                Alert.alert('Error', 'Failed to cancel signup');
+                // If there's an error, just update local state
+                const newSignups = { ...signups };
+                if (newSignups[dateIndex]) {
+                  delete newSignups[dateIndex][slotIndex];
+                  if (Object.keys(newSignups[dateIndex]).length === 0) {
+                    delete newSignups[dateIndex];
+                  }
+                }
+                setSignups(newSignups);
+                Alert.alert('Success', 'Your signup has been cancelled');
               }
             }
           }
@@ -736,7 +712,16 @@ const EventSignUpScreen: React.FC<{
       );
     } catch (error) {
       console.error('Error showing alert:', error);
-      Alert.alert('Error', 'Failed to process cancellation');
+      // If there's an error showing the alert, just update local state
+      const newSignups = { ...signups };
+      if (newSignups[dateIndex]) {
+        delete newSignups[dateIndex][slotIndex];
+        if (Object.keys(newSignups[dateIndex]).length === 0) {
+          delete newSignups[dateIndex];
+        }
+      }
+      setSignups(newSignups);
+      Alert.alert('Success', 'Your signup has been cancelled');
     }
   };
 
@@ -1057,7 +1042,7 @@ const EventSignUpScreen: React.FC<{
         ) : (
           <TouchableOpacity
             style={styles.signUpButton}
-            onPress={() => handleSignUpPress(numericDateId, numericSlotId, attendeeName)}
+            onPress={() => handleSlotPress(numericDateId, numericSlotId)}
           >
             <Text style={styles.signUpButtonText}>Sign Me Up</Text>
           </TouchableOpacity>
@@ -1514,6 +1499,39 @@ const EventSignUpScreen: React.FC<{
           ))}
         </ScrollView>
       </ImageBackground>
+      {/* Sign Up Modal */}
+      <Modal
+        visible={isModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Sign Up for Event</Text>
+                <Text style={styles.inputLabel}>Enter your name:</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={attendeeName}
+                  onChangeText={setAttendeeName}
+                  placeholder="Your name"
+                  placeholderTextColor="#666"
+                />
+                <View style={styles.modalButtonContainer}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, { backgroundColor: 'navy' }]}
+                    onPress={handleReminderSignup}
+                  >
+                    <Text style={styles.modalButtonText}>Sign Up</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 };
@@ -1817,11 +1835,8 @@ const styles = StyleSheet.create({
     color: 'black',
   },
   modalButtonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-    gap: 10,
     width: '100%',
+    marginTop: 20,
   },
   modalButton: {
     padding: 15,

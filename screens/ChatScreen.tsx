@@ -5,191 +5,206 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
+  SafeAreaView,
 } from 'react-native';
-import { ChatService } from '../services/firebase';
-import { useEncryptedStorage } from '../contexts/EncryptedStorageContext';
+import { ChatService } from '../services/chatService';
+import { getAuth } from '@react-native-firebase/auth';
+import { Unsubscribe } from '@react-native-firebase/firestore';
+import { initializeFirebase } from '../firebaseInit';
+import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { chatStyles } from '../styles/chatStyles';
+
+interface Message {
+  id: string;
+  text: string;
+  userId: string;
+  userName: string;
+  userPhotoURL?: string;
+  timestamp: FirebaseFirestoreTypes.Timestamp;
+}
 
 interface ChatScreenProps {
   route: {
     params: {
       eventId: string;
+      eventName: string;
     };
   };
+  navigation: any;
 }
 
-interface Message {
-  id: string;
-  message: string;
-  senderId: string;
-  senderName: string;
-  timestamp: number;
-}
-
-export const ChatScreen: React.FC<ChatScreenProps> = ({ route }) => {
-  const { eventId } = route.params;
+export const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
+  const { eventId, eventName } = route.params;
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [username, setUsername] = useState<string>('');
-  const { getItem: getEncryptedItem } = useEncryptedStorage();
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const flatListRef = useRef<FlatList>(null);
+  const [currentUser, setCurrentUser] = useState(getAuth().currentUser);
 
   useEffect(() => {
-    const loadUsername = async () => {
-      const storedUsername = await getEncryptedItem('username');
-      if (storedUsername) {
-        setUsername(storedUsername);
+    const setupFirebase = async () => {
+      try {
+        await initializeFirebase();
+        setCurrentUser(getAuth().currentUser);
+      } catch (error) {
+        console.error('Error initializing Firebase:', error);
+        setError('Failed to initialize chat service');
+        setIsLoading(false);
       }
     };
-    loadUsername();
-  }, [getEncryptedItem]);
+
+    setupFirebase();
+  }, []);
 
   useEffect(() => {
-    const unsubscribe = ChatService.getMessages(eventId, (newMessages) => {
-      setMessages(newMessages);
-      setLoading(false);
-    });
+    let unsubscribe: Unsubscribe | undefined;
 
-    return () => unsubscribe();
-  }, [eventId]);
+    const setupChat = async () => {
+      try {
+        if (!currentUser) {
+          setError('User not authenticated');
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if user can access chat
+        const canAccess = await ChatService.canAccessChat(eventId, currentUser.uid);
+        if (!canAccess) {
+          setError('You do not have access to this chat');
+          setIsLoading(false);
+          return;
+        }
+
+        // Subscribe to messages
+        unsubscribe = ChatService.subscribeToMessages(eventId, (newMessages: Message[]) => {
+          setMessages(newMessages);
+          // Scroll to bottom when new messages arrive
+          setTimeout(() => {
+            if (flatListRef.current) {
+              flatListRef.current.scrollToEnd({ animated: true });
+            }
+          }, 100);
+        });
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error setting up chat:', error);
+        setError('Failed to load chat messages');
+        setIsLoading(false);
+      }
+    };
+
+    if (currentUser) {
+      setupChat();
+    }
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [eventId, currentUser]);
 
   const sendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !currentUser) return;
 
-    const currentUsername = await getEncryptedItem('username');
-    if (!currentUsername) return;
-
-    await ChatService.sendMessage(eventId, newMessage.trim(), currentUsername, currentUsername);
-    setNewMessage('');
+    try {
+      await ChatService.sendMessage(
+        eventId,
+        currentUser.uid,
+        currentUser.displayName || 'Anonymous',
+        currentUser.photoURL || undefined,
+        newMessage.trim()
+      );
+      setNewMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      Alert.alert('Error', 'Failed to send message');
+    }
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
-    const isCurrentUser = item.senderId === username;
-    
+    const isCurrentUser = item.userId === currentUser?.uid;
     return (
       <View style={[
-        styles.messageContainer,
-        isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage
+        chatStyles.messageContainer,
+        isCurrentUser ? chatStyles.currentUserMessage : chatStyles.otherUserMessage
       ]}>
-        <Text style={styles.senderName}>{item.senderName}</Text>
-        <Text style={styles.messageText}>{item.message}</Text>
-        <Text style={styles.timestamp}>
-          {new Date(item.timestamp).toLocaleTimeString()}
+        <Text style={chatStyles.senderName}>{item.userName}</Text>
+        <Text style={chatStyles.messageText}>{item.text}</Text>
+        <Text style={chatStyles.timestamp}>
+          {item.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>
       </View>
     );
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+      <View style={chatStyles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={chatStyles.container}>
+        <Text style={chatStyles.errorText}>{error}</Text>
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
-        onLayout={() => flatListRef.current?.scrollToEnd()}
-      />
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={newMessage}
-          onChangeText={setNewMessage}
-          placeholder="Type a message..."
-          multiline
-        />
-        <TouchableOpacity
-          style={styles.sendButton}
-          onPress={sendMessage}
-          disabled={!newMessage.trim()}
-        >
-          <Text style={styles.sendButtonText}>Send</Text>
+    <SafeAreaView style={chatStyles.container}>
+      <View style={chatStyles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={chatStyles.backButton}>
+          <MaterialIcons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
+        <Text style={chatStyles.headerTitle}>{eventName}</Text>
+        <View style={{ width: 40 }} />
       </View>
-    </KeyboardAvoidingView>
+      
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        {messages.length > 0 ? (
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ padding: 10 }}
+            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+            onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          />
+        ) : (
+          <View style={chatStyles.loadingContainer}>
+            <Text style={chatStyles.emptyMessage}>No messages yet. Start the conversation!</Text>
+          </View>
+        )}
+        
+        <View style={chatStyles.inputContainer}>
+          <TextInput
+            style={chatStyles.input}
+            value={newMessage}
+            onChangeText={setNewMessage}
+            placeholder="Type a message..."
+            placeholderTextColor="#999"
+            multiline
+          />
+          <TouchableOpacity style={chatStyles.sendButton} onPress={sendMessage} disabled={!newMessage.trim()}>
+            <MaterialIcons name="send" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  messageContainer: {
-    padding: 10,
-    marginVertical: 5,
-    marginHorizontal: 10,
-    borderRadius: 10,
-    maxWidth: '80%',
-  },
-  currentUserMessage: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#DCF8C6',
-  },
-  otherUserMessage: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#E8E8E8',
-  },
-  senderName: {
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  messageText: {
-    fontSize: 16,
-  },
-  timestamp: {
-    fontSize: 12,
-    color: '#666',
-    alignSelf: 'flex-end',
-    marginTop: 5,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    padding: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#E8E8E8',
-    backgroundColor: '#fff',
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    marginRight: 10,
-    maxHeight: 100,
-  },
-  sendButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#007AFF',
-    borderRadius: 20,
-    paddingHorizontal: 20,
-  },
-  sendButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-}); 
+}; 
