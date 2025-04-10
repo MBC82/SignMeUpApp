@@ -9,22 +9,18 @@ import {
   Image,
   Platform,
   SafeAreaView,
+  ActivityIndicator,
   Alert,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../App';
 import { ChatService } from '../services/chatService';
 import { ChatParticipant } from '../types/chat';
 import { getAuth } from '@react-native-firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Define the navigation type
-type RootStackParamList = {
-  Home: undefined;
-  Chat: { eventId: string; eventName: string };
-  // Add other routes as needed
-};
+import { chatColors } from '../styles/chatStyles';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -56,7 +52,20 @@ export const CreateChatScreen = () => {
     if (text.length >= 2) {
       try {
         setLoading(true);
-        const results = await ChatService.searchUsers(text);
+        let results;
+        
+        try {
+          // Try to search by username first
+          results = await ChatService.searchUsers(text);
+        } catch (error) {
+          console.log('Error searching by username, falling back to getting all users:', error);
+          // Fallback to getting all users and filtering them
+          results = await ChatService.getAllUsers();
+          results = results.filter(user => 
+            user.userName.toLowerCase().includes(text.toLowerCase())
+          );
+        }
+        
         // Filter out current user
         const filteredResults = results.filter(user => user.userName !== username);
         setSearchResults(filteredResults);
@@ -120,72 +129,76 @@ export const CreateChatScreen = () => {
           <Text style={styles.headerTitle}>Create Chat</Text>
           <TouchableOpacity 
             onPress={handleCreateChat}
-            style={[styles.createButton, { opacity: selectedUsers.length > 0 ? 1 : 0.5 }]}
+            style={[
+              styles.createButton, 
+              { opacity: selectedUsers.length > 0 ? 1 : 0.5 }
+            ]}
             disabled={selectedUsers.length === 0 || loading}
           >
             <Text style={styles.createButtonText}>Create</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.mainContent}>
-          <View style={styles.centeredContent}>
-            <View style={styles.selectedUsers}>
-              <FlatList
-                data={selectedUsers}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={item => item.userId}
-                renderItem={({ item }) => (
-                  <View style={styles.selectedUserChip}>
-                    <Text style={styles.selectedUserText}>{item.userName}</Text>
-                    <TouchableOpacity onPress={() => handleRemoveUser(item.userId)}>
-                      <MaterialIcons name="close" size={20} color="white" />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              />
-            </View>
-
+        <View style={styles.contentContainer}>
+          <View style={styles.toContainer}>
+            <Text style={styles.toLabel}>to:</Text>
             <View style={styles.searchContainer}>
-              <MaterialIcons name="search" size={24} color="white" style={styles.searchIcon} />
+              <View style={styles.selectedUsers}>
+                <FlatList
+                  data={selectedUsers}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={item => item.userId}
+                  renderItem={({ item }) => (
+                    <View style={styles.selectedUserChip}>
+                      <Text style={styles.selectedUserText}>{item.userName}</Text>
+                      <TouchableOpacity onPress={() => handleRemoveUser(item.userId)}>
+                        <MaterialIcons name="close" size={20} color="white" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                />
+              </View>
+              
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search users..."
-                placeholderTextColor="#999"
+                placeholder="Search for..."
+                placeholderTextColor="#aaa"
                 value={searchTerm}
                 onChangeText={handleSearch}
               />
             </View>
-
-            {loading ? (
-              <View style={styles.loadingContainer}>
-                <Text style={styles.loadingText}>Searching...</Text>
-              </View>
-            ) : searchResults.length > 0 ? (
-              <FlatList
-                data={searchResults}
-                keyExtractor={item => item.userId}
-                style={styles.searchResults}
-                renderItem={({ item }) => (
-                  <TouchableOpacity 
-                    style={styles.userItem}
-                    onPress={() => handleSelectUser(item)}
-                  >
-                    {item.userPhotoURL ? (
-                      <Image source={{ uri: item.userPhotoURL }} style={styles.userPhoto} />
-                    ) : (
-                      <MaterialIcons name="account-circle" size={40} color="white" />
-                    )}
-                    <Text style={styles.userName}>{item.userName}</Text>
-                  </TouchableOpacity>
-                )}
-              />
-            ) : searchTerm.length >= 2 ? (
-              <View style={styles.noResultsContainer}>
-                <Text style={styles.noResultsText}>No users found</Text>
-              </View>
-            ) : null}
           </View>
+
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={chatColors.accent} />
+              <Text style={styles.loadingText}>Searching...</Text>
+            </View>
+          ) : searchResults.length > 0 ? (
+            <FlatList
+              data={searchResults}
+              keyExtractor={item => item.userId}
+              style={styles.searchResults}
+              renderItem={({ item }) => (
+                <TouchableOpacity 
+                  style={styles.userItem}
+                  onPress={() => handleSelectUser(item)}
+                >
+                  {item.userPhotoURL ? (
+                    <Image source={{ uri: item.userPhotoURL }} style={styles.userPhoto} />
+                  ) : (
+                    <MaterialIcons name="account-circle" size={40} color="white" />
+                  )}
+                  <Text style={styles.userName}>{item.userName}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          ) : searchTerm.length >= 2 ? (
+            <View style={styles.noResultsContainer}>
+              <Text style={styles.noResultsText}>No users found</Text>
+            </View>
+          ) : null}
         </View>
       </View>
     </SafeAreaView>
@@ -195,12 +208,12 @@ export const CreateChatScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: 'navy',
-    paddingTop: Platform.OS === 'ios' ? 40 : 20,
+    backgroundColor: 'royalblue',
+    paddingTop: Platform.OS === 'android' ? 30 : 0,
   },
   container: {
     flex: 1,
-    backgroundColor: 'navy',
+    backgroundColor: 'white',
   },
   header: {
     flexDirection: 'row',
@@ -208,91 +221,78 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     height: 56,
-    backgroundColor: 'navy',
-    borderBottomWidth: 1,
-    borderBottomColor: '#334',
+    backgroundColor: 'royalblue',
   },
-  mainContent: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    backgroundColor: 'navy',
-    paddingTop: 30,
-  },
-  centeredContent: {
-    width: '90%',
-    maxWidth: 400,
-    backgroundColor: '#001133',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
   },
   backButton: {
     padding: 8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: 'white',
   },
   createButton: {
     padding: 8,
   },
   createButtonText: {
-    color: '#7af',
+    color: 'white',
     fontWeight: 'bold',
+    fontSize: 16,
+  },
+  contentContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+    paddingHorizontal: 16,
+  },
+  toContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    paddingBottom: 10,
+  },
+  toLabel: {
+    fontSize: 22,
+    color: 'black',
+    marginRight: 10,
+  },
+  searchContainer: {
+    flex: 1,
   },
   selectedUsers: {
-    minHeight: 50,
-    marginBottom: 16,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 5,
   },
   selectedUserChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#334',
+    backgroundColor: '#eee',
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
     marginRight: 8,
+    marginBottom: 5,
   },
   selectedUserText: {
     marginRight: 4,
-    color: 'white',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#223',
-    borderRadius: 25,
-    padding: 8,
-    marginBottom: 16,
-  },
-  searchIcon: {
-    marginRight: 8,
-    color: '#7af',
+    color: 'black',
   },
   searchInput: {
-    flex: 1,
-    height: 40,
-    color: 'white',
-    fontSize: 16,
+    color: '#666',
+    fontSize: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 0,
   },
   searchResults: {
-    maxHeight: 300,
+    marginTop: 10,
   },
   userItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#334',
+    borderBottomColor: '#eee',
   },
   userPhoto: {
     width: 40,
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 16,
-    color: 'white',
+    color: 'black',
   },
   loadingContainer: {
     flex: 1,
@@ -310,17 +310,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: 'white',
+    marginTop: 10,
+    color: '#666',
     fontSize: 16,
-    fontWeight: 'bold',
   },
   noResultsContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingTop: 40,
   },
   noResultsText: {
-    color: 'white',
+    color: '#999',
     fontSize: 16,
   },
 });

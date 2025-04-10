@@ -14,6 +14,7 @@ export const ChatService = {
         .limit(10)
         .get();
 
+      // Convert to array of ChatParticipant objects
       return usersSnapshot.docs.map(doc => ({
         userId: doc.id,
         userName: doc.data().username || doc.data().name || 'Unknown User',
@@ -22,6 +23,26 @@ export const ChatService = {
       }));
     } catch (error) {
       console.error('Error searching users:', error);
+      throw error;
+    }
+  },
+
+  // Get all users for testing purposes
+  async getAllUsers(): Promise<ChatParticipant[]> {
+    try {
+      const usersSnapshot = await firestoreService
+        .collection('users')
+        .limit(20)
+        .get();
+
+      return usersSnapshot.docs.map(doc => ({
+        userId: doc.id,
+        userName: doc.data().username || doc.data().name || 'Unknown User',
+        userPhotoURL: doc.data().profileImage || doc.data().photoURL,
+        lastSeen: doc.data().lastSeen || Timestamp.now()
+      }));
+    } catch (error) {
+      console.error('Error getting all users:', error);
       throw error;
     }
   },

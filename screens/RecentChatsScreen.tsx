@@ -4,64 +4,128 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  FlatList,
+  Image,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
-import ChatUserDropdown from '../components/ChatUserDropdown';
-import { setupTestData } from '../utils/setupTestData';
+import { chatColors } from '../styles/chatStyles';
+import { ChatService } from '../services/chatService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
+interface ChatItem {
+  id: string;
+  name: string;
+  lastMessage: string;
+  timestamp: Date;
+  isGroup: boolean;
+}
+
 const RecentChatsScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const [chats, setChats] = useState<ChatItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [username, setUsername] = useState<string>('');
 
   useEffect(() => {
-    setupTestData();
-  }, []);
+    loadUserData();
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadChats();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
-  const handleSelectChat = (eventId: string, userId?: string) => {
-    setIsDropdownVisible(false);
-    navigation.navigate('Chat', { 
-      eventId,
-      userId, // If userId is provided, it's a direct message, otherwise it's a group chat
+  const loadUserData = async () => {
+    try {
+      const storedUsername = await AsyncStorage.getItem('username');
+      if (storedUsername) {
+        setUsername(storedUsername);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  };
+
+  const loadChats = async () => {
+    setLoading(true);
+    // In a real app, you would load chats from a service
+    // For now, we'll use mock data
+    const mockChats: ChatItem[] = [
+      // You could add mock data here if desired
+    ];
+    setChats(mockChats);
+    setLoading(false);
+  };
+
+  const handleCreateChat = () => {
+    navigation.navigate('CreateChat');
+  };
+
+  const handleSelectChat = (chat: ChatItem) => {
+    navigation.navigate('Chat', {
+      eventId: chat.id,
+      eventName: chat.name
     });
   };
+
+  const renderChatItem = ({ item }: { item: ChatItem }) => (
+    <TouchableOpacity 
+      style={styles.chatItem}
+      onPress={() => handleSelectChat(item)}
+    >
+      <View style={styles.chatAvatar}>
+        <MaterialIcons 
+          name={item.isGroup ? "group" : "person"} 
+          size={24} 
+          color="white" 
+        />
+      </View>
+      <View style={styles.chatInfo}>
+        <Text style={styles.chatName}>{item.name}</Text>
+        <Text style={styles.chatMessage} numberOfLines={1}>
+          {item.lastMessage}
+        </Text>
+      </View>
+      <Text style={styles.chatTime}>
+        {item.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+      </Text>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>Recent Chats</Text>
+        <Text style={styles.headerText}>Chats</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity
             style={styles.headerButton}
-            onPress={() => setIsDropdownVisible(true)}
+            onPress={handleCreateChat}
           >
             <MaterialIcons name="add" size={28} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => {/* TODO: Implement search */}}
-          >
-            <MaterialIcons name="search" size={28} color="white" />
-          </TouchableOpacity>
         </View>
       </View>
-      <View style={styles.emptyContainer}>
-        <MaterialIcons name="chat-bubble-outline" size={64} color="#4B68FF" />
-        <Text style={styles.emptyText}>No chats yet</Text>
-        <Text style={styles.emptySubText}>
-          Your recent conversations will appear here
-        </Text>
-      </View>
 
-      <ChatUserDropdown
-        visible={isDropdownVisible}
-        onClose={() => setIsDropdownVisible(false)}
-        onSelectChat={handleSelectChat}
-      />
+      {chats.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <MaterialIcons name="chat-bubble-outline" size={64} color={chatColors.accent} />
+          <Text style={styles.emptyText}>No chats yet</Text>
+          <Text style={styles.emptySubText}>
+            Start a conversation by tapping the + button
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={chats}
+          renderItem={renderChatItem}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.chatList}
+        />
+      )}
     </View>
   );
 };
@@ -69,23 +133,22 @@ const RecentChatsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0F2C',
+    backgroundColor: chatColors.primary,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    paddingTop: 140,
-    backgroundColor: '#0A0F2C',
+    paddingTop: 60,
+    backgroundColor: chatColors.primary,
     borderBottomWidth: 1,
-    borderBottomColor: '#FFD700',
-    paddingBottom: 15,
+    borderBottomColor: chatColors.highlight,
   },
   headerText: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: 'white',
+    color: chatColors.text,
   },
   headerButtons: {
     flexDirection: 'row',
@@ -95,7 +158,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFD700',
+    backgroundColor: chatColors.accent,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -104,20 +167,55 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
-    marginBottom: 200,
-    marginTop: 60,
   },
   emptyText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: 'white',
-    marginTop: 8,
+    color: chatColors.text,
+    marginTop: 16,
     marginBottom: 8,
   },
   emptySubText: {
     fontSize: 16,
     color: '#8F9BB3',
     textAlign: 'center',
+  },
+  chatList: {
+    padding: 10,
+  },
+  chatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  chatAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: chatColors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  chatInfo: {
+    flex: 1,
+  },
+  chatName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: chatColors.text,
+    marginBottom: 4,
+  },
+  chatMessage: {
+    fontSize: 14,
+    color: '#8F9BB3',
+  },
+  chatTime: {
+    fontSize: 12,
+    color: '#8F9BB3',
+    marginLeft: 10,
   },
 });
 

@@ -20,6 +20,7 @@ import EventSignUpScreen from './screens/EventSignUpScreen';
 import { ChatScreen } from './screens/ChatScreen';
 import RecentChatsScreen from './screens/RecentChatsScreen';
 import { NotificationsScreen } from './screens/NotificationsScreen';
+import { CreateChatScreen } from './screens/CreateChatScreen';
 import TopNav from './components/TopNav';
 import BottomNavBar from './components/BottomNavBar';
 
@@ -94,6 +95,7 @@ export type RootStackParamList = {
   Chat: { eventId: string; eventName: string };
   RecentChats: undefined;
   Notifications: undefined;
+  CreateChat: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -208,6 +210,10 @@ const App = () => {
                   <Stack.Screen 
                     name="Notifications" 
                     component={NotificationsScreen as React.ComponentType<ScreenProps>} 
+                  />
+                  <Stack.Screen 
+                    name="CreateChat" 
+                    component={CreateChatScreen as React.ComponentType<ScreenProps>} 
                   />
                 </Stack.Navigator>
                 <BottomNavBar />
