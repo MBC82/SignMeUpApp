@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -52,16 +53,25 @@ const RecentChatsScreen = () => {
 
   const loadChats = async () => {
     setLoading(true);
-    // In a real app, you would load chats from a service
-    // For now, we'll use mock data
-    const mockChats: ChatItem[] = [
-      // You could add mock data here if desired
-    ];
-    setChats(mockChats);
-    setLoading(false);
+    try {
+      // Try to load chats from Firebase
+      const userChats = await ChatService.getUserChats();
+      setChats(userChats);
+    } catch (error) {
+      console.error('Error loading chats:', error);
+      // Fallback to mock data
+      const mockChats: ChatItem[] = [
+        // You could add mock data here if desired
+      ];
+      setChats(mockChats);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCreateChat = () => {
+    console.log('Create Chat button pressed');
+    console.log('Navigating to:', 'CreateChat');
     navigation.navigate('CreateChat');
   };
 
@@ -87,11 +97,12 @@ const RecentChatsScreen = () => {
       <View style={styles.chatInfo}>
         <Text style={styles.chatName}>{item.name}</Text>
         <Text style={styles.chatMessage} numberOfLines={1}>
-          {item.lastMessage}
+          {item.lastMessage || 'No messages yet'}
         </Text>
       </View>
       <Text style={styles.chatTime}>
-        {item.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+        {item.timestamp && item.timestamp.toLocaleTimeString ? 
+          item.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
       </Text>
     </TouchableOpacity>
   );
@@ -104,18 +115,25 @@ const RecentChatsScreen = () => {
           <TouchableOpacity
             style={styles.headerButton}
             onPress={handleCreateChat}
+            activeOpacity={0.7}
+            testID="createChatButton"
           >
             <MaterialIcons name="add" size={36} color="navy" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {chats.length === 0 ? (
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="royalblue" />
+          <Text style={styles.loadingText}>Loading conversations...</Text>
+        </View>
+      ) : chats.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <MaterialIcons name="chat-bubble-outline" size={64} color={chatColors.accent} />
-          <Text style={styles.emptyText}>No chats yet</Text>
+          <MaterialIcons name="chat-bubble-outline" size={80} color="#B0B0B0" />
+          <Text style={styles.emptyText}>Start a Conversation</Text>
           <Text style={styles.emptySubText}>
-            Start a conversation by tapping the + button
+            Tap the + button above to chat with others
           </Text>
         </View>
       ) : (
@@ -133,7 +151,7 @@ const RecentChatsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: chatColors.primary,
+    backgroundColor: 'white',
   },
   header: {
     flexDirection: 'row',
@@ -141,14 +159,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     paddingTop: 120,
-    backgroundColor: chatColors.primary,
+    backgroundColor: 'royalblue',
     borderBottomWidth: 1,
-    borderBottomColor: chatColors.highlight,
+    borderBottomColor: '#cccccc',
   },
   headerText: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: chatColors.text,
+    color: 'white',
   },
   headerButtons: {
     flexDirection: 'row',
@@ -162,6 +180,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -170,15 +198,15 @@ const styles = StyleSheet.create({
     marginTop: -150,
   },
   emptyText: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: chatColors.text,
+    color: '#666',
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubText: {
     fontSize: 16,
-    color: '#8F9BB3',
+    color: '#999',
     textAlign: 'center',
   },
   chatList: {
@@ -189,13 +217,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
+    borderBottomColor: '#f0f0f0',
   },
   chatAvatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: chatColors.accent,
+    backgroundColor: 'royalblue',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -206,16 +234,16 @@ const styles = StyleSheet.create({
   chatName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: chatColors.text,
+    color: '#333',
     marginBottom: 4,
   },
   chatMessage: {
     fontSize: 14,
-    color: '#8F9BB3',
+    color: '#999',
   },
   chatTime: {
     fontSize: 12,
-    color: '#8F9BB3',
+    color: '#999',
     marginLeft: 10,
   },
 });

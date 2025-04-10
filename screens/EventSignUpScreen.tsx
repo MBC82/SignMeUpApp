@@ -1532,6 +1532,114 @@ const EventSignUpScreen: React.FC<{
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+      
+      {/* Reminder Preferences Modal */}
+      <Modal
+        visible={showReminderModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowReminderModal(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setShowReminderModal(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Set Up Reminders</Text>
+                <Text style={[styles.inputLabel, { marginTop: 10 }]}>
+                  How would you like to receive reminders for this event?
+                </Text>
+                
+                <View style={styles.reminderOptions}>
+                  <TouchableOpacity
+                    style={[
+                      styles.reminderButton,
+                      { 
+                        backgroundColor: reminderType === 'text' ? '#ADD8E6' : 'lightgray',
+                        marginBottom: 10
+                      }
+                    ]}
+                    onPress={() => setReminderType('text')}
+                  >
+                    <Text style={[
+                      styles.reminderButtonText,
+                      { color: reminderType === 'text' ? 'navy' : 'black' }
+                    ]}>
+                      Text Message
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  {reminderType === 'text' && (
+                    <TextInput
+                      style={styles.modalInput}
+                      value={phoneNumber}
+                      onChangeText={setPhoneNumber}
+                      placeholder="Enter your phone number"
+                      placeholderTextColor="#666"
+                      keyboardType="phone-pad"
+                    />
+                  )}
+                  
+                  <TouchableOpacity
+                    style={[
+                      styles.reminderButton,
+                      { 
+                        backgroundColor: reminderType === 'email' ? '#ADD8E6' : 'lightgray',
+                        marginBottom: 10
+                      }
+                    ]}
+                    onPress={() => setReminderType('email')}
+                  >
+                    <Text style={[
+                      styles.reminderButtonText,
+                      { color: reminderType === 'email' ? 'navy' : 'black' }
+                    ]}>
+                      Email
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  {reminderType === 'email' && (
+                    <TextInput
+                      style={styles.modalInput}
+                      value={email}
+                      onChangeText={setEmail}
+                      placeholder="Enter your email address"
+                      placeholderTextColor="#666"
+                      keyboardType="email-address"
+                    />
+                  )}
+                </View>
+                
+                <View style={styles.modalButtonContainer}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, { backgroundColor: 'red', marginRight: 10 }]}
+                    onPress={() => setShowReminderModal(false)}
+                  >
+                    <Text style={styles.modalButtonText}>Skip</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[
+                      styles.modalButton, 
+                      { 
+                        backgroundColor: 'navy',
+                        opacity: (reminderType === 'text' && phoneNumber) || 
+                                 (reminderType === 'email' && email) ? 1 : 0.5
+                      }
+                    ]}
+                    onPress={handleReminderConfirm}
+                    disabled={!(
+                      (reminderType === 'text' && phoneNumber) || 
+                      (reminderType === 'email' && email)
+                    )}
+                  >
+                    <Text style={styles.modalButtonText}>Confirm</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 };

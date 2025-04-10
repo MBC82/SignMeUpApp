@@ -2,6 +2,7 @@ import { FirebaseFirestoreTypes, Timestamp } from '@react-native-firebase/firest
 import firestore from '@react-native-firebase/firestore';
 import { firestoreService } from '../config/firebase';
 import { ChatMessage, ChatRoom, ChatParticipant } from '../types/chat';
+import { getAuth } from '@react-native-firebase/auth';
 
 export const ChatService = {
   async searchUsers(searchTerm: string): Promise<ChatParticipant[]> {
@@ -203,5 +204,85 @@ export const ChatService = {
     });
     
     return true;
-  }
+  },
+
+  // Get all chats for the current user
+  async getUserChats(): Promise<any[]> {
+    try {
+      const currentUser = getAuth().currentUser;
+      if (!currentUser) {
+        return [];
+      }
+      
+      // Get user's chat references
+      const userDoc = await firestoreService
+        .collection('users')
+        .doc(currentUser.uid)
+        .get();
+      
+      const userData = userDoc.data();
+      const chatIds = userData?.chats || [];
+      
+      if (chatIds.length === 0) {
+        return [];
+      }
+      
+      // Get chat details for each chat ID
+      const chatsPromises = chatIds.map(async (chatId: string) => {
+        const chatDoc = await firestoreService.collection('chats').doc(chatId).get();
+        if (!chatDoc.exists) return null;
+        
+        const chatData = chatDoc.data();
+        
+        // Get the last message
+        const messagesSnapshot = await firestoreService
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .orderBy('timestamp', 'desc')
+          .limit(1)
+          .get();
+        
+        let lastMessage = '';
+        let timestamp = chatData?.createdAt || Timestamp.now();
+        
+        if (!messagesSnapshot.empty) {
+          const messageData = messagesSnapshot.docs[0].data();
+          lastMessage = messageData.text;
+          timestamp = messageData.timestamp;
+        }
+        
+        // Format participants
+        const participants = chatData?.participants || [];
+        const otherParticipants = participants.filter(
+          (p: any) => p.userId !== currentUser.uid
+        );
+        
+        // Create a name for the chat (if it's a group chat, use all participant names)
+        let name = '';
+        if (otherParticipants.length === 0) {
+          name = 'Chat with yourself';
+        } else if (otherParticipants.length === 1) {
+          name = otherParticipants[0].userName;
+        } else {
+          name = otherParticipants.map((p: any) => p.userName).join(', ');
+        }
+        
+        return {
+          id: chatId,
+          name,
+          lastMessage,
+          timestamp,
+          isGroup: participants.length > 2,
+          participants
+        };
+      });
+      
+      const chats = await Promise.all(chatsPromises);
+      return chats.filter(chat => chat !== null);
+    } catch (error) {
+      console.error('Error getting user chats:', error);
+      return [];
+    }
+  },
 }; 
