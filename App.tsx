@@ -21,10 +21,7 @@ import { ChatScreen } from './screens/ChatScreen';
 import RecentChatsScreen from './screens/RecentChatsScreen';
 import { NotificationsScreen } from './screens/NotificationsScreen';
 import TopNav from './components/TopNav';
-// Import BottomNavBar component from components folder
-// This will need to be created if it doesn't exist
-// For now, let's comment it to avoid the error
-// import BottomNavBar from './components/BottomNavBar';
+import BottomNavBar from './components/BottomNavBar';
 
 type EventDate = {
   date: string;
@@ -213,8 +210,7 @@ const App = () => {
                     component={NotificationsScreen as React.ComponentType<ScreenProps>} 
                   />
                 </Stack.Navigator>
-                {/* Temporarily comment out BottomNavBar until the component is created */}
-                {/* <BottomNavBar /> */}
+                <BottomNavBar />
               </View>
             </EncryptedStorageProvider>
           </ThemeProvider>
