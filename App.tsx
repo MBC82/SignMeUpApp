@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { initializeFirebase } from './firebaseInit';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { StyleSheet, View, ActivityIndicator, Text, StatusBar } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text, StatusBar, TouchableOpacity } from 'react-native';
 import HomeScreen from './screens/HomeScreen';
 import CreateEventScreen from './screens/CreateEventScreen';
 import EventDetailsScreen from './screens/EventDetailsScreen';
@@ -20,7 +20,7 @@ import EventSignUpScreen from './screens/EventSignUpScreen';
 import { ChatScreen } from './screens/ChatScreen';
 import RecentChatsScreen from './screens/RecentChatsScreen';
 import { NotificationsScreen } from './screens/NotificationsScreen';
-import { CreateChatScreen } from './screens/CreateChatScreen';
+import CreateChatScreen from './screens/CreateChatScreen';
 import TopNav from './components/TopNav';
 import BottomNavBar from './components/BottomNavBar';
 
@@ -92,7 +92,7 @@ export type RootStackParamList = {
     isPremium?: boolean;
     isDesigner?: boolean;
   };
-  Chat: { eventId: string; eventName: string };
+  Chat: { eventId: string; eventName?: string };
   RecentChats: undefined;
   Notifications: undefined;
   CreateChat: undefined;

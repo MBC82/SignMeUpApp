@@ -69,12 +69,6 @@ const RecentChatsScreen = () => {
     }
   };
 
-  const handleCreateChat = () => {
-    console.log('Create Chat button pressed');
-    console.log('Navigating to:', 'CreateChat');
-    navigation.navigate('CreateChat');
-  };
-
   const handleSelectChat = (chat: ChatItem) => {
     navigation.navigate('Chat', {
       eventId: chat.id,
@@ -111,17 +105,17 @@ const RecentChatsScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerText}>Chats</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={handleCreateChat}
-            activeOpacity={0.7}
-            testID="createChatButton"
-          >
-            <MaterialIcons name="add" size={36} color="navy" />
-          </TouchableOpacity>
-        </View>
       </View>
+
+      {/* Floating Action Button positioned over header */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => {
+          navigation.navigate('CreateChat');
+        }}
+      >
+        <MaterialIcons name="add" size={36} color="navy" />
+      </TouchableOpacity>
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -133,7 +127,7 @@ const RecentChatsScreen = () => {
           <MaterialIcons name="chat-bubble-outline" size={80} color="#B0B0B0" />
           <Text style={styles.emptyText}>Start a Conversation</Text>
           <Text style={styles.emptySubText}>
-            Tap the + button above to chat with others
+            Tap the + button to chat with others
           </Text>
         </View>
       ) : (
@@ -167,18 +161,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: 'white',
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  headerButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#FFD700',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   loadingContainer: {
     flex: 1,
@@ -246,6 +228,25 @@ const styles = StyleSheet.create({
     color: '#999',
     marginLeft: 10,
   },
+  fab: {
+    position: 'absolute',
+    width: 50,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    right: 20,
+    top: 115,  // Changed from 110 to 115 to move it down slightly
+    backgroundColor: '#FFD700', // Gold color
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: 'navy',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    zIndex: 999,
+  }
 });
 
 export default RecentChatsScreen; 

@@ -7,6 +7,23 @@ import { getAuth } from '@react-native-firebase/auth';
 export const ChatService = {
   async searchUsers(searchTerm: string): Promise<ChatParticipant[]> {
     try {
+      console.log('Searching for users with term:', searchTerm);
+      
+      // First try with exact match for admin username
+      if (searchTerm.toLowerCase() === 'mbc82' || 
+          searchTerm.toLowerCase().includes('mbc') || 
+          searchTerm.toLowerCase().includes('admin')) {
+        console.log('Special case: admin user search');
+        // Return admin user
+        return [{
+          userId: 'admin',
+          userName: 'mbc82',
+          userPhotoURL: undefined,
+          lastSeen: Timestamp.now()
+        }];
+      }
+      
+      // Regular search
       const usersSnapshot = await firestoreService
         .collection('users')
         .orderBy('username')
@@ -16,12 +33,15 @@ export const ChatService = {
         .get();
 
       // Convert to array of ChatParticipant objects
-      return usersSnapshot.docs.map(doc => ({
+      const results = usersSnapshot.docs.map(doc => ({
         userId: doc.id,
         userName: doc.data().username || doc.data().name || 'Unknown User',
         userPhotoURL: doc.data().profileImage || doc.data().photoURL,
         lastSeen: doc.data().lastSeen || Timestamp.now()
       }));
+      
+      console.log('Found users:', results.length);
+      return results;
     } catch (error) {
       console.error('Error searching users:', error);
       throw error;
@@ -36,12 +56,22 @@ export const ChatService = {
         .limit(20)
         .get();
 
-      return usersSnapshot.docs.map(doc => ({
+      const results = usersSnapshot.docs.map(doc => ({
         userId: doc.id,
         userName: doc.data().username || doc.data().name || 'Unknown User',
         userPhotoURL: doc.data().profileImage || doc.data().photoURL,
         lastSeen: doc.data().lastSeen || Timestamp.now()
       }));
+      
+      // Add admin user for testing
+      results.push({
+        userId: 'admin',
+        userName: 'mbc82',
+        userPhotoURL: undefined,
+        lastSeen: Timestamp.now()
+      });
+      
+      return results;
     } catch (error) {
       console.error('Error getting all users:', error);
       throw error;
@@ -50,14 +80,35 @@ export const ChatService = {
 
   async createChat(creatorId: string, participantIds: string[]): Promise<string> {
     try {
+      console.log('Creating chat with participants:', participantIds);
+      
+      // Check for admin user
+      const adminParticipantIndex = participantIds.findIndex(id => id === 'admin');
+      if (adminParticipantIndex >= 0) {
+        console.log('Admin user detected in participants');
+        // Replace with the actual admin user ID if available, or use a placeholder
+        // This is where you would add your actual admin user ID in production
+        participantIds[adminParticipantIndex] = creatorId; // Chat with self for testing
+      }
+      
       // Get all participants' data
       const participantsData = await Promise.all(
-        [...participantIds, creatorId].map(async (userId) => {
+        [...new Set([...participantIds, creatorId])].map(async (userId) => {
+          // Special case for admin user
+          if (userId === 'admin') {
+            return {
+              userId: 'admin',
+              userName: 'mbc82',
+              userPhotoURL: undefined,
+              lastSeen: Timestamp.now()
+            };
+          }
+          
           const userDoc = await firestoreService.collection('users').doc(userId).get();
           return {
             userId,
-            userName: userDoc.data()?.name || 'Unknown User',
-            userPhotoURL: userDoc.data()?.photoURL,
+            userName: userDoc.data()?.name || userDoc.data()?.username || 'Unknown User',
+            userPhotoURL: userDoc.data()?.photoURL || userDoc.data()?.profileImage,
             lastSeen: Timestamp.now()
           };
         })

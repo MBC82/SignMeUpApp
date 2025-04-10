@@ -24,10 +24,11 @@ import { ChatParticipant } from '../types/chat';
 import { getAuth } from '@react-native-firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { chatColors } from '../styles/chatStyles';
+import { Timestamp } from '@firebase/firestore';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
-export const CreateChatScreen = () => {
+const CreateChatScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<ChatParticipant[]>([]);
@@ -40,8 +41,11 @@ export const CreateChatScreen = () => {
     const loadUsername = async () => {
       try {
         const storedUsername = await AsyncStorage.getItem('username');
+        console.log('Loaded username from storage:', storedUsername);
         if (storedUsername) {
           setUsername(storedUsername);
+        } else {
+          console.log('No username found in storage');
         }
       } catch (error) {
         console.error('Error loading username:', error);
@@ -58,25 +62,50 @@ export const CreateChatScreen = () => {
 
   const handleSearch = async (text: string) => {
     setSearchTerm(text);
-    if (text.length >= 2) {
+    console.log('Searching for:', text);
+    
+    if (text.length >= 1) {
       try {
         setLoading(true);
         let results;
         
         try {
           // Try to search by username first
+          console.log('Attempting to search users with:', text);
           results = await ChatService.searchUsers(text);
+          console.log('Search results:', results.length > 0 ? 'Found users' : 'No users found');
         } catch (error) {
           console.log('Error searching by username, falling back to getting all users:', error);
           // Fallback to getting all users and filtering them
           results = await ChatService.getAllUsers();
+          console.log('Got all users, count:', results.length);
+          
           results = results.filter(user => 
             user.userName.toLowerCase().includes(text.toLowerCase())
           );
+          console.log('Filtered users count:', results.length);
         }
         
-        // Filter out current user
-        const filteredResults = results.filter(user => user.userName !== username);
+        // Special case for admin username
+        if (text.toLowerCase().includes('mbc') || text.toLowerCase() === 'admin') {
+          const hasAdmin = results.some(user => user.userName === 'mbc82');
+          if (!hasAdmin) {
+            console.log('Adding admin user to results');
+            results.push({
+              userId: 'admin',
+              userName: 'mbc82',
+              userPhotoURL: undefined,
+              lastSeen: Timestamp.now()
+            });
+          }
+        }
+        
+        // Filter out current user unless it's the admin testing with themselves
+        let filteredResults = results;
+        if (username !== 'mbc82') {
+          filteredResults = results.filter(user => user.userName !== username);
+        }
+        
         setSearchResults(filteredResults);
         setLoading(false);
       } catch (error) {
@@ -139,15 +168,33 @@ export const CreateChatScreen = () => {
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <TouchableOpacity 
+              onPress={() => {
+                console.log('Back button pressed');
+                try {
+                  navigation.goBack();
+                } catch (error) {
+                  console.error('Error navigating back:', error);
+                  // Try alternative
+                  navigation.navigate('RecentChats');
+                }
+              }} 
+              style={styles.backButton}
+            >
               <MaterialIcons name="arrow-back" size={36} color="white" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Create Chat</Text>
             <TouchableOpacity 
-              onPress={() => {}}
+              onPress={handleDone}
               style={styles.createButton}
+              disabled={selectedUsers.length === 0}
             >
-              <Text style={styles.createButtonText}>Create Chat</Text>
+              <Text style={[
+                styles.createButtonText, 
+                selectedUsers.length === 0 ? { opacity: 0.5 } : {}
+              ]}>
+                Create Chat
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -175,7 +222,7 @@ export const CreateChatScreen = () => {
                 <TextInput
                   ref={inputRef}
                   style={styles.searchInput}
-                  placeholder="Search for..."
+                  placeholder="Type 'mbc82' to chat with admin"
                   placeholderTextColor="#aaa"
                   value={searchTerm}
                   onChangeText={handleSearch}
@@ -209,7 +256,7 @@ export const CreateChatScreen = () => {
                   </TouchableOpacity>
                 )}
               />
-            ) : searchTerm.length >= 2 ? (
+            ) : searchTerm.length >= 1 ? (
               <View style={styles.noResultsContainer}>
                 <Text style={styles.noResultsText}>No users found</Text>
               </View>
