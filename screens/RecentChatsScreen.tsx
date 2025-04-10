@@ -105,7 +105,7 @@ const RecentChatsScreen = () => {
             style={styles.headerButton}
             onPress={handleCreateChat}
           >
-            <MaterialIcons name="add" size={28} color="white" />
+            <MaterialIcons name="add" size={36} color="navy" />
           </TouchableOpacity>
         </View>
       </View>
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    paddingTop: 60,
+    paddingTop: 120,
     backgroundColor: chatColors.primary,
     borderBottomWidth: 1,
     borderBottomColor: chatColors.highlight,
@@ -155,10 +155,10 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: chatColors.accent,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFD700',
     justifyContent: 'center',
     alignItems: 'center',
   },
