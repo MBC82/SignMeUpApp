@@ -167,6 +167,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
+    marginTop: -150,
   },
   emptyText: {
     fontSize: 20,
