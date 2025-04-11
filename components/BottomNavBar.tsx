@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -6,47 +6,116 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { RootStackParamList } from '../App';
+import { ProfileContext } from '../ProfileContext';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 const BottomNavBar = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { profile } = useContext(ProfileContext);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
 
+  // Validate image URI to avoid errors
+  const validateImageUri = (uri: string | null): boolean => {
+    if (!uri) return false;
+    
+    // Check if it's a valid string URI
+    if (typeof uri !== 'string') return false;
+    
+    // Check if it has a valid scheme
+    return uri.startsWith('file://') || uri.startsWith('http://') || uri.startsWith('https://');
+  };
+
+  // Main effect to check login status and load profile image
   useEffect(() => {
-    const checkLoginStatus = async () => {
+    const checkLoginAndLoadImage = async () => {
       try {
+        // Reset error state on each check
+        setImageLoadError(false);
+        
+        // Check login status
         const encryptedLoginStatus = await EncryptedStorage.getItem('isLoggedIn');
         const asyncLoginStatus = await AsyncStorage.getItem('isLoggedIn');
-        const loggedIn = encryptedLoginStatus === 'true' || asyncLoginStatus === 'true';
-        setIsLoggedIn(loggedIn);
-
-        if (loggedIn) {
-          const savedImage = await AsyncStorage.getItem('profileImage');
-          if (savedImage) {
-            setProfileImage(savedImage);
-          }
-        } else {
+        const isUserLoggedIn = encryptedLoginStatus === 'true' || asyncLoginStatus === 'true';
+        
+        console.log('BOTTOM NAV - Login status:', isUserLoggedIn);
+        
+        // Set login state first
+        setIsLoggedIn(isUserLoggedIn);
+        
+        // Clear the profile image if not logged in
+        if (!isUserLoggedIn) {
           setProfileImage(null);
+          return;
         }
+        
+        // Use profile.profileImage first if available
+        if (profile && profile.profileImage && validateImageUri(profile.profileImage)) {
+          console.log('BOTTOM NAV - Using profile image from context');
+          setProfileImage(profile.profileImage);
+          return;
+        }
+        
+        // Otherwise, try to get from AsyncStorage
+        const savedImage = await AsyncStorage.getItem('profileImage');
+        console.log('BOTTOM NAV - Profile image from AsyncStorage:', savedImage ? 'found' : 'not found');
+        
+        if (savedImage && validateImageUri(savedImage)) {
+          setProfileImage(savedImage);
+          return;
+        }
+        
+        // Try username-specific image as final fallback
+        try {
+          const username = await AsyncStorage.getItem('username') || 
+                         await EncryptedStorage.getItem('username');
+                         
+          if (username) {
+            const userImage = await AsyncStorage.getItem(`profileImage_${username}`);
+            if (userImage && validateImageUri(userImage)) {
+              console.log('BOTTOM NAV - Found user-specific image');
+              setProfileImage(userImage);
+              
+              // Save it to the main key for next time
+              await AsyncStorage.setItem('profileImage', userImage);
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn('BOTTOM NAV - Error loading user-specific image:', err);
+        }
+        
+        // No valid image found
+        setProfileImage(null);
       } catch (error) {
-        console.error('Error checking login status:', error);
-        setIsLoggedIn(false);
+        console.error('BOTTOM NAV - Error:', error);
         setProfileImage(null);
       }
     };
-
-    checkLoginStatus();
-  }, []);
+    
+    // Initial check
+    checkLoginAndLoadImage();
+    
+    // Set up listener for when screen is focused
+    const unsubscribe = navigation.addListener('focus', () => {
+      checkLoginAndLoadImage();
+    });
+    
+    return () => unsubscribe();
+  }, [navigation, profile]);
 
   const handleProfilePress = () => {
     if (isLoggedIn) {
-      navigation.navigate('UserProfile');
+      navigation.navigate('UserProfile' as never);
     } else {
       navigation.navigate('ProfileSetup', { skipWelcome: false });
     }
   };
+
+  // If profileImage is non-null AND isLoggedIn is true AND no image load error, show the profile image
+  const showProfileImage = isLoggedIn && profileImage !== null && !imageLoadError;
 
   return (
     <View style={styles.bottomNav}>
@@ -67,11 +136,15 @@ const BottomNavBar = () => {
 
       <TouchableOpacity onPress={handleProfilePress} style={styles.navButton}>
         <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-          {isLoggedIn && profileImage ? (
+          {showProfileImage ? (
             <Image 
-              source={{ uri: profileImage }} 
+              source={{ uri: profileImage || undefined }} 
               style={styles.profileImageNav}
               resizeMode="cover"
+              onError={() => {
+                console.log('BOTTOM NAV - Image failed to load');
+                setImageLoadError(true);
+              }}
             />
           ) : (
             <MaterialIcons 
@@ -118,6 +191,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'navy',
     marginTop: 3,
+    backgroundColor: '#DDDDDD',
   },
 });
 

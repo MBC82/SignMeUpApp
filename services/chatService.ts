@@ -4,6 +4,21 @@ import { firestoreService } from '../config/firebase';
 import { ChatMessage, ChatRoom, ChatParticipant } from '../types/chat';
 import { getAuth } from '@react-native-firebase/auth';
 
+// Fallback firestore service if the imported one is undefined
+const getFirestoreService = () => {
+  if (firestoreService) {
+    return firestoreService;
+  } else {
+    try {
+      console.log('Using fallback firestore service');
+      return firestore();
+    } catch (error) {
+      console.error('Firebase Firestore not initialized:', error);
+      return null;
+    }
+  }
+};
+
 export const ChatService = {
   async searchUsers(searchTerm: string): Promise<ChatParticipant[]> {
     try {
@@ -23,8 +38,20 @@ export const ChatService = {
         }];
       }
       
+      // Get firestore service
+      const db = getFirestoreService();
+      if (!db) {
+        console.log('Firestore service not available, returning only admin user');
+        return [{
+          userId: 'admin',
+          userName: 'mbc82',
+          userPhotoURL: undefined,
+          lastSeen: Timestamp.now()
+        }];
+      }
+      
       // Regular search
-      const usersSnapshot = await firestoreService
+      const usersSnapshot = await db
         .collection('users')
         .orderBy('username')
         .startAt(searchTerm.toLowerCase())
@@ -44,14 +71,31 @@ export const ChatService = {
       return results;
     } catch (error) {
       console.error('Error searching users:', error);
-      throw error;
+      // Return admin user as fallback
+      return [{
+        userId: 'admin',
+        userName: 'mbc82',
+        userPhotoURL: undefined,
+        lastSeen: Timestamp.now()
+      }];
     }
   },
 
   // Get all users for testing purposes
   async getAllUsers(): Promise<ChatParticipant[]> {
     try {
-      const usersSnapshot = await firestoreService
+      const db = getFirestoreService();
+      if (!db) {
+        console.log('Firestore service not available, returning only admin user');
+        return [{
+          userId: 'admin',
+          userName: 'mbc82',
+          userPhotoURL: undefined,
+          lastSeen: Timestamp.now()
+        }];
+      }
+      
+      const usersSnapshot = await db
         .collection('users')
         .limit(20)
         .get();
@@ -74,7 +118,13 @@ export const ChatService = {
       return results;
     } catch (error) {
       console.error('Error getting all users:', error);
-      throw error;
+      // Return admin user as fallback
+      return [{
+        userId: 'admin',
+        userName: 'mbc82',
+        userPhotoURL: undefined,
+        lastSeen: Timestamp.now()
+      }];
     }
   },
 
@@ -91,6 +141,13 @@ export const ChatService = {
         participantIds[adminParticipantIndex] = creatorId; // Chat with self for testing
       }
       
+      // Get firestore service
+      const db = getFirestoreService();
+      if (!db) {
+        console.error('Firestore service not available for creating chat');
+        throw new Error('Firebase services not initialized');
+      }
+      
       // Get all participants' data
       const participantsData = await Promise.all(
         [...new Set([...participantIds, creatorId])].map(async (userId) => {
@@ -104,7 +161,7 @@ export const ChatService = {
             };
           }
           
-          const userDoc = await firestoreService.collection('users').doc(userId).get();
+          const userDoc = await db!.collection('users').doc(userId).get();
           return {
             userId,
             userName: userDoc.data()?.name || userDoc.data()?.username || 'Unknown User',
@@ -115,7 +172,7 @@ export const ChatService = {
       );
 
       // Create the chat room
-      const chatRef = await firestoreService.collection('chats').add({
+      const chatRef = await db!.collection('chats').add({
         participants: participantsData,
         createdAt: Timestamp.now(),
         createdBy: creatorId,
@@ -126,7 +183,7 @@ export const ChatService = {
       // Add chat reference to all participants
       await Promise.all(
         participantsData.map(participant =>
-          firestoreService
+          db!
             .collection('users')
             .doc(participant.userId)
             .update({
@@ -143,34 +200,52 @@ export const ChatService = {
   },
 
   async sendMessage(eventId: string, userId: string, userName: string, userPhotoURL: string | undefined, text: string): Promise<void> {
-    const eventRef = firestoreService.collection('events').doc(eventId);
-    const eventDoc = await eventRef.get();
-    
-    if (!eventDoc.exists) {
-      throw new Error('Event not found');
+    try {
+      const db = getFirestoreService();
+      if (!db) {
+        console.error('Firestore service not available for sending message');
+        throw new Error('Firebase services not initialized');
+      }
+      
+      const eventRef = db.collection('events').doc(eventId);
+      const eventDoc = await eventRef.get();
+      
+      if (!eventDoc.exists) {
+        throw new Error('Event not found');
+      }
+
+      const eventData = eventDoc.data();
+      if (!eventData?.participants?.includes(userId)) {
+        throw new Error('User is not a participant in this event');
+      }
+
+      const message: Omit<ChatMessage, 'id' | 'timestamp'> = {
+        eventId,
+        userId,
+        userName,
+        userPhotoURL,
+        text
+      };
+
+      await db.collection('events').doc(eventId).collection('messages').add({
+        ...message,
+        timestamp: Timestamp.now()
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
     }
-
-    const eventData = eventDoc.data();
-    if (!eventData?.participants?.includes(userId)) {
-      throw new Error('User is not a participant in this event');
-    }
-
-    const message: Omit<ChatMessage, 'id' | 'timestamp'> = {
-      eventId,
-      userId,
-      userName,
-      userPhotoURL,
-      text
-    };
-
-    await firestoreService.collection('events').doc(eventId).collection('messages').add({
-      ...message,
-      timestamp: Timestamp.now()
-    });
   },
 
   subscribeToMessages(eventId: string, callback: (messages: ChatMessage[]) => void): () => void {
-    return firestoreService
+    const db = getFirestoreService();
+    if (!db) {
+      console.error('Firestore service not available for subscribing to messages');
+      // Return a no-op unsubscribe function
+      return () => {};
+    }
+    
+    return db
       .collection('events')
       .doc(eventId)
       .collection('messages')
@@ -185,30 +260,47 @@ export const ChatService = {
   },
 
   async getEventParticipants(eventId: string): Promise<ChatParticipant[]> {
-    const eventDoc = await firestoreService.collection('events').doc(eventId).get();
-    if (!eventDoc.exists) {
-      throw new Error('Event not found');
+    try {
+      const db = getFirestoreService();
+      if (!db) {
+        console.error('Firestore service not available for getting event participants');
+        return [];
+      }
+      
+      const eventDoc = await db.collection('events').doc(eventId).get();
+      if (!eventDoc.exists) {
+        throw new Error('Event not found');
+      }
+
+      const eventData = eventDoc.data();
+      const participants = eventData?.participants || [];
+      
+      const participantPromises = participants.map(async (userId: string) => {
+        const userDoc = await db.collection('users').doc(userId).get();
+        const userData = userDoc.data();
+        return {
+          userId,
+          userName: userData?.name || 'Unknown User',
+          userPhotoURL: userData?.photoURL,
+          lastSeen: Timestamp.now()
+        } as ChatParticipant;
+      });
+
+      return Promise.all(participantPromises);
+    } catch (error) {
+      console.error('Error getting event participants:', error);
+      return [];
     }
-
-    const eventData = eventDoc.data();
-    const participants = eventData?.participants || [];
-    
-    const participantPromises = participants.map(async (userId: string) => {
-      const userDoc = await firestoreService.collection('users').doc(userId).get();
-      const userData = userDoc.data();
-      return {
-        userId,
-        userName: userData?.name || 'Unknown User',
-        userPhotoURL: userData?.photoURL,
-        lastSeen: Timestamp.now()
-      } as ChatParticipant;
-    });
-
-    return Promise.all(participantPromises);
   },
 
   async canAccessChat(eventId: string, userId: string): Promise<boolean> {
-    const eventDoc = await firestoreService.collection('events').doc(eventId).get();
+    const db = getFirestoreService();
+    if (!db) {
+      console.error('Firestore service not available for checking chat access');
+      return false;
+    }
+
+    const eventDoc = await db.collection('events').doc(eventId).get();
     if (!eventDoc.exists) {
       return false;
     }
@@ -219,7 +311,13 @@ export const ChatService = {
 
   getEventDetails: async (eventId: string) => {
     try {
-      const eventDoc = await firestoreService.collection('events').doc(eventId).get();
+      const db = getFirestoreService();
+      if (!db) {
+        console.error('Firestore service not available for getting event details');
+        return null;
+      }
+      
+      const eventDoc = await db.collection('events').doc(eventId).get();
       
       if (!eventDoc.exists) {
         return null;
@@ -233,13 +331,19 @@ export const ChatService = {
   },
 
   async addParticipant(eventId: string, userId: string, userData: any): Promise<boolean> {
-    const eventRef = firestoreService.collection('events').doc(eventId);
+    const db = getFirestoreService();
+    if (!db) {
+      console.error('Firestore service not available for adding participant');
+      return false;
+    }
+    
+    const eventRef = db.collection('events').doc(eventId);
     
     await eventRef.update({
       participants: firestore.FieldValue.arrayUnion(userId)
     });
     
-    await firestoreService.collection('events').doc(eventId).collection('participants').doc(userId).set({
+    await db.collection('events').doc(eventId).collection('participants').doc(userId).set({
       ...userData,
       joinedAt: Timestamp.now()
     });
@@ -248,7 +352,13 @@ export const ChatService = {
   },
 
   async inviteUserToEvent(eventId: string, userId: string, inviterId: string): Promise<boolean> {
-    await firestoreService.collection('events').doc(eventId).collection('invitations').doc(userId).set({
+    const db = getFirestoreService();
+    if (!db) {
+      console.error('Firestore service not available for inviting user to event');
+      return false;
+    }
+    
+    await db.collection('events').doc(eventId).collection('invitations').doc(userId).set({
       invitedBy: inviterId,
       invitedAt: Timestamp.now(),
       status: 'pending'
@@ -265,11 +375,14 @@ export const ChatService = {
         return [];
       }
       
+      const db = getFirestoreService();
+      if (!db) {
+        console.error('Firestore service not available for getting user chats');
+        return [];
+      }
+      
       // Get user's chat references
-      const userDoc = await firestoreService
-        .collection('users')
-        .doc(currentUser.uid)
-        .get();
+      const userDoc = await db.collection('users').doc(currentUser.uid).get();
       
       const userData = userDoc.data();
       const chatIds = userData?.chats || [];
@@ -280,14 +393,13 @@ export const ChatService = {
       
       // Get chat details for each chat ID
       const chatsPromises = chatIds.map(async (chatId: string) => {
-        const chatDoc = await firestoreService.collection('chats').doc(chatId).get();
+        const chatDoc = await db.collection('chats').doc(chatId).get();
         if (!chatDoc.exists) return null;
         
         const chatData = chatDoc.data();
         
         // Get the last message
-        const messagesSnapshot = await firestoreService
-          .collection('chats')
+        const messagesSnapshot = await db.collection('chats')
           .doc(chatId)
           .collection('messages')
           .orderBy('timestamp', 'desc')

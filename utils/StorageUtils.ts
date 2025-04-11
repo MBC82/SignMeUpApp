@@ -1,8 +1,46 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import EncryptedStorage from 'react-native-encrypted-storage';
+import { Platform } from 'react-native';
 
 // Add this helper function at the top of the file
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Ensure AsyncStorage directory exists
+export const ensureAsyncStorageDirectories = async () => {
+  try {
+    if (Platform.OS === 'ios') {
+      // Create a series of writes to ensure the directory structure is created
+      const steps = [
+        // First step: Write a temporary value
+        async () => await AsyncStorage.setItem('_directory_init_', 'init'),
+        // Delay to allow filesystem operations to complete
+        async () => await delay(200),
+        // Read the value back to verify storage is working
+        async () => await AsyncStorage.getItem('_directory_init_'),
+        // Another delay
+        async () => await delay(200),
+        // Try to write another value to create any missing subdirectories
+        async () => await AsyncStorage.setItem('profileImage', ''),
+        // Delay
+        async () => await delay(200),
+        // Clean up
+        async () => await AsyncStorage.removeItem('_directory_init_')
+      ];
+      
+      // Execute all steps in sequence
+      for (const step of steps) {
+        await step();
+      }
+      
+      console.log('AsyncStorage directories initialized successfully');
+      return true;
+    }
+    return true;
+  } catch (error) {
+    console.error('Failed to initialize AsyncStorage directories:', error);
+    return false;
+  }
+};
 
 // Check if EncryptedStorage is working properly
 export const isEncryptedStorageWorking = async () => {
@@ -150,34 +188,76 @@ export const checkLoginStatus = async () => {
   }
 };
 
-// Set login status
+// Update setLoginStatus to ensure directories exist first
 export const setLoginStatus = async (isLoggedIn: boolean, username: string | null) => {
   try {
-    // First, try to create the directory if it doesn't exist
-    try {
-      await AsyncStorage.getItem('dummy_key');
-    } catch (error) {
-      console.warn('AsyncStorage directory check failed:', error);
+    // First, ensure AsyncStorage directories exist with multiple attempts
+    let dirInitialized = false;
+    for (let i = 0; i < 3; i++) {
+      dirInitialized = await ensureAsyncStorageDirectories();
+      if (dirInitialized) break;
+      await delay(500); // Wait longer between attempts
     }
-
-    // Set login status with retry mechanism
+    
+    if (!dirInitialized) {
+      console.warn('Could not initialize AsyncStorage directories after multiple attempts');
+    }
+    
+    // Try with EncryptedStorage first
+    try {
+      await EncryptedStorage.setItem('isLoggedIn', isLoggedIn ? 'true' : 'false');
+    } catch (encryptedError) {
+      console.warn('EncryptedStorage write failed:', encryptedError);
+    }
+      
+    // Also try AsyncStorage as backup with retry mechanism
+    let asyncStorageSuccess = false;
+    for (let i = 0; i < 3; i++) {
+      try {
+        await AsyncStorage.setItem('isLoggedIn', isLoggedIn ? 'true' : 'false');
+        asyncStorageSuccess = true;
+        break;
+      } catch (asyncError) {
+        console.warn(`AsyncStorage write attempt ${i+1} failed:`, asyncError);
+        await delay(300);
+      }
+    }
+    
+    // Set username with retry mechanism
     let retryCount = 0;
     const maxRetries = 3;
     
     while (retryCount < maxRetries) {
       try {
-        await AsyncStorage.setItem('isLoggedIn', isLoggedIn ? 'true' : 'false');
-        
         if (isLoggedIn && username) {
-          // Set the username
-          await safeSetItem('username', username);
+          // Try EncryptedStorage first
+          try {
+            await EncryptedStorage.setItem('username', username);
+          } catch (encryptedError) {
+            console.warn('EncryptedStorage username write failed:', encryptedError);
+          }
           
-          // Also store the username in AsyncStorage directly as a backup
-          await AsyncStorage.setItem('current_username', username);
+          // Try AsyncStorage backup with retry
+          for (let i = 0; i < 3; i++) {
+            try {
+              await AsyncStorage.setItem('current_username', username);
+              await AsyncStorage.setItem('fallback_username', username);
+              break;
+            } catch (asyncError) {
+              console.warn(`AsyncStorage username write attempt ${i+1} failed:`, asyncError);
+              await delay(300);
+            }
+          }
         } else {
           // Clear the username
-          await bypassRemoveItem('username');
-          await AsyncStorage.removeItem('current_username');
+          try {
+            await EncryptedStorage.removeItem('username');
+          } catch (e) {}
+          
+          try {
+            await AsyncStorage.removeItem('current_username');
+            await AsyncStorage.removeItem('fallback_username');
+          } catch (e) {}
         }
         
         return true;
@@ -191,11 +271,11 @@ export const setLoginStatus = async (isLoggedIn: boolean, username: string | nul
         }
         
         // Wait a bit before retrying
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await delay(1000);
       }
     }
     
-    return false;
+    return asyncStorageSuccess;
   } catch (error) {
     console.error('Error setting login status:', error);
     return false;

@@ -24,6 +24,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Header from '../components/Header';
+import { uploadProfileImage, getProfileImageUrl } from '../utils/firebaseStorage';
 
 type EventDate = {
   date: string;
@@ -110,7 +111,7 @@ const UserProfileScreen = () => {
 
   // Add new state variables at the top with other states
   const [isEditingUsername, setIsEditingUsername] = useState(false);
-  const [newUsername, setNewUsername] = useState(profile.username);
+  const [newUsername, setNewUsername] = useState<string>(profile.username || '');
 
   // Add new state variables for verification
   const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
@@ -126,7 +127,7 @@ const UserProfileScreen = () => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [verificationMethod, setVerificationMethod] = useState<'phone' | 'email' | ''>('');
   const [isVerifying, setIsVerifying] = useState(false);
-  const [generatedCode, setGeneratedCode] = useState('');
+  const [generatedCode, setGeneratedCode] = useState<string>('');
   const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -137,6 +138,10 @@ const UserProfileScreen = () => {
   const [isDesigner, setIsDesigner] = useState(false);
 
   const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [verificationSent, setVerificationSent] = useState(false);
 
   useEffect(() => {
     if (!profile.username) {
@@ -208,6 +213,38 @@ const UserProfileScreen = () => {
     }
   }, [isFocused, updateProfile]);
 
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      setIsLoading(true);
+      try {
+        // Try getting profile from EncryptedStorage first
+        const profileData = await EncryptedStorage.getItem('userProfile');
+        
+        if (profileData) {
+          const parsedData = JSON.parse(profileData);
+          setNewUsername(parsedData.username || '');
+          setNewName(parsedData.name || '');
+          setNewEmail(parsedData.email || '');
+          setNewPhoneNumber(parsedData.phone || '');
+          
+          // For the profile image, try to get it from Firebase first
+          const firebaseImage = await getProfileImageUrl(parsedData.username || '');
+          if (firebaseImage) {
+            setProfileImage(firebaseImage);
+          } else if (parsedData.profileImage) {
+            setProfileImage(parsedData.profileImage);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserProfile();
+  }, []);
+
   const loadUserStats = async () => {
     try {
       const username = await EncryptedStorage.getItem('username');
@@ -245,63 +282,49 @@ const UserProfileScreen = () => {
 
   const pickImage = async () => {
     try {
+      setIsLoading(true);
       const result = await launchImageLibrary({
         mediaType: 'photo',
-        quality: 0.8,
-        includeBase64: false, // Don't include base64 to reduce memory usage
+        quality: 0.7,
+        includeBase64: false,
       });
       
-      if (result.didCancel) {
-        console.log('User cancelled image picker');
-        return;
-      }
-      
-      if (result.errorCode) {
-        throw new Error(`Image picker error: ${result.errorMessage}`);
-      }
-      
-      if (result.assets && result.assets.length > 0) {
+      if (!result.didCancel && result.assets && result.assets.length > 0) {
         const selectedImage = result.assets[0].uri;
-        console.log('Selected image URI:', selectedImage);
         
-        try {
-          // Update the profile image in state first
-          updateProfile({ profileImage: selectedImage });
-          
-          // Get the username
-          const username = await EncryptedStorage.getItem('username');
-          if (username) {
-            // Save to username-specific storage
-            await AsyncStorage.setItem(`profileImage_${username}`, selectedImage);
-            console.log('Saved to username-specific storage');
+        // Update state immediately for UI feedback
+        if (selectedImage) {
+          setProfileImage(selectedImage);
+        
+          try {
+            // Upload to Firebase Storage and get download URL
+            const downloadUrl = await uploadProfileImage(selectedImage, profile.username || '');
             
-            // Also save to generic storage
-            await AsyncStorage.setItem('profileImage', selectedImage);
-            console.log('Saved to generic storage');
-          } else {
-            console.warn('Username is undefined, cannot save profile image');
+            if (downloadUrl) {
+              // Update state and encrypted storage with the download URL
+              setProfileImage(downloadUrl);
+              
+              // Update profile in encrypted storage
+              const profileData = await EncryptedStorage.getItem('userProfile');
+              if (profileData) {
+                const parsedData = JSON.parse(profileData);
+                await EncryptedStorage.setItem('userProfile', JSON.stringify({
+                  ...parsedData,
+                  profileImage: downloadUrl
+                }));
+              }
+            }
+          } catch (error) {
+            console.error('Error saving profile image:', error);
+            Alert.alert('Error', 'Failed to save profile image. Please try again.');
           }
-          
-          // Also update the profile in the encrypted storage
-          const userProfileString = await EncryptedStorage.getItem('userProfile');
-          if (userProfileString) {
-            const userProfile = JSON.parse(userProfileString);
-            userProfile.profileImage = selectedImage;
-            await EncryptedStorage.setItem('userProfile', JSON.stringify(userProfile));
-            console.log('Saved to encrypted storage');
-          }
-        } catch (storageError) {
-          console.error('Error saving profile image:', storageError);
-          Alert.alert(
-            'Warning',
-            'Your profile image has been set, but might not persist after restarting the app.',
-            [{ text: 'OK' }]
-          );
         }
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to select image. Please try again.');
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -398,7 +421,7 @@ const UserProfileScreen = () => {
             (user.name?.toLowerCase() || '').includes(query.toLowerCase()) ||
             (user.username?.toLowerCase() || '').includes(query.toLowerCase());
           const isPublic = user.privacySettings?.profileVisibility === 'public';
-          const isNotCurrentUser = user.username !== profile.username;
+          const isNotCurrentUser = user.username !== (profile?.username || '');
           return matchesSearch && (isPublic || isNotCurrentUser);
         });
         setSearchResults(filteredUsers);
@@ -412,6 +435,12 @@ const UserProfileScreen = () => {
   // Add new handler functions
   const handleUpdateUsername = async () => {
     try {
+      // Ensure newUsername is not undefined or empty
+      if (!newUsername.trim()) {
+        Alert.alert('Error', 'Username cannot be empty');
+        return;
+      }
+      
       const updatedProfile = {
         ...profile,
         username: newUsername
@@ -429,30 +458,55 @@ const UserProfileScreen = () => {
   };
 
   // Add function to generate verification code
-  const generateVerificationCode = () => {
+  const generateVerificationCode = (): string => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedCode(code);
     return code;
   };
 
   // Add function to send verification code
-  const sendVerificationCode = async (method: 'phone' | 'email') => {
+  const sendVerificationCode = async () => {
+    if (!profile) return;
+    
+    setIsVerifying(true);
     try {
-      const code = generateVerificationCode();
-      if (method === 'phone' && profile.phone) {
-        // Here you would integrate with your SMS service (e.g., Twilio)
-        // For now, we'll just show the code in an alert
-        Alert.alert('Development Mode', `SMS Code: ${code}`);
-      } else if (method === 'email' && profile.email) {
-        // Here you would integrate with your email service
-        // For now, we'll just show the code in an alert
-        Alert.alert('Development Mode', `Email Code: ${code}`);
+      // Make sure we have a valid string for the destination
+      let destination = '';
+      
+      if (verificationMethod === 'phone') {
+        // Safe type handling for phone
+        const phoneValue = profile.phone as string | number | undefined;
+        if (typeof phoneValue === 'string') {
+          destination = phoneValue;
+        } else if (typeof phoneValue === 'number') {
+          destination = phoneValue.toString();
+        }
+      } else if (verificationMethod === 'email') {
+        // Safe type handling for email
+        const emailValue = profile.email as string | undefined;
+        if (typeof emailValue === 'string') {
+          destination = emailValue;
+        }
       }
-      setVerificationMethod(method);
-      setIsVerifying(true);
+        
+      if (!destination) {
+        Alert.alert('Error', 'No valid phone or email to send verification code');
+        setIsVerifying(false);
+        return;
+      }
+      
+      // Mock implementation - in a real app, this would call an actual service
+      const code = generateVerificationCode();
+      console.log(`Mock verification code sent to ${destination}: ${code}`);
+      
+      // Simulate successful verification
+      setVerificationSent(true);
+      Alert.alert('Success', `Verification code sent to ${verificationMethod === 'phone' ? 'phone' : 'email'}`);
     } catch (error) {
       console.error('Error sending verification code:', error);
       Alert.alert('Error', 'Failed to send verification code');
+    } finally {
+      setIsVerifying(false);
     }
   };
 

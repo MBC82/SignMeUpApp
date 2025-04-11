@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Platform, StatusBar } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, StatusBar, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../App';
+
+// Define RootStackParamList type locally to match the structure in App.tsx
+type RootStackParamList = {
+  Home: undefined;
+  EventDetails: { eventId: string };
+  CreateEvent: undefined;
+  MyEvents: undefined;
+  UserProfile: any;
+  ProfileSetup: { skipWelcome?: boolean };
+  RecentChats: undefined;
+  Notifications: undefined;
+  [key: string]: any; // For any other routes
+};
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 

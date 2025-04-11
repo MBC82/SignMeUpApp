@@ -105,22 +105,30 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         console.warn('Error updating EncryptedStorage:', error);
       }
       
+      // Force create AsyncStorage directory structure if needed
+      try {
+        const tempKey = '_signout_init_' + Date.now();
+        await AsyncStorage.setItem(tempKey, 'init');
+        await AsyncStorage.getItem(tempKey);
+        await AsyncStorage.removeItem(tempKey);
+      } catch (e) {
+        console.warn('Failed to initialize AsyncStorage during signout:', e);
+      }
+      
       // Clear AsyncStorage items - but DON'T clear the profile image
       try {
         if (username) {
           // DON'T remove the profile image, so the next login can find it
-          // await AsyncStorage.removeItem(`profileImage_${username}`);
           
-          await AsyncStorage.multiRemove([
-            'isLoggedIn',
-            'memberSince',
-            `submittedEvents_${username}`,
-            `eventSignups_${username}`,
-            `draftEvents_${username}`
-          ]);
+          // Clear login status items one by one with error handling
+          try { await AsyncStorage.setItem('isLoggedIn', 'false'); } catch (e) {}
+          try { await AsyncStorage.removeItem('memberSince'); } catch (e) {}
+          try { await AsyncStorage.removeItem(`submittedEvents_${username}`); } catch (e) {}
+          try { await AsyncStorage.removeItem(`eventSignups_${username}`); } catch (e) {}
+          try { await AsyncStorage.removeItem(`draftEvents_${username}`); } catch (e) {}
         } else {
-          await AsyncStorage.removeItem('isLoggedIn');
-          await AsyncStorage.removeItem('memberSince');
+          try { await AsyncStorage.setItem('isLoggedIn', 'false'); } catch (e) {}
+          try { await AsyncStorage.removeItem('memberSince'); } catch (e) {}
         }
       } catch (asyncError) {
         console.warn('Error clearing AsyncStorage:', asyncError);
