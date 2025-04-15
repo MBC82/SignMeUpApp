@@ -2,7 +2,7 @@ import React, { createContext, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { Alert } from 'react-native';
-import { safeGetItem, safeSetItem, bypassRemoveItem } from './utils/StorageUtils';
+import { safeGetItem, safeSetItem, bypassRemoveItem, clearLoginState, logoutUser } from './utils/StorageUtils';
 
 type Profile = {
   name: string;
@@ -17,6 +17,8 @@ type ProfileContextType = {
   profile: Profile;
   updateProfile: (updatedProfile: Partial<Profile>) => void;
   signOut: (navigation: any) => void;
+  checkLoginStatus: () => Promise<boolean>;
+  clearLoginState: () => Promise<boolean>;
 };
 
 export const ProfileContext = createContext<ProfileContextType>({
@@ -30,6 +32,8 @@ export const ProfileContext = createContext<ProfileContextType>({
   },
   updateProfile: () => {},
   signOut: () => {},
+  checkLoginStatus: async () => false,
+  clearLoginState: async () => false,
 });
 
 export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -42,12 +46,34 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     memberSince: '',
   });
 
+  const checkLoginStatus = async (): Promise<boolean> => {
+    try {
+      // Check both Encrypted and regular storage
+      const encryptedLoginStatus = await EncryptedStorage.getItem('isLoggedIn');
+      const asyncLoginStatus = await AsyncStorage.getItem('isLoggedIn');
+      
+      // Check if username exists in either storage
+      const encryptedUsername = await EncryptedStorage.getItem('username');
+      const asyncUsername = await AsyncStorage.getItem('username');
+      
+      // User is logged in if both conditions are met:
+      // 1. Login status is 'true' in either storage
+      // 2. Username exists in either storage
+      const isLoggedIn = 
+        (encryptedLoginStatus === 'true' || asyncLoginStatus === 'true') && 
+        (!!encryptedUsername || !!asyncUsername);
+      
+      return isLoggedIn;
+    } catch (error) {
+      return false;
+    }
+  };
+
   const loadProfile = async () => {
     try {
       const username = await safeGetItem('username');
       
       if (!username) {
-        console.log('No username found, cannot load profile');
         return null;
       }
       
@@ -57,14 +83,11 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const userProfile = allUsers.find((user: any) => user.username === username);
       
       if (userProfile) {
-        console.log('Loaded profile for user:', username);
         return userProfile;
       }
       
-      console.log('User profile not found for username:', username);
       return null;
     } catch (error) {
-      console.error('Error loading profile:', error);
       return null;
     }
   };
@@ -84,66 +107,18 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       await safeSetItem('allUsers', JSON.stringify(allUsers));
       
-      console.log('Updated profile for user:', profile.username);
       return true;
     } catch (error) {
-      console.error('Error updating profile:', error);
       return false;
     }
   };
 
   const signOut = async (navigation: any) => {
     try {
-      // Get the username before signing out
-      const username = await EncryptedStorage.getItem('username');
+      // Log out the user
+      await logoutUser();
       
-      // Instead of removing items from EncryptedStorage, just set them to empty or null values
-      try {
-        await EncryptedStorage.setItem('userProfile', JSON.stringify({}));
-        await EncryptedStorage.setItem('isLoggedIn', 'false');
-      } catch (error) {
-        console.warn('Error updating EncryptedStorage:', error);
-      }
-      
-      // Force create AsyncStorage directory structure if needed
-      try {
-        const tempKey = '_signout_init_' + Date.now();
-        await AsyncStorage.setItem(tempKey, 'init');
-        await AsyncStorage.getItem(tempKey);
-        await AsyncStorage.removeItem(tempKey);
-      } catch (e) {
-        console.warn('Failed to initialize AsyncStorage during signout:', e);
-      }
-      
-      // Clear AsyncStorage items - but DON'T clear the profile image
-      try {
-        if (username) {
-          // DON'T remove the profile image, so the next login can find it
-          
-          // Clear login status items one by one with error handling
-          try { await AsyncStorage.setItem('isLoggedIn', 'false'); } catch (e) {}
-          try { await AsyncStorage.removeItem('memberSince'); } catch (e) {}
-          try { await AsyncStorage.removeItem(`submittedEvents_${username}`); } catch (e) {}
-          try { await AsyncStorage.removeItem(`eventSignups_${username}`); } catch (e) {}
-          try { await AsyncStorage.removeItem(`draftEvents_${username}`); } catch (e) {}
-        } else {
-          try { await AsyncStorage.setItem('isLoggedIn', 'false'); } catch (e) {}
-          try { await AsyncStorage.removeItem('memberSince'); } catch (e) {}
-        }
-      } catch (asyncError) {
-        console.warn('Error clearing AsyncStorage:', asyncError);
-      }
-      
-      // Also try clearing any stored username
-      try {
-        await EncryptedStorage.setItem('username', '');
-        await AsyncStorage.removeItem('current_username');
-        await AsyncStorage.removeItem('fallback_username');
-      } catch (error) {
-        console.warn('Error clearing username:', error);
-      }
-      
-      // Reset profile context
+      // Reset the profile state
       setProfile({
         name: '',
         username: '',
@@ -153,32 +128,17 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         memberSince: '',
       });
       
-      // Navigate to ProfileSetupScreen
+      // Navigate to login screen
       navigation.reset({
         index: 0,
         routes: [{ name: 'ProfileSetup' }],
       });
     } catch (error) {
-      console.error('Error during sign out:', error);
-      
-      // Force sign out even if there are errors
-      setProfile({
-        name: '',
-        username: '',
-        email: '',
-        phone: '',
-        profileImage: null,
-        memberSince: '',
-      });
-      
-      // Navigate to ProfileSetupScreen regardless of errors
+      // Still navigate to login screen even on error
       navigation.reset({
         index: 0,
         routes: [{ name: 'ProfileSetup' }],
       });
-      
-      // Show a less alarming message
-      Alert.alert('Sign Out', 'You have been signed out, but some data cleanup may not have completed.');
     }
   };
 
@@ -186,15 +146,11 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     <ProfileContext.Provider value={{ 
       profile, 
       updateProfile: (updatedProfile) => {
-        console.log('Updating profile in context:', updatedProfile);
-        // Update the local state
-        setProfile((prev) => {
-          const newProfile = { ...prev, ...updatedProfile };
-          console.log('New profile state:', newProfile);
-          return newProfile;
-        });
+        setProfile((prev) => ({ ...prev, ...updatedProfile }));
       }, 
-      signOut 
+      signOut,
+      checkLoginStatus,
+      clearLoginState
     }}>
       {children}
     </ProfileContext.Provider>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -7,6 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { RootStackParamList } from '../App';
 import { ProfileContext } from '../ProfileContext';
+import { getProfileImage, isTemporaryFile, verifyImageExists } from '../utils/ImageUtils';
+import { clearLoginState } from '../utils/StorageUtils';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -17,105 +19,67 @@ const BottomNavBar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
 
-  // Validate image URI to avoid errors
-  const validateImageUri = (uri: string | null): boolean => {
+  // Simple silent profile image validation
+  const validateImageUri = (uri: string | null | undefined): boolean => {
     if (!uri) return false;
-    
-    // Check if it's a valid string URI
     if (typeof uri !== 'string') return false;
-    
-    // Check if it has a valid scheme
-    return uri.startsWith('file://') || uri.startsWith('http://') || uri.startsWith('https://');
+    return uri.startsWith('http') || uri.startsWith('file://');
   };
 
   // Main effect to check login status and load profile image
   useEffect(() => {
-    const checkLoginAndLoadImage = async () => {
-      try {
-        // Reset error state on each check
-        setImageLoadError(false);
-        
-        // Check login status
-        const encryptedLoginStatus = await EncryptedStorage.getItem('isLoggedIn');
-        const asyncLoginStatus = await AsyncStorage.getItem('isLoggedIn');
-        const isUserLoggedIn = encryptedLoginStatus === 'true' || asyncLoginStatus === 'true';
-        
-        console.log('BOTTOM NAV - Login status:', isUserLoggedIn);
-        
-        // Set login state first
-        setIsLoggedIn(isUserLoggedIn);
-        
-        // Clear the profile image if not logged in
-        if (!isUserLoggedIn) {
-          setProfileImage(null);
-          return;
-        }
-        
-        // Use profile.profileImage first if available
-        if (profile && profile.profileImage && validateImageUri(profile.profileImage)) {
-          console.log('BOTTOM NAV - Using profile image from context');
-          setProfileImage(profile.profileImage);
-          return;
-        }
-        
-        // Otherwise, try to get from AsyncStorage
-        const savedImage = await AsyncStorage.getItem('profileImage');
-        console.log('BOTTOM NAV - Profile image from AsyncStorage:', savedImage ? 'found' : 'not found');
-        
-        if (savedImage && validateImageUri(savedImage)) {
-          setProfileImage(savedImage);
-          return;
-        }
-        
-        // Try username-specific image as final fallback
-        try {
-          const username = await AsyncStorage.getItem('username') || 
-                         await EncryptedStorage.getItem('username');
-                         
-          if (username) {
-            const userImage = await AsyncStorage.getItem(`profileImage_${username}`);
-            if (userImage && validateImageUri(userImage)) {
-              console.log('BOTTOM NAV - Found user-specific image');
-              setProfileImage(userImage);
-              
-              // Save it to the main key for next time
-              await AsyncStorage.setItem('profileImage', userImage);
-              return;
-            }
-          }
-        } catch (err) {
-          console.warn('BOTTOM NAV - Error loading user-specific image:', err);
-        }
-        
-        // No valid image found
-        setProfileImage(null);
-      } catch (error) {
-        console.error('BOTTOM NAV - Error:', error);
-        setProfileImage(null);
-      }
-    };
+    // Just use the profile state directly without AsyncStorage or disk checks
+    const loggedIn = !!profile?.username;
+    setIsLoggedIn(loggedIn);
     
-    // Initial check
-    checkLoginAndLoadImage();
+    if (loggedIn && profile.profileImage && validateImageUri(profile.profileImage)) {
+      setProfileImage(profile.profileImage);
+    } else {
+      setProfileImage(null);
+    }
     
-    // Set up listener for when screen is focused
-    const unsubscribe = navigation.addListener('focus', () => {
-      checkLoginAndLoadImage();
-    });
-    
-    return () => unsubscribe();
-  }, [navigation, profile]);
+    setImageLoadError(false);
+  }, [profile]);
 
-  const handleProfilePress = () => {
+  const handleProfilePress = async () => {
+    // Always navigate to correct screen based on login state
     if (isLoggedIn) {
       navigation.navigate('UserProfile' as never);
     } else {
-      navigation.navigate('ProfileSetup', { skipWelcome: false });
+      try {
+        await AsyncStorage.setItem('isLoggedIn', 'false');
+      } catch (e) {
+        // Ignore errors
+      }
+      navigation.navigate('ProfileSetup' as never);
     }
+  };
+
+  const handleProfileLongPress = () => {
+    Alert.alert(
+      'Storage Utility',
+      'Do you want to clear app storage and logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Open Utility',
+          onPress: () => navigation.navigate('ClearStorage' as never)
+        }
+      ]
+    );
   };
 
   // If profileImage is non-null AND isLoggedIn is true AND no image load error, show the profile image
   const showProfileImage = isLoggedIn && profileImage !== null && !imageLoadError;
+
+  // Image load error handler
+  const handleImageError = () => {
+    setImageLoadError(true);
+    setProfileImage(null);
+  };
 
   return (
     <View style={styles.bottomNav}>
@@ -134,17 +98,19 @@ const BottomNavBar = () => {
         <Text style={styles.iconLabel}>Create Event</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={handleProfilePress} style={styles.navButton}>
+      <TouchableOpacity 
+        onPress={handleProfilePress} 
+        onLongPress={handleProfileLongPress}
+        delayLongPress={1000}
+        style={styles.navButton}
+      >
         <View style={{ alignItems: 'center', justifyContent: 'center' }}>
           {showProfileImage ? (
             <Image 
               source={{ uri: profileImage || undefined }} 
               style={styles.profileImageNav}
               resizeMode="cover"
-              onError={() => {
-                console.log('BOTTOM NAV - Image failed to load');
-                setImageLoadError(true);
-              }}
+              onError={handleImageError}
             />
           ) : (
             <MaterialIcons 

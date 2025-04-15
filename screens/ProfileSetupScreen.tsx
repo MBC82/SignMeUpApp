@@ -136,6 +136,7 @@ const ProfileSetupScreen = ({ route }: { route: { params?: { skipWelcome?: boole
   const [targetValue, setTargetValue] = useState(0);
   const [isVerified, setIsVerified] = useState(false);
   const [sliderWidth, setSliderWidth] = useState(300);
+  const [isLoading, setIsLoading] = useState(true);
 
   const loadProfile = async () => {
     try {
@@ -148,6 +149,8 @@ const ProfileSetupScreen = ({ route }: { route: { params?: { skipWelcome?: boole
       }
     } catch (error) {
       console.log('Error loading profile:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -822,6 +825,32 @@ const ProfileSetupScreen = ({ route }: { route: { params?: { skipWelcome?: boole
       console.log('Cleared user-specific data:', userKeys);
     }
   };
+
+  // Add a useEffect that runs on screen focus to ensure login state is reset
+  useFocusEffect(
+    React.useCallback(() => {
+      const initializeLoginState = async () => {
+        try {
+          console.log('ProfileSetupScreen focused - resetting login state');
+          // Force clear AsyncStorage username to ensure consistent login state
+          await AsyncStorage.removeItem('username');
+          await AsyncStorage.removeItem('current_username');
+          await AsyncStorage.removeItem('fallback_username');
+          await AsyncStorage.setItem('isLoggedIn', 'false');
+          
+          // Force clear EncryptedStorage username
+          await EncryptedStorage.setItem('isLoggedIn', 'false');
+          await EncryptedStorage.setItem('username', '');
+          
+          console.log('Login state reset successfully');
+        } catch (e) {
+          // Silent error handling - username missing is expected during logout
+        }
+      };
+      
+      initializeLoginState();
+    }, [])
+  );
 
   return (
     <ImageBackground

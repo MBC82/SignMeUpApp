@@ -12,6 +12,8 @@ import {
   SafeAreaView,
   Linking,
   Modal,
+  ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { ProfileContext } from '../ProfileContext';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -25,6 +27,39 @@ import EncryptedStorage from 'react-native-encrypted-storage';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Header from '../components/Header';
 import { uploadProfileImage, getProfileImageUrl } from '../utils/firebaseStorage';
+import { saveProfileImagePermanently, getProfileImage, isTemporaryFile } from '../utils/ImageUtils';
+import { clearLoginState } from '../utils/StorageUtils';
+
+// Custom date formatter function
+const formatDate = (date: string | Date | null | undefined): string => {
+  if (!date) return 'Unknown'; // Default instead of empty string
+
+  // Handle invalid date strings
+  if (typeof date === 'string' && (!date.trim() || date === 'Invalid Date')) {
+    return 'Unknown';
+  }
+  
+  try {
+    if (typeof date === 'string') {
+      const parsedDate = new Date(date);
+      // Check if date is valid
+      if (isNaN(parsedDate.getTime())) {
+        return 'Unknown';
+      }
+      date = parsedDate;
+    }
+    
+    const options: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    };
+    return date.toLocaleDateString('en-US', options);
+  } catch (e) {
+    // Silent error handling
+    return 'Unknown';
+  }
+};
 
 type EventDate = {
   date: string;
@@ -77,8 +112,35 @@ type RootStackParamList = {
 
 type UserProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'UserProfile'>;
 
+// Define proper types for Firestore data
+interface EventData {
+  id: string;
+  title: string;
+  date: string;
+  location: string;
+  createdBy: string;
+  [key: string]: any; // For other event properties
+}
+
+interface EventSignupData {
+  eventId: string;
+  userId: string;
+  status: string;
+  [key: string]: any; // For other signup properties
+}
+
+interface UserProfileData {
+  username: string;
+  email: string;
+  phone: string;
+  name: string;
+  memberSince: string;
+  profileImage: string | null;
+  [key: string]: any; // For other profile properties
+}
+
 const UserProfileScreen = () => {
-  const { profile, updateProfile, signOut } = useContext(ProfileContext);
+  const { profile, updateProfile, signOut, checkLoginStatus } = useContext(ProfileContext);
   const navigation = useNavigation<UserProfileScreenNavigationProp>();
   const isFocused = useIsFocused();
   
@@ -143,12 +205,26 @@ const UserProfileScreen = () => {
 
   const [verificationSent, setVerificationSent] = useState(false);
 
+  const [submittedEvents, setSubmittedEvents] = useState<EventData[]>([]);
+  const [eventSignups, setEventSignups] = useState<Record<string, EventSignupData>>({});
+
   useEffect(() => {
-    if (!profile.username) {
-      navigation.navigate('ProfileSetup');
-      return;
-    }
-  }, [profile.username, navigation]);
+    const checkProfile = async () => {
+      try {
+        // Only navigate to ProfileSetup if we're not already there and username is missing
+        if (!profile.username && !isOwnProfile) {
+          const currentRoute = navigation.getState()?.routes[navigation.getState().index]?.name;
+          if (currentRoute !== 'ProfileSetup') {
+            navigation.navigate('ProfileSetup');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking profile:', error);
+      }
+    };
+
+    checkProfile();
+  }, [profile.username, navigation, isOwnProfile]);
 
   useEffect(() => {
     const loadMemberSince = async () => {
@@ -194,17 +270,107 @@ const UserProfileScreen = () => {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const savedImage = await AsyncStorage.getItem('profileImage');
-        if (savedImage) {
-          updateProfile({ profileImage: savedImage });
+        setIsLoading(true);
+
+        // Get the username from EncryptedStorage
+        const username = await EncryptedStorage.getItem('username');
+        if (!username) {
+          // Silent - expected during logout
+          setIsLoading(false);
+          return;
         }
-        const username = await AsyncStorage.getItem('username');
-        if (username) {
-          setIsPremium(await AsyncStorage.getItem('isPremium') === 'true');
-          setIsDesigner(await AsyncStorage.getItem('isDesigner') === 'true');
+
+        // Initialize user data with basic info
+        const userData: UserProfileData = {
+          username,
+          email: '',
+          phone: '',
+          name: '',
+          memberSince: '',
+          profileImage: null,
+        };
+
+        // Try to load from EncryptedStorage
+        try {
+          const userProfileStr = await EncryptedStorage.getItem('userProfile');
+          if (userProfileStr) {
+            const userProfile = JSON.parse(userProfileStr);
+            
+            // Update userData with stored data
+            Object.assign(userData, userProfile);
+            
+            // Format the member since date
+            if (userData.memberSince) {
+              userData.memberSince = formatDate(userData.memberSince);
+            }
+          }
+        } catch (storageError) {
+          console.error('Error loading from storage:', storageError);
         }
+
+        // Load profile image if not present in profile data
+        if (!userData.profileImage) {
+          try {
+            // Try to get from EncryptedStorage
+            const profileData = await EncryptedStorage.getItem('userProfile');
+            if (profileData) {
+              const parsedProfile = JSON.parse(profileData);
+              if (parsedProfile.profileImage) {
+                userData.profileImage = parsedProfile.profileImage;
+              }
+            }
+            
+            // Also check AsyncStorage as fallback, but we're moving away from it
+            if (!userData.profileImage) {
+              const asyncProfileImage = await AsyncStorage.getItem('profileImage');
+              if (asyncProfileImage) {
+                userData.profileImage = asyncProfileImage;
+              }
+            }
+          } catch (imageError) {
+            console.error('Error loading profile image:', imageError);
+          }
+        }
+
+        // Load feature flags from EncryptedStorage
+        try {
+          const isPremium = await EncryptedStorage.getItem('isPremium') === 'true';
+          const isDesigner = await EncryptedStorage.getItem('isDesigner') === 'true';
+          
+          setIsPremium(isPremium);
+          setIsDesigner(isDesigner);
+        } catch (flagsError) {
+          console.error('Error loading feature flags:', flagsError);
+        }
+
+        // Update state with user data
+        setProfileImage(userData.profileImage);
+        updateProfile(userData);
+        
+        // Load events from AsyncStorage as fallback
+        try {
+          // Get user events from AsyncStorage
+          const submittedEventsStr = await AsyncStorage.getItem(`submittedEvents_${username}`);
+          const events = submittedEventsStr ? JSON.parse(submittedEventsStr) : [];
+          
+          setSubmittedEvents(events);
+          
+          // Get event signups from AsyncStorage
+          const eventSignupsStr = await AsyncStorage.getItem(`eventSignups_${username}`);
+          const signups = eventSignupsStr ? JSON.parse(eventSignupsStr) : {};
+          
+          setEventSignups(signups);
+        } catch (eventsError) {
+          console.error('Error loading events:', eventsError);
+          // Initialize with empty values if there's an error
+          setSubmittedEvents([]);
+          setEventSignups({});
+        }
+        
+        setIsLoading(false);
       } catch (error) {
-        console.log('Error loading user data:', error);
+        console.error('Error in loadUserData:', error);
+        setIsLoading(false);
       }
     };
 
@@ -227,12 +393,15 @@ const UserProfileScreen = () => {
           setNewEmail(parsedData.email || '');
           setNewPhoneNumber(parsedData.phone || '');
           
-          // For the profile image, try to get it from Firebase first
-          const firebaseImage = await getProfileImageUrl(parsedData.username || '');
-          if (firebaseImage) {
-            setProfileImage(firebaseImage);
-          } else if (parsedData.profileImage) {
+          // Check for profile image in the parsed data
+          if (parsedData.profileImage) {
             setProfileImage(parsedData.profileImage);
+          } else {
+            // Fallback to AsyncStorage if needed
+            const asyncProfileImage = await AsyncStorage.getItem('profileImage');
+            if (asyncProfileImage) {
+              setProfileImage(asyncProfileImage);
+            }
           }
         }
       } catch (error) {
@@ -280,51 +449,75 @@ const UserProfileScreen = () => {
     }
   };
 
-  const pickImage = async () => {
+  const handleProfileImageSelect = async () => {
     try {
-      setIsLoading(true);
       const result = await launchImageLibrary({
         mediaType: 'photo',
-        quality: 0.7,
-        includeBase64: false,
+        quality: 0.8,
       });
       
-      if (!result.didCancel && result.assets && result.assets.length > 0) {
-        const selectedImage = result.assets[0].uri;
+      if (result.didCancel || !result.assets || result.assets.length === 0) {
+        return;
+      }
+      
+      const selectedImage = result.assets[0].uri;
+      
+      if (selectedImage && profile?.username) {
+        console.log('Selected image:', selectedImage);
         
-        // Update state immediately for UI feedback
-        if (selectedImage) {
-          setProfileImage(selectedImage);
+        // Set the image immediately for a responsive UI
+        setProfileImage(selectedImage);
         
-          try {
-            // Upload to Firebase Storage and get download URL
-            const downloadUrl = await uploadProfileImage(selectedImage, profile.username || '');
+        // Save to permanent storage
+        if (isTemporaryFile(selectedImage)) {
+          console.log('Image is temporary, saving to permanent storage...');
+          const permanentUri = await saveProfileImagePermanently(profile.username, selectedImage);
+          
+          if (permanentUri) {
+            console.log('Saved image permanently:', permanentUri);
+            setProfileImage(permanentUri);
             
-            if (downloadUrl) {
-              // Update state and encrypted storage with the download URL
-              setProfileImage(downloadUrl);
-              
-              // Update profile in encrypted storage
-              const profileData = await EncryptedStorage.getItem('userProfile');
-              if (profileData) {
-                const parsedData = JSON.parse(profileData);
-                await EncryptedStorage.setItem('userProfile', JSON.stringify({
-                  ...parsedData,
-                  profileImage: downloadUrl
-                }));
-              }
-            }
-          } catch (error) {
-            console.error('Error saving profile image:', error);
-            Alert.alert('Error', 'Failed to save profile image. Please try again.');
+            // Update profile with the new image
+            const updatedProfile = {
+              ...profile,
+              profileImage: permanentUri
+            };
+            
+            updateProfile(updatedProfile);
+            
+            // Save to EncryptedStorage as backup
+            await EncryptedStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+          } else {
+            console.error('Failed to save image permanently');
+            Alert.alert('Warning', 'Profile image set but may not persist after app restart');
           }
+        } else {
+          // Already a permanent file, just update the profile
+          const updatedProfile = {
+            ...profile,
+            profileImage: selectedImage
+          };
+          
+          updateProfile(updatedProfile);
+          await EncryptedStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+        }
+        
+        // Optional: Try to upload to Firebase for cloud storage if available
+        try {
+          const downloadUrl = await uploadProfileImage(selectedImage, profile.username);
+          if (downloadUrl) {
+            console.log('Uploaded image to Firebase:', downloadUrl);
+            // We don't update the UI with the Firebase URL since we're using the local file
+            // But we could store it as a backup
+            await AsyncStorage.setItem(`firebaseProfileImage_${profile.username.toLowerCase()}`, downloadUrl);
+          }
+        } catch (firebaseError) {
+          console.error('Failed to upload to Firebase (continuing with local image):', firebaseError);
         }
       }
     } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
-    } finally {
-      setIsLoading(false);
+      console.error('Error selecting image:', error);
+      Alert.alert('Error', 'There was a problem selecting the image.');
     }
   };
 
@@ -552,6 +745,19 @@ const UserProfileScreen = () => {
     }
   };
 
+  // Simplified login check that only runs once on mount 
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      // If username isn't in the profile context, user isn't properly logged in
+      if (!profile.username) {
+        // Navigate to login screen
+        navigation.navigate('ProfileSetup');
+      }
+    };
+    
+    checkLoginStatus();
+  }, [navigation, profile.username]);
+
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -570,7 +776,7 @@ const UserProfileScreen = () => {
                   style={styles.profileImage}
                 />
               ) : (
-                <TouchableOpacity onPress={pickImage} style={styles.profileImagePlaceholder}>
+                <TouchableOpacity onPress={handleProfileImageSelect} style={styles.profileImagePlaceholder}>
                   <View style={styles.defaultProfileCircle}>
                     <Text style={styles.chooseImageText}>Choose Image</Text>
                   </View>
@@ -578,13 +784,13 @@ const UserProfileScreen = () => {
               )}
               <TouchableOpacity 
                 style={styles.editImageButton}
-                onPress={pickImage}
+                onPress={handleProfileImageSelect}
               >
                 <MaterialIcons name="add-a-photo" size={24} color="white" />
               </TouchableOpacity>
             </View>
             <Text style={styles.userName}>{profile.name}</Text>
-            <Text style={styles.userInfo}>Member since: {new Date(profile.memberSince).toLocaleDateString()}</Text>
+            <Text style={styles.userInfo}>Member since: {formatDate(profile.memberSince)}</Text>
           </View>
 
           <View style={styles.statsContainer}>

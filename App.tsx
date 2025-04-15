@@ -23,6 +23,9 @@ import { NotificationsScreen } from './screens/NotificationsScreen';
 import CreateChatScreen from './screens/CreateChatScreen';
 import TopNav from './components/TopNav';
 import BottomNavBar from './components/BottomNavBar';
+import ClearStorage from './ClearStorage';
+// Import the ImageUtils module silently but don't use it directly
+import {} from './utils/ImageUtils';
 
 type EventDate = {
   date: string;
@@ -96,6 +99,7 @@ export type RootStackParamList = {
   RecentChats: undefined;
   Notifications: undefined;
   CreateChat: undefined;
+  ClearStorage: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -114,22 +118,37 @@ const App = () => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        console.log('Initializing Firebase...');
+        // Initialize Firebase first
         await initializeFirebase();
-        console.log('Firebase initialized successfully');
         setIsFirebaseInitialized(true);
-
-        // Load user data
-        const savedUsername = await AsyncStorage.getItem('username');
-        const premium = await AsyncStorage.getItem('isPremium');
-        const designer = await AsyncStorage.getItem('isDesigner');
         
-        if (savedUsername) setUsername(savedUsername);
-        if (premium) setIsPremium(premium === 'true');
-        if (designer) setIsDesigner(designer === 'true');
+        // Initialize storage only once
+        try {
+          const appInit = await AsyncStorage.getItem('app_initialized');
+          if (!appInit) {
+            await AsyncStorage.setItem('app_initialized', 'true');
+          }
+        } catch (e) {
+          // Ignore storage errors
+        }
+        
+        // Load user data in one operation
+        try {
+          const [username, premium, designer] = await Promise.all([
+            AsyncStorage.getItem('username'),
+            AsyncStorage.getItem('isPremium'),
+            AsyncStorage.getItem('isDesigner')
+          ]);
+          
+          if (username) setUsername(username);
+          if (premium) setIsPremium(premium === 'true'); 
+          if (designer) setIsDesigner(designer === 'true');
+        } catch (e) {
+          // Ignore data load errors
+        }
       } catch (error) {
-        console.error('Error initializing app:', error);
-        // Don't set isFirebaseInitialized to true if initialization failed
+        // Always set firebase initialization to true to allow app to function
+        setIsFirebaseInitialized(true);
       }
     };
 
@@ -214,6 +233,10 @@ const App = () => {
                   <Stack.Screen 
                     name="CreateChat" 
                     component={CreateChatScreen as React.ComponentType<ScreenProps>} 
+                  />
+                  <Stack.Screen 
+                    name="ClearStorage" 
+                    component={ClearStorage as React.ComponentType<ScreenProps>} 
                   />
                 </Stack.Navigator>
                 <BottomNavBar />

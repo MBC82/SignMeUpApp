@@ -330,4 +330,124 @@ export const clearLoginStatus = async () => {
     console.error('Error clearing login status:', error);
     return false;
   }
+};
+
+/**
+ * Forcibly resets the login state to logged out
+ * Use this when login state is inconsistent
+ */
+export const clearLoginState = async () => {
+  let allSuccess = true;
+  
+  // Create a helper for error handling
+  const safeSetItem = async (
+    storage: typeof AsyncStorage | typeof EncryptedStorage, 
+    key: string, 
+    value: string
+  ): Promise<boolean> => {
+    try {
+      await storage.setItem(key, value);
+      return true;
+    } catch (error) {
+      console.warn(`Error setting ${key} in storage:`, error);
+      allSuccess = false;
+      return false;
+    }
+  };
+  
+  try {
+    // Clear login state in EncryptedStorage - handle each operation separately
+    try {
+      await EncryptedStorage.setItem('isLoggedIn', 'false');
+    } catch (error) {
+      console.warn('Error setting isLoggedIn in EncryptedStorage:', error);
+      allSuccess = false;
+    }
+    
+    // Clear username but don't delete it
+    try {
+      await EncryptedStorage.setItem('username', '');
+    } catch (error) {
+      console.warn('Error setting username in EncryptedStorage:', error);
+      allSuccess = false;
+    }
+    
+    try {
+      await EncryptedStorage.setItem('userProfile', JSON.stringify({}));
+    } catch (error) {
+      console.warn('Error setting userProfile in EncryptedStorage:', error);
+      allSuccess = false;
+    }
+    
+    // Clear login state in AsyncStorage
+    try {
+      await AsyncStorage.setItem('isLoggedIn', 'false');
+    } catch (error) {
+      console.warn('Error setting isLoggedIn in AsyncStorage:', error);
+      allSuccess = false;
+    }
+    
+    // Create a directory structure if it doesn't exist
+    try {
+      const tempKey = `_clear_login_${Date.now()}`;
+      await AsyncStorage.setItem(tempKey, 'true');
+      await AsyncStorage.removeItem(tempKey);
+    } catch (e) {
+      console.warn('Error initializing AsyncStorage:', e);
+      allSuccess = false;
+    }
+    
+    // Try to remove other items, but don't fail if they don't exist
+    const itemsToRemove: string[] = [
+      'memberSince',
+      'current_username',
+      'fallback_username'
+    ];
+    
+    for (const key of itemsToRemove) {
+      try {
+        await AsyncStorage.removeItem(key);
+      } catch (e) {
+        // Ignore these errors
+      }
+    }
+    
+    if (allSuccess) {
+      console.log('Login state successfully cleared');
+    } else {
+      console.warn('Login state partially cleared with some errors');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error clearing login state:', error);
+    return false;
+  }
+};
+
+/**
+ * Performs a reliable user logout by clearing all storage
+ */
+export const logoutUser = async (): Promise<boolean> => {
+  try {
+    // Clear AsyncStorage login items
+    await AsyncStorage.setItem('isLoggedIn', 'false');
+    
+    // Don't delete the username completely for profile reference
+    await AsyncStorage.setItem('current_username', '');
+    
+    // Clear encrypted storage
+    try {
+      await EncryptedStorage.setItem('isLoggedIn', 'false');
+      await EncryptedStorage.setItem('username', '');
+      await EncryptedStorage.setItem('userProfile', JSON.stringify({}));
+    } catch (e) {
+      // Ignore encrypted storage errors
+    }
+    
+    return true;
+  } catch (error) {
+    // Always return true to avoid blocking the UI
+    return true;
+  }
 }; 

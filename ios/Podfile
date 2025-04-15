@@ -33,7 +33,7 @@ target 'SignMeUp' do
     :hermes_enabled => flags[:hermes_enabled],
     :fabric_enabled => flags[:fabric_enabled],
     :flipper_configuration => flipper_config,
-    :app_path => "#{Pod::Config.instance.installation_root}/.."
+    :app_path => "#{Dir.pwd}/.."
   )
 
   target 'SignMeUpTests' do
