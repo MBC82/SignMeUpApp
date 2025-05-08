@@ -18,6 +18,7 @@ import EncryptedStorage from 'react-native-encrypted-storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { checkLoginStatus, clearLoginStatus } from '../utils/StorageUtils';
 import ChatButton from '../components/ChatButton';
+import { useAuth } from '../contexts/AuthContext';
 
 // Update type definitions at the top of the file
 type RootStackParamList = {
@@ -157,9 +158,12 @@ const MyEventsScreen = () => {
   const isFocused = useIsFocused();
   const [submittedEvents, setSubmittedEvents] = useState<Event[]>([]);
   const [draftEvents, setDraftEvents] = useState<Event[]>([]);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUsername, setCurrentUsername] = useState('');
+  
+  // Use the Firebase auth context
+  const { isLoggedIn: firebaseLoggedIn, user } = useAuth();
 
   // Add this useEffect to monitor app state changes
   useEffect(() => {
@@ -188,28 +192,47 @@ const MyEventsScreen = () => {
       setDraftEvents([]);
       setCurrentUsername('');
       
-      // Get login status using the utility function
-      const { isLoggedIn, username } = await checkLoginStatus();
-      
-      console.log('Login status check:', { isLoggedIn, username });
-      
-      // Only consider logged in if both conditions are met
-      if (isLoggedIn && username) {
-        console.log('User is logged in, loading events for:', username);
-        setIsLoggedIn(true);
-        setCurrentUsername(username);
-        // Load events for this specific user
-        await loadEventsForUser(username);
-      } else {
-        console.log('User is NOT logged in, clearing events');
-        setIsLoggedIn(false);
-        setCurrentUsername('');
-        // Ensure events are cleared
-        setSubmittedEvents([]);
-        setDraftEvents([]);
+      // Primary check with Firebase authentication
+      if (firebaseLoggedIn && user) {
+        console.log('Firebase authenticated user:', user.email);
         
-        // Clear any cached events
-        await AsyncStorage.removeItem('cachedEvents');
+        // Also get the username from storage
+        const { username } = await checkLoginStatus();
+        
+        if (username) {
+          console.log('User is logged in, loading events for:', username);
+          setCurrentUsername(username);
+          // Load events for this specific user
+          await loadEventsForUser(username);
+        } else {
+          console.log('Firebase authenticated but no username found');
+        }
+        
+        setIsLoggedIn(true);
+      } else {
+        // Fallback to storage-based check only if Firebase auth fails
+        const { isLoggedIn, username } = await checkLoginStatus();
+        
+        console.log('Storage login check:', { isLoggedIn, username });
+        
+        // Only consider logged in if both conditions are met
+        if (isLoggedIn && username) {
+          console.log('User is logged in via storage, loading events for:', username);
+          setIsLoggedIn(true);
+          setCurrentUsername(username);
+          // Load events for this specific user
+          await loadEventsForUser(username);
+        } else {
+          console.log('User is NOT logged in, clearing events');
+          setIsLoggedIn(false);
+          setCurrentUsername('');
+          // Ensure events are cleared
+          setSubmittedEvents([]);
+          setDraftEvents([]);
+          
+          // Clear any cached events
+          await AsyncStorage.removeItem('cachedEvents');
+        }
       }
       
       setIsLoading(false);
@@ -227,7 +250,7 @@ const MyEventsScreen = () => {
   // Update the first useEffect to use the extracted function
   useEffect(() => {
     checkLoginStatusAndLoadEvents();
-  }, []);
+  }, [firebaseLoggedIn, user]); // Add Firebase auth state as dependency
   
   // Update the useFocusEffect to use the extracted function
   useFocusEffect(
@@ -237,7 +260,7 @@ const MyEventsScreen = () => {
       return () => {
         console.log('Focus effect cleanup');
       };
-    }, [])
+    }, [firebaseLoggedIn, user]) // Add Firebase auth state as dependency
   );
 
   const loadEventsForUser = async (username: string) => {
@@ -400,11 +423,6 @@ const MyEventsScreen = () => {
       isPreview: false,
       headerTileColor: event.headerTileColor || event.tileColor || '#f0f0f0',
       headerFontColor: event.headerFontColor || event.fontColor || 'black',
-      screenBgColor: event.bgColor || 'white',
-      modalFontColor: event.fontColor || 'black',
-      modalFontSize: event.fontSize || 16,
-      modalFontType: event.fontType || 'sans-serif',
-      modalTileColor: event.tileColor || '#f0f0f0',
       isPremium: event.isPremium || false,
       isDesigner: event.isDesigner || false
     });
@@ -562,6 +580,11 @@ const MyEventsScreen = () => {
               <Text style={styles.liveText}>LIVE</Text>
             </View>
           )}
+          {isDraft && (
+            <View style={styles.draftIconContainer}>
+              <Text style={styles.draftText}>DRAFT</Text>
+            </View>
+          )}
           <View style={[styles.eventCardContent, { backgroundColor: headerTileColor }]}>
             <View style={styles.eventHeader}>
               <Text style={[styles.eventTitle, { 
@@ -633,7 +656,7 @@ const MyEventsScreen = () => {
   }
 
   // If not logged in, show login required screen
-  if (!isLoggedIn) {
+  if (!isLoggedIn && !firebaseLoggedIn) {
     return (
       <ImageBackground
         source={require('../ios/assets/blue.jpg')}
@@ -889,6 +912,23 @@ const styles = StyleSheet.create({
   },
   liveText: {
     color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  draftIconContainer: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'gold',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'navy',
+    zIndex: 10,
+  },
+  draftText: {
+    color: 'navy',
     fontSize: 12,
     fontWeight: 'bold',
   },

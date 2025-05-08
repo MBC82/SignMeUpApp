@@ -13,6 +13,7 @@ import { ProfileProvider } from './ProfileContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { EncryptedStorageProvider } from './contexts/EncryptedStorageContext';
+import { AuthProvider } from './contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import EnhancedSignUpScreen from './screens/EnhancedSignUpScreen';
 import SignUpScreen from './screens/SignUpScreen';
@@ -166,85 +167,87 @@ const App = () => {
 
   return (
     <NavigationContainer>
-      <ProfileProvider>
-        <LanguageProvider>
-          <ThemeProvider>
-            <EncryptedStorageProvider>
-              <StatusBar barStyle="dark-content" />
-              <View style={styles.mainContainer}>
-                <TopNav 
-                  isPremium={isPremium}
-                  isDesigner={isDesigner}
-                  username={username}
-                />
-                <Stack.Navigator
-                  screenOptions={{
-                    headerShown: false,
-                  }}
-                >
-                  <Stack.Screen 
-                    name="Home" 
-                    component={HomeScreen as React.ComponentType<ScreenProps>} 
+      <AuthProvider>
+        <ProfileProvider>
+          <LanguageProvider>
+            <ThemeProvider>
+              <EncryptedStorageProvider>
+                <StatusBar barStyle="dark-content" />
+                <View style={styles.mainContainer}>
+                  <TopNav 
+                    isPremium={isPremium}
+                    isDesigner={isDesigner}
+                    username={username}
                   />
-                  <Stack.Screen 
-                    name="EventDetails" 
-                    component={EventDetailsScreen as React.ComponentType<ScreenProps>} 
-                  />
-                  <Stack.Screen 
-                    name="CreateEvent" 
-                    component={CreateEventScreen as React.ComponentType<ScreenProps>} 
-                  />
-                  <Stack.Screen 
-                    name="MyEvents" 
-                    component={MyEventsScreen as React.ComponentType<ScreenProps>} 
-                  />
-                  <Stack.Screen 
-                    name="ProfileSetup" 
-                    component={ProfileSetupScreen as React.ComponentType<ScreenProps>} 
-                  />
-                  <Stack.Screen 
-                    name="UserProfile" 
-                    component={UserProfileScreen as React.ComponentType<ScreenProps>} 
-                  />
-                  <Stack.Screen 
-                    name="EnhancedSignUp" 
-                    component={EnhancedSignUpScreen as React.ComponentType<ScreenProps>} 
-                  />
-                  <Stack.Screen 
-                    name="SignUpScreen" 
-                    component={SignUpScreen as React.ComponentType<ScreenProps>} 
-                  />
-                  <Stack.Screen 
-                    name="EventSignUp" 
-                    component={EventSignUpScreen as React.ComponentType<ScreenProps>} 
-                  />
-                  <Stack.Screen 
-                    name="Chat" 
-                    component={ChatScreen as React.ComponentType<ScreenProps>} 
-                  />
-                  <Stack.Screen 
-                    name="RecentChats" 
-                    component={RecentChatsScreen as React.ComponentType<ScreenProps>} 
-                  />
-                  <Stack.Screen 
-                    name="Notifications" 
-                    component={NotificationsScreen as React.ComponentType<ScreenProps>} 
-                  />
-                  <Stack.Screen 
-                    name="CreateChat" 
-                    component={CreateChatScreen as React.ComponentType<ScreenProps>} 
-                  />
-                  <Stack.Screen 
-                    name="ClearStorage" 
-                    component={ClearStorage as React.ComponentType<ScreenProps>} 
-                  />
-                </Stack.Navigator>
-                <BottomNavBar />
-              </View>
-            </EncryptedStorageProvider>
-          </ThemeProvider>
-        </LanguageProvider>
-      </ProfileProvider>
+                  <Stack.Navigator
+                    screenOptions={{
+                      headerShown: false,
+                    }}
+                  >
+                    <Stack.Screen 
+                      name="Home" 
+                      component={HomeScreen as React.ComponentType<ScreenProps>} 
+                    />
+                    <Stack.Screen 
+                      name="EventDetails" 
+                      component={EventDetailsScreen as React.ComponentType<ScreenProps>} 
+                    />
+                    <Stack.Screen 
+                      name="CreateEvent" 
+                      component={CreateEventScreen as React.ComponentType<ScreenProps>} 
+                    />
+                    <Stack.Screen 
+                      name="MyEvents" 
+                      component={MyEventsScreen as React.ComponentType<ScreenProps>} 
+                    />
+                    <Stack.Screen 
+                      name="ProfileSetup" 
+                      component={ProfileSetupScreen as React.ComponentType<ScreenProps>} 
+                    />
+                    <Stack.Screen 
+                      name="UserProfile" 
+                      component={UserProfileScreen as React.ComponentType<ScreenProps>} 
+                    />
+                    <Stack.Screen 
+                      name="EnhancedSignUp" 
+                      component={EnhancedSignUpScreen as React.ComponentType<ScreenProps>} 
+                    />
+                    <Stack.Screen 
+                      name="SignUpScreen" 
+                      component={SignUpScreen as React.ComponentType<ScreenProps>} 
+                    />
+                    <Stack.Screen 
+                      name="EventSignUp" 
+                      component={EventSignUpScreen as React.ComponentType<ScreenProps>} 
+                    />
+                    <Stack.Screen 
+                      name="Chat" 
+                      component={ChatScreen as React.ComponentType<ScreenProps>} 
+                    />
+                    <Stack.Screen 
+                      name="RecentChats" 
+                      component={RecentChatsScreen as React.ComponentType<ScreenProps>} 
+                    />
+                    <Stack.Screen 
+                      name="Notifications" 
+                      component={NotificationsScreen as React.ComponentType<ScreenProps>} 
+                    />
+                    <Stack.Screen 
+                      name="CreateChat" 
+                      component={CreateChatScreen as React.ComponentType<ScreenProps>} 
+                    />
+                    <Stack.Screen 
+                      name="ClearStorage" 
+                      component={ClearStorage as React.ComponentType<ScreenProps>} 
+                    />
+                  </Stack.Navigator>
+                  <BottomNavBar />
+                </View>
+              </EncryptedStorageProvider>
+            </ThemeProvider>
+          </LanguageProvider>
+        </ProfileProvider>
+      </AuthProvider>
     </NavigationContainer>
   );
 };

@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { Platform } from 'react-native';
+import { authService } from '../config/firebase';
 
 // Add this helper function at the top of the file
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -172,12 +173,27 @@ export const safeRemoveItem = async (key) => {
 // Check login status
 export const checkLoginStatus = async () => {
   try {
-    const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
-    const username = await safeGetItem('username');
+    // First check Firebase Authentication status
+    const currentUser = authService.currentUser;
     
+    if (currentUser) {
+      // User is logged in with Firebase
+      console.log('User is authenticated with Firebase:', currentUser.email);
+      
+      // Get username from storage as Firebase might not have it
+      const username = await safeGetItem('username');
+      
+      return {
+        isLoggedIn: true,
+        username
+      };
+    }
+    
+    // If not logged in with Firebase, we should consider the user logged out
+    console.log('No authenticated Firebase user found');
     return {
-      isLoggedIn: isLoggedIn === 'true',
-      username
+      isLoggedIn: false,
+      username: null
     };
   } catch (error) {
     console.error('Error checking login status:', error);
@@ -203,79 +219,20 @@ export const setLoginStatus = async (isLoggedIn: boolean, username: string | nul
       console.warn('Could not initialize AsyncStorage directories after multiple attempts');
     }
     
-    // Try with EncryptedStorage first
-    try {
-      await EncryptedStorage.setItem('isLoggedIn', isLoggedIn ? 'true' : 'false');
-    } catch (encryptedError) {
-      console.warn('EncryptedStorage write failed:', encryptedError);
-    }
-      
-    // Also try AsyncStorage as backup with retry mechanism
-    let asyncStorageSuccess = false;
-    for (let i = 0; i < 3; i++) {
-      try {
-        await AsyncStorage.setItem('isLoggedIn', isLoggedIn ? 'true' : 'false');
-        asyncStorageSuccess = true;
-        break;
-      } catch (asyncError) {
-        console.warn(`AsyncStorage write attempt ${i+1} failed:`, asyncError);
-        await delay(300);
-      }
+    // We still want to store username in storage for convenience
+    if (isLoggedIn && username) {
+      // Set username
+      await safeSetItem('username', username);
+      await AsyncStorage.setItem('current_username', username);
+      await AsyncStorage.setItem('fallback_username', username);
+    } else {
+      // Clear username
+      await safeRemoveItem('username');
+      await AsyncStorage.removeItem('current_username');
+      await AsyncStorage.removeItem('fallback_username');
     }
     
-    // Set username with retry mechanism
-    let retryCount = 0;
-    const maxRetries = 3;
-    
-    while (retryCount < maxRetries) {
-      try {
-        if (isLoggedIn && username) {
-          // Try EncryptedStorage first
-          try {
-            await EncryptedStorage.setItem('username', username);
-          } catch (encryptedError) {
-            console.warn('EncryptedStorage username write failed:', encryptedError);
-          }
-          
-          // Try AsyncStorage backup with retry
-          for (let i = 0; i < 3; i++) {
-            try {
-              await AsyncStorage.setItem('current_username', username);
-              await AsyncStorage.setItem('fallback_username', username);
-              break;
-            } catch (asyncError) {
-              console.warn(`AsyncStorage username write attempt ${i+1} failed:`, asyncError);
-              await delay(300);
-            }
-          }
-        } else {
-          // Clear the username
-          try {
-            await EncryptedStorage.removeItem('username');
-          } catch (e) {}
-          
-          try {
-            await AsyncStorage.removeItem('current_username');
-            await AsyncStorage.removeItem('fallback_username');
-          } catch (e) {}
-        }
-        
-        return true;
-      } catch (error) {
-        console.warn(`Attempt ${retryCount + 1} failed:`, error);
-        retryCount++;
-        
-        if (retryCount === maxRetries) {
-          console.error('All retry attempts failed:', error);
-          return false;
-        }
-        
-        // Wait a bit before retrying
-        await delay(1000);
-      }
-    }
-    
-    return asyncStorageSuccess;
+    return true;
   } catch (error) {
     console.error('Error setting login status:', error);
     return false;
@@ -320,11 +277,19 @@ export const bypassRemoveItem = async (key) => {
   }
 };
 
-// Update the clearLoginStatus function to use the bypass method
+// Update clearLoginStatus to sign out from Firebase
 export const clearLoginStatus = async () => {
   try {
-    await AsyncStorage.setItem('isLoggedIn', 'false');
-    await bypassRemoveItem('username');
+    // Sign out from Firebase
+    await authService.signOut();
+    
+    // Still clear storage for backward compatibility
+    await safeRemoveItem('username');
+    await safeRemoveItem('isLoggedIn');
+    await AsyncStorage.removeItem('isLoggedIn');
+    await AsyncStorage.removeItem('current_username');
+    await AsyncStorage.removeItem('fallback_username');
+    
     return true;
   } catch (error) {
     console.error('Error clearing login status:', error);
