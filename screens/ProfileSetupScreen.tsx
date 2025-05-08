@@ -26,7 +26,11 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { safeGetItem, safeSetItem, setLoginStatus, clearLoginStatus } from '../utils/StorageUtils';
 import ReCAPTCHA from 'react-native-recaptcha-v3';
 import { WebView } from 'react-native-webview';
-import { authService, createUser, signIn } from '../config/firebase';
+import { auth, db, storage } from '../config/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import * as ImagePicker from 'expo-image-picker';
 import { verifyCaptcha } from '../utils/captchaUtils';
 import Slider from '@react-native-community/slider';
 
@@ -212,24 +216,6 @@ const ProfileSetupScreen = ({ route }: { route: { params?: { skipWelcome?: boole
         Alert.alert('Username Taken', 'This username is already registered. Please choose another.');
         return;
       }
-      
-      // Create a user in Firebase Authentication
-      try {
-        const userCredential = await createUser(email, password);
-        console.log('Firebase user created:', userCredential.uid);
-      } catch (firebaseError: any) {
-        console.error('Failed to create Firebase user:', firebaseError.message);
-        
-        // Show appropriate error message based on the error
-        if (firebaseError.code === 'auth/email-already-in-use') {
-          Alert.alert('Email Already Used', 'This email is already registered. Please use another email or login.');
-        } else if (firebaseError.code === 'auth/weak-password') {
-          Alert.alert('Weak Password', 'Please use a stronger password (at least 6 characters).');
-        } else {
-          Alert.alert('Error', 'Failed to create account. Please try again.');
-        }
-        return;
-      }
 
       const newProfile = { 
         name, 
@@ -274,38 +260,27 @@ const ProfileSetupScreen = ({ route }: { route: { params?: { skipWelcome?: boole
   const handleLogin = async () => {
     try {
       console.log('========== STARTING LOGIN ==========');
-      
-      if (!username || !password) {
-        Alert.alert('Missing Information', 'Please enter both username and password.');
-        return;
-      }
-      
       const lowerUsername = username.toLowerCase();
       console.log('Attempting login for username:', lowerUsername);
       
-      // Get email for this username
+      // Get stored password for this username
+      const storedPassword = await safeGetItem(`password_${lowerUsername}`);
+      console.log('Password check:', storedPassword ? 'Found' : 'Not found');
+      
+      if (!storedPassword || storedPassword !== password) {
+        console.log('Login failed: Invalid credentials');
+        Alert.alert('Login Failed', 'Invalid username or password');
+        return;
+      }
+      
+      // Get user profile
       const allUsersString = await safeGetItem('allUsers');
       const allUsers = allUsersString ? JSON.parse(allUsersString) : [];
       const userProfile = allUsers.find((user: any) => user.username === lowerUsername);
       
-      if (!userProfile || !userProfile.email) {
+      if (!userProfile) {
         console.log('Login failed: User profile not found');
-        Alert.alert('Login Failed', 'User not found. Please check your username.');
-        return;
-      }
-      
-      const email = userProfile.email;
-      
-      // Use Firebase Authentication
-      try {
-        // Make sure we have strings for email and password
-        const safeEmail = email || '';
-        const safePassword = password || '';
-        const userCredential = await signIn(safeEmail, safePassword);
-        console.log('Firebase login successful:', userCredential.uid);
-      } catch (firebaseError: any) {
-        console.error('Firebase authentication failed:', firebaseError.message);
-        Alert.alert('Login Failed', 'Invalid username or password');
+        Alert.alert('Login Failed', 'User profile not found');
         return;
       }
       
@@ -331,7 +306,7 @@ const ProfileSetupScreen = ({ route }: { route: { params?: { skipWelcome?: boole
         console.warn('Error retrieving profile image:', imageError);
       }
       
-      // Store username using the utility function (Firebase already tracks auth state)
+      // Store current user info using the utility function
       const loginSuccess = await setLoginStatus(true, lowerUsername);
       if (!loginSuccess) {
         console.error('Failed to set login status');

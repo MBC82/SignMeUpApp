@@ -95,6 +95,8 @@ interface DateData {
 interface TimeSlot {
   startTime: string;
   endTime: string;
+  start?: string;
+  end?: string;
 }
 
 type TileNamesState = string[][];
@@ -735,12 +737,18 @@ const EventSignUpScreen: React.FC<{
       const tileName = tileNames[dateIndex]?.[slotIndex] || '';
       const signupUsername = signupData?.username;
       const isCurrentUserSlot = signupUsername === currentEncryptedUsername;
+      
+      // Get time slot information if available
+      const timeSlotInfo = timeSlots[dateIndex]?.[slotIndex];
+      const startTime = timeSlotInfo?.startTime || timeSlotInfo?.start || '';
+      const endTime = timeSlotInfo?.endTime || timeSlotInfo?.end || '';
+      const hasTimeSlot = date.isTimeSlot && (startTime || endTime);
 
       return (
         <View key={slotId} style={[
           styles.slotTile,
           {
-            backgroundColor: modalTileColor,
+            backgroundColor: currentModalTileColor,
             opacity: isTaken ? 0.7 : 1,
             borderColor: 'gold',
             width: '48%',
@@ -775,6 +783,23 @@ const EventSignUpScreen: React.FC<{
             ]}>
               {tileName || (dates[dateIndex].isTimeSlot ? 'Time Slot' : 'Available')}
             </Text>
+            
+            {/* Display time slot information if available */}
+            {hasTimeSlot && (
+              <Text style={[
+                styles.timeText,
+                {
+                  fontSize: currentModalFontSize - 2,
+                  fontFamily: currentModalFontType,
+                  color: currentModalFontColor,
+                  textAlign: 'center',
+                  marginBottom: 10,
+                }
+              ]}>
+                {startTime} - {endTime}
+              </Text>
+            )}
+            
             {isTaken ? (
               <View>
                 <Text style={[

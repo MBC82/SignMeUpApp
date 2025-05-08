@@ -29,6 +29,13 @@ import Header from '../components/Header';
 import { uploadProfileImage, getProfileImageUrl } from '../utils/firebaseStorage';
 import { saveProfileImagePermanently, getProfileImage, isTemporaryFile } from '../utils/ImageUtils';
 import { clearLoginState } from '../utils/StorageUtils';
+import {
+  safeGetItem,
+  safeSetItem,
+  retrieveWithChunking,
+  retrieveEventData,
+  EventData as StorageEventData
+} from '../utils/StorageUtils';
 
 // Custom date formatter function
 const formatDate = (date: string | Date | null | undefined): string => {
@@ -205,7 +212,7 @@ const UserProfileScreen = () => {
 
   const [verificationSent, setVerificationSent] = useState(false);
 
-  const [submittedEvents, setSubmittedEvents] = useState<EventData[]>([]);
+  const [submittedEvents, setSubmittedEvents] = useState<StorageEventData[]>([]);
   const [eventSignups, setEventSignups] = useState<Record<string, EventSignupData>>({});
 
   useEffect(() => {
@@ -322,7 +329,8 @@ const UserProfileScreen = () => {
             
             // Also check AsyncStorage as fallback, but we're moving away from it
             if (!userData.profileImage) {
-              const asyncProfileImage = await AsyncStorage.getItem('profileImage');
+              // Use retrieveWithChunking to handle potentially large images
+              const asyncProfileImage = await retrieveWithChunking('profileImage');
               if (asyncProfileImage) {
                 userData.profileImage = asyncProfileImage;
               }
@@ -347,17 +355,16 @@ const UserProfileScreen = () => {
         setProfileImage(userData.profileImage);
         updateProfile(userData);
         
-        // Load events from AsyncStorage as fallback
+        // Load events using our new storage utilities with chunking support
         try {
-          // Get user events from AsyncStorage
-          const submittedEventsStr = await AsyncStorage.getItem(`submittedEvents_${username}`);
-          const events = submittedEventsStr ? JSON.parse(submittedEventsStr) : [];
+          // Get user events from storage
+          const eventsData = await retrieveEventData(username, false);
+          setSubmittedEvents(eventsData as StorageEventData[]);
           
-          setSubmittedEvents(events);
-          
-          // Get event signups from AsyncStorage
-          const eventSignupsStr = await AsyncStorage.getItem(`eventSignups_${username}`);
-          const signups = eventSignupsStr ? JSON.parse(eventSignupsStr) : {};
+          // Try to get event signups, using chunking if needed
+          const eventSignupsKey = `eventSignups_${username}`;
+          const signupsData = await retrieveWithChunking(eventSignupsKey);
+          const signups = signupsData ? (typeof signupsData === 'string' ? JSON.parse(signupsData) : signupsData) : {};
           
           setEventSignups(signups);
         } catch (eventsError) {

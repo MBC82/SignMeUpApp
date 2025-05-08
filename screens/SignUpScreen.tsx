@@ -133,7 +133,10 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
   const [applyToAll, setApplyToAll] = useState(false);
   const [applyNumbers, setApplyNumbers] = useState(false);
   const [isEditingDate, setIsEditingDate] = useState(false);
+  const [isEditingTimeSlot, setIsEditingTimeSlot] = useState(false);
   const [editingDate, setEditingDate] = useState('');
+  const [editingTimeStart, setEditingTimeStart] = useState('');
+  const [editingTimeEnd, setEditingTimeEnd] = useState('');
   const [backgroundImage, setBackgroundImage] = useState<{ uri: string } | null>(null);
   const [screenBgColor, setScreenBgColor] = useState(bgColor || 'white');
   const [modalFontColor, setModalFontColor] = useState(fontColor || 'black');
@@ -158,12 +161,6 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
   const [tileNames, setTileNames] = useState<Array<Array<string>>>([]);
   const [notes, setNotes] = useState<Array<Array<string>>>([]);
   const [showNotes, setShowNotes] = useState<Array<Array<boolean>>>([]);
-  const [isEditingTime, setIsEditingTime] = useState(false);
-  const [editingDateIndex, setEditingDateIndex] = useState<number | null>(null);
-  const [editingSlotIndex, setEditingSlotIndex] = useState<number | null>(null);
-  const [editingStartTime, setEditingStartTime] = useState('');
-  const [editingEndTime, setEditingEndTime] = useState('');
-  const [timeSlotsCopy, setTimeSlotsCopy] = useState<any[]>([]);
 
   const themes = [
     { name: 'Classic', tileColor: 'gold', fontColor: 'navy', bgColor: '#f0f0f0', fontType: 'Roboto', bgImage: localBackgrounds.classic },
@@ -411,6 +408,18 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
     setEditSlotIndex(slotIndex);
     setEditName(tileNames[dateIndex]?.[slotIndex] || '');
     setIsEditingDate(false);
+    setIsEditingTimeSlot(false);
+    setEditModalVisible(true);
+  };
+
+  const handleEditTime = (dateIndex: number, slotIndex: number) => {
+    setEditDateIndex(dateIndex);
+    setEditSlotIndex(slotIndex);
+    const slot = timeSlots?.[dateIndex]?.[slotIndex] || {};
+    setEditingTimeStart(slot.start ? String(slot.start) : '');
+    setEditingTimeEnd(slot.end ? String(slot.end) : '');
+    setIsEditingDate(false);
+    setIsEditingTimeSlot(true);
     setEditModalVisible(true);
   };
 
@@ -418,73 +427,62 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
     setEditDateIndex(dateIndex);
     setEditingDate(dates[dateIndex].date);
     setIsEditingDate(true);
-    setEditModalVisible(true);
-  };
-
-  const handleEditTime = (dateIndex: number, slotIndex: number) => {
-    const slot = timeSlotsCopy[dateIndex]?.[slotIndex] || {};
-    setEditingDateIndex(dateIndex);
-    setEditingSlotIndex(slotIndex);
-    setEditingStartTime(slot.start || '');
-    setEditingEndTime(slot.end || '');
-    setIsEditingTime(true);
+    setIsEditingTimeSlot(false);
     setEditModalVisible(true);
   };
 
   const handleEditConfirm = () => {
-    if (isEditingDate && editDateIndex !== null) {
-      const newDates = [...dates];
-      newDates[editDateIndex].date = editingDate;
-      setDates(newDates);
-    } else if (isEditingTime && editingDateIndex !== null && editingSlotIndex !== null) {
-      // Create a new copy of timeSlotsCopy
-      const newTimeSlots = JSON.parse(JSON.stringify(timeSlotsCopy));
+    if (editDateIndex === null) return;
+    
+    if (isEditingDate) {
+      const updatedDates = [...dates];
+      updatedDates[editDateIndex].date = editingDate;
+      setDates(updatedDates);
+    } else if (isEditingTimeSlot && editSlotIndex !== null) {
+      // Create a deep copy of the timeSlots array
+      const timeSlotsCopy = JSON.parse(JSON.stringify(timeSlots));
       
-      // Ensure the arrays exist
-      if (!newTimeSlots[editingDateIndex]) {
-        newTimeSlots[editingDateIndex] = [];
+      // Make sure nested arrays exist
+      if (!timeSlotsCopy[editDateIndex]) {
+        timeSlotsCopy[editDateIndex] = [];
+      }
+      if (!timeSlotsCopy[editDateIndex][editSlotIndex]) {
+        timeSlotsCopy[editDateIndex][editSlotIndex] = {};
       }
       
-      // Update the time slot
-      newTimeSlots[editingDateIndex][editingSlotIndex] = {
-        ...newTimeSlots[editingDateIndex][editingSlotIndex],
-        start: editingStartTime,
-        end: editingEndTime
+      // Update the time values
+      timeSlotsCopy[editDateIndex][editSlotIndex] = {
+        ...timeSlotsCopy[editDateIndex][editSlotIndex],
+        start: editingTimeStart,
+        end: editingTimeEnd
       };
       
-      // Save the changes to state
-      setTimeSlotsCopy(newTimeSlots);
-    } else if (editDateIndex !== null && editSlotIndex !== null) {
-      // Handle tile name editing (existing code)
-      const updatedTileNames = [...tileNames];
-      if (!updatedTileNames[editDateIndex]) {
-        updatedTileNames[editDateIndex] = [];
-      }
-      updatedTileNames[editDateIndex][editSlotIndex] = editName;
-      setTileNames(updatedTileNames);
+      // Update route params to persist the changes
+      navigation.setParams({
+        ...route.params,
+        timeSlots: timeSlotsCopy
+      });
       
+      // Ensure dates are marked as time slots
+      const updatedDates = [...dates];
+      updatedDates[editDateIndex].isTimeSlot = true;
+      setDates(updatedDates);
+    } else if (editSlotIndex !== null) {
       if (applyToAll) {
         handleApplyToAllAttendees();
-      }
-      
-      if (applyNumbers) {
+        setApplyToAll(false);
+      } else if (applyNumbers) {
         handleApplyNumbersToAttendees();
+        setApplyNumbers(false);
+      } else {
+        handleTileNameChange(editDateIndex, editSlotIndex, editName);
       }
     }
-    
-    // Reset edit states
-    setIsEditingDate(false);
-    setIsEditingTime(false);
+    setEditName('');
+    setEditingTimeStart('');
+    setEditingTimeEnd('');
     setEditDateIndex(null);
     setEditSlotIndex(null);
-    setEditingDateIndex(null);
-    setEditingSlotIndex(null);
-    setEditName('');
-    setEditingDate('');
-    setEditingStartTime('');
-    setEditingEndTime('');
-    setApplyToAll(false);
-    setApplyNumbers(false);
     setEditModalVisible(false);
   };
 
@@ -603,7 +601,7 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
     const signups = dates[dateIndex].signups || 1;
 
     return Array.from({ length: signups }, (_, i) => {
-      const slot = timeSlotsCopy[dateIndex]?.[i] || timeSlots?.[dateIndex]?.[i] || {};
+      const slot = timeSlots?.[dateIndex]?.[i] || {};
       const start = slot.start ? String(slot.start) : null;
       const end = slot.end ? String(slot.end) : null;
       const attendeeName = tileNames[dateIndex]?.[i] || (dates[dateIndex].isTimeSlot ? 'Time Slot' : `Attendee ${i + 1}`);
@@ -663,12 +661,6 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
       Alert.alert('Premium Feature', 'This feature requires a premium subscription.');
     }
   };
-
-  useEffect(() => {
-    if (timeSlots) {
-      setTimeSlotsCopy(JSON.parse(JSON.stringify(timeSlots)));
-    }
-  }, [timeSlots]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -919,81 +911,123 @@ const SignUpScreen = ({ route }: { route: SignUpScreenRouteProp }) => {
               <TouchableWithoutFeedback>
                 <View style={styles.customizationContainer}>
                   <Text style={styles.modalHeaderText}>
-                    {isEditingDate ? 'Edit Date' : isEditingTime ? 'Edit Time Slot' : 'Edit Name'}
+                    {isEditingHeader ? 'Edit Header Fields' : isEditingDate ? 'Edit Date' : isEditingTimeSlot ? 'Edit Time Slot' : 'Edit Tile Name'}
                   </Text>
-                  
-                  {isEditingDate ? (
+                  {isEditingHeader ? (
+                    <>
+                      <View style={styles.headerEditContainer}>
+                        <Text style={styles.headerEditLabel}>Event Name</Text>
+                        <TextInput
+                          style={styles.headerEditInput}
+                          value={headerValues.eventName}
+                          onChangeText={(text) => setHeaderValues({ ...headerValues, eventName: text })}
+                          placeholder="Enter event name"
+                        />
+                        <Text style={styles.headerEditLabel}>Location</Text>
+                        <TextInput
+                          style={styles.headerEditInput}
+                          value={headerValues.location}
+                          onChangeText={(text) => setHeaderValues({ ...headerValues, location: text })}
+                          placeholder="Enter location"
+                        />
+                        <Text style={styles.headerEditLabel}>Organizer</Text>
+                        <TextInput
+                          style={styles.headerEditInput}
+                          value={headerValues.organizer}
+                          onChangeText={(text) => setHeaderValues({ ...headerValues, organizer: text })}
+                          placeholder="Enter organizer"
+                        />
+                        <Text style={styles.headerEditLabel}>Address</Text>
+                        <TextInput
+                          style={styles.headerEditInput}
+                          value={headerValues.address}
+                          onChangeText={(text) => setHeaderValues({ ...headerValues, address: text })}
+                          placeholder="Enter address"
+                        />
+                        <Text style={styles.headerEditLabel}>Event Time</Text>
+                        <TextInput
+                          style={styles.headerEditInput}
+                          value={headerValues.eventTime}
+                          onChangeText={(text) => setHeaderValues({ ...headerValues, eventTime: text })}
+                          placeholder="Enter event time"
+                        />
+                      </View>
+                    </>
+                  ) : isEditingDate ? (
                     <TextInput
                       style={styles.editInput}
                       value={editingDate}
                       onChangeText={setEditingDate}
-                      placeholder="Enter new date"
-                      placeholderTextColor="#666"
+                      placeholder="Enter date"
                     />
-                  ) : isEditingTime ? (
-                    <View style={styles.timeEditContainer}>
-                      <Text style={styles.timeEditLabel}>Start Time:</Text>
-                      <TextInput
-                        style={styles.timeEditInput}
-                        value={editingStartTime}
-                        onChangeText={setEditingStartTime}
-                        placeholder="e.g., 9:00 AM"
-                        placeholderTextColor="#666"
-                      />
-                      
-                      <Text style={styles.timeEditLabel}>End Time:</Text>
-                      <TextInput
-                        style={styles.timeEditInput}
-                        value={editingEndTime}
-                        onChangeText={setEditingEndTime}
-                        placeholder="e.g., 10:00 AM"
-                        placeholderTextColor="#666"
-                      />
-                    </View>
+                  ) : isEditingTimeSlot ? (
+                    <>
+                      <View style={styles.timeEditContainer}>
+                        <Text style={styles.timeEditLabel}>Start Time</Text>
+                        <TextInput
+                          style={styles.editInput}
+                          value={editingTimeStart}
+                          onChangeText={setEditingTimeStart}
+                          placeholder="Enter start time (e.g. 9:00 AM)"
+                          placeholderTextColor="gray"
+                        />
+                        <Text style={styles.timeEditLabel}>End Time</Text>
+                        <TextInput
+                          style={styles.editInput}
+                          value={editingTimeEnd}
+                          onChangeText={setEditingTimeEnd}
+                          placeholder="Enter end time (e.g. 10:00 AM)"
+                          placeholderTextColor="gray"
+                        />
+                      </View>
+                      <Text style={styles.editInstructions}>
+                        Enter times in your preferred format (e.g., "9:00 AM", "14:30")
+                      </Text>
+                    </>
                   ) : (
                     <>
                       <TextInput
                         style={styles.editInput}
                         value={editName}
                         onChangeText={setEditName}
-                        placeholder="Enter new name"
-                        placeholderTextColor="#666"
+                        placeholder="Enter attendee name"
                       />
-                      
-                      <View style={styles.checkboxContainer}>
+                      <View style={styles.applyToAllContainer}>
                         <TouchableOpacity
                           style={[styles.checkbox, applyToAll && styles.checkboxChecked]}
                           onPress={() => setApplyToAll(!applyToAll)}
                         >
-                          {applyToAll && <MaterialIcons name="check" size={16} color="#fff" />}
+                          {applyToAll && <MaterialIcons name="check" size={20} color="white" />}
                         </TouchableOpacity>
-                        <Text style={styles.checkboxLabel}>Apply to all attendees</Text>
+                        <Text style={styles.applyToAllText}>Apply to all attendees</Text>
                       </View>
-                      
-                      <View style={styles.checkboxContainer}>
+                      <View style={styles.applyToAllContainer}>
                         <TouchableOpacity
                           style={[styles.checkbox, applyNumbers && styles.checkboxChecked]}
                           onPress={() => setApplyNumbers(!applyNumbers)}
                         >
-                          {applyNumbers && <MaterialIcons name="check" size={16} color="#fff" />}
+                          {applyNumbers && <MaterialIcons name="check" size={20} color="white" />}
                         </TouchableOpacity>
-                        <Text style={styles.checkboxLabel}>Include numbers</Text>
+                        <Text style={styles.applyToAllText}>Apply numbers to attendees</Text>
                       </View>
                     </>
                   )}
-                  
                   <View style={styles.modalButtonContainer}>
                     <TouchableOpacity
                       style={[styles.modalButton, styles.cancelButton]}
-                      onPress={() => setEditModalVisible(false)}
+                      onPress={() => {
+                        setEditModalVisible(false);
+                        setApplyToAll(false);
+                        setApplyNumbers(false);
+                      }}
                     >
                       <Text style={styles.modalButtonText}>Cancel</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.modalButton, styles.confirmButton]}
-                      onPress={handleEditConfirm}
+                      onPress={isEditingHeader ? applyHeaderEdit : handleEditConfirm}
                     >
-                      <Text style={styles.modalButtonText}>Confirm</Text>
+                      <Text style={styles.modalButtonText}>Apply</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -1137,6 +1171,13 @@ const styles = StyleSheet.create({
   },
   editIconButton: {
     padding: 4,
+    marginLeft: 5,
+  },
+  editTimeButton: {
+    padding: 4,
+    marginLeft: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 12,
   },
   tileRow: {
     flexDirection: 'row',
@@ -1183,11 +1224,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 5,
+    width: '100%',
   },
   timeText: {
     fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 5,
+    marginRight: 0,
   },
   noteInput: {
     width: '90%',
@@ -1448,26 +1489,9 @@ const styles = StyleSheet.create({
   timeEditLabel: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: 'navy',
     marginBottom: 5,
-    color: '#333',
-  },
-  timeEditInput: {
-    width: '100%',
-    padding: 10,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    marginBottom: 15,
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  checkboxLabel: {
-    fontSize: 16,
-    color: 'black',
+    marginTop: 10,
   },
 });
 

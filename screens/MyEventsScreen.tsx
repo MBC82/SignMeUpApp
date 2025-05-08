@@ -16,9 +16,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { checkLoginStatus, clearLoginStatus } from '../utils/StorageUtils';
+import { checkLoginStatus, clearLoginStatus, retrieveEventData, storeEventData, EventData } from '../utils/StorageUtils';
 import ChatButton from '../components/ChatButton';
-import { useAuth } from '../contexts/AuthContext';
 
 // Update type definitions at the top of the file
 type RootStackParamList = {
@@ -158,12 +157,9 @@ const MyEventsScreen = () => {
   const isFocused = useIsFocused();
   const [submittedEvents, setSubmittedEvents] = useState<Event[]>([]);
   const [draftEvents, setDraftEvents] = useState<Event[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentUsername, setCurrentUsername] = useState('');
-  
-  // Use the Firebase auth context
-  const { isLoggedIn: firebaseLoggedIn, user } = useAuth();
 
   // Add this useEffect to monitor app state changes
   useEffect(() => {
@@ -192,47 +188,28 @@ const MyEventsScreen = () => {
       setDraftEvents([]);
       setCurrentUsername('');
       
-      // Primary check with Firebase authentication
-      if (firebaseLoggedIn && user) {
-        console.log('Firebase authenticated user:', user.email);
-        
-        // Also get the username from storage
-        const { username } = await checkLoginStatus();
-        
-        if (username) {
-          console.log('User is logged in, loading events for:', username);
-          setCurrentUsername(username);
-          // Load events for this specific user
-          await loadEventsForUser(username);
-        } else {
-          console.log('Firebase authenticated but no username found');
-        }
-        
+      // Get login status using the utility function
+      const { isLoggedIn, username } = await checkLoginStatus();
+      
+      console.log('Login status check:', { isLoggedIn, username });
+      
+      // Only consider logged in if both conditions are met
+      if (isLoggedIn && username) {
+        console.log('User is logged in, loading events for:', username);
         setIsLoggedIn(true);
+        setCurrentUsername(username);
+        // Load events for this specific user
+        await loadEventsForUser(username);
       } else {
-        // Fallback to storage-based check only if Firebase auth fails
-        const { isLoggedIn, username } = await checkLoginStatus();
+        console.log('User is NOT logged in, clearing events');
+        setIsLoggedIn(false);
+        setCurrentUsername('');
+        // Ensure events are cleared
+        setSubmittedEvents([]);
+        setDraftEvents([]);
         
-        console.log('Storage login check:', { isLoggedIn, username });
-        
-        // Only consider logged in if both conditions are met
-        if (isLoggedIn && username) {
-          console.log('User is logged in via storage, loading events for:', username);
-          setIsLoggedIn(true);
-          setCurrentUsername(username);
-          // Load events for this specific user
-          await loadEventsForUser(username);
-        } else {
-          console.log('User is NOT logged in, clearing events');
-          setIsLoggedIn(false);
-          setCurrentUsername('');
-          // Ensure events are cleared
-          setSubmittedEvents([]);
-          setDraftEvents([]);
-          
-          // Clear any cached events
-          await AsyncStorage.removeItem('cachedEvents');
-        }
+        // Clear any cached events
+        await AsyncStorage.removeItem('cachedEvents');
       }
       
       setIsLoading(false);
@@ -250,7 +227,7 @@ const MyEventsScreen = () => {
   // Update the first useEffect to use the extracted function
   useEffect(() => {
     checkLoginStatusAndLoadEvents();
-  }, [firebaseLoggedIn, user]); // Add Firebase auth state as dependency
+  }, []);
   
   // Update the useFocusEffect to use the extracted function
   useFocusEffect(
@@ -260,28 +237,43 @@ const MyEventsScreen = () => {
       return () => {
         console.log('Focus effect cleanup');
       };
-    }, [firebaseLoggedIn, user]) // Add Firebase auth state as dependency
+    }, [])
   );
 
   const loadEventsForUser = async (username: string) => {
     try {
       console.log('Loading events for user:', username);
       
-      // Load draft events
-      const draftKey = `draftEvents_${username}`;
-      const draftEventsJson = await AsyncStorage.getItem(draftKey);
-      const loadedDraftEvents = draftEventsJson ? JSON.parse(draftEventsJson) : [];
-      console.log('Loaded draft events:', loadedDraftEvents);
+      // Load draft and submitted events using our new chunking utility
+      try {
+        const loadedDraftEvents = await retrieveEventData(username, true);
+        console.log('Loaded draft events:', loadedDraftEvents.length);
+        setDraftEvents(loadedDraftEvents as Event[]);
+      } catch (draftError) {
+        console.error('Error loading draft events:', draftError);
+        
+        // Fallback to old method
+        const draftKey = `draftEvents_${username}`;
+        const draftEventsJson = await AsyncStorage.getItem(draftKey);
+        const loadedDraftEvents = draftEventsJson ? JSON.parse(draftEventsJson) : [];
+        console.log('Loaded draft events (fallback):', loadedDraftEvents.length);
+        setDraftEvents(loadedDraftEvents);
+      }
       
-      // Load submitted events
-      const submittedKey = `submittedEvents_${username}`;
-      const submittedEventsJson = await AsyncStorage.getItem(submittedKey);
-      const loadedSubmittedEvents = submittedEventsJson ? JSON.parse(submittedEventsJson) : [];
-      console.log('Loaded submitted events:', loadedSubmittedEvents);
-      
-      // Update state with loaded events
-      setDraftEvents(loadedDraftEvents);
-      setSubmittedEvents(loadedSubmittedEvents);
+      try {
+        const loadedSubmittedEvents = await retrieveEventData(username, false);
+        console.log('Loaded submitted events:', loadedSubmittedEvents.length);
+        setSubmittedEvents(loadedSubmittedEvents as Event[]);
+      } catch (submittedError) {
+        console.error('Error loading submitted events:', submittedError);
+        
+        // Fallback to old method
+        const submittedKey = `submittedEvents_${username}`;
+        const submittedEventsJson = await AsyncStorage.getItem(submittedKey);
+        const loadedSubmittedEvents = submittedEventsJson ? JSON.parse(submittedEventsJson) : [];
+        console.log('Loaded submitted events (fallback):', loadedSubmittedEvents.length);
+        setSubmittedEvents(loadedSubmittedEvents);
+      }
     } catch (error) {
       console.error('Error loading events:', error);
       Alert.alert('Error', 'Failed to load events. Please try again.');
@@ -344,42 +336,43 @@ const MyEventsScreen = () => {
                 return;
               }
               
-              // Determine which storage key to use based on whether it's a draft or submitted event
-              const storageKey = isDraft ? `draftEvents_${username}` : `submittedEvents_${username}`;
-              console.log('Using storage key:', storageKey);
+              // Get current events using the new chunking utility
+              let events: Event[] = [];
+              try {
+                const loadedEvents = await retrieveEventData(username, isDraft);
+                events = loadedEvents as Event[];
+              } catch (loadError) {
+                // Fallback to old method
+                const storageKey = isDraft ? `draftEvents_${username}` : `submittedEvents_${username}`;
+                const eventsData = await AsyncStorage.getItem(storageKey);
+                events = eventsData ? JSON.parse(eventsData) : [];
+              }
               
-              // Get the existing events
-              const eventsData = await AsyncStorage.getItem(storageKey);
+              console.log('Total events before deletion:', events.length);
               
-              if (eventsData) {
-                const events = JSON.parse(eventsData);
-                console.log('Total events before deletion:', events.length);
-                console.log('Events IDs before deletion:', events.map((e: any) => e.id));
-                
-                // Filter out the event with the matching ID (check both eventId and id)
-                const updatedEvents = events.filter((event: Event) => {
-                  const matches = event.id !== eventId && event.eventId !== eventId;
-                  if (!matches) {
-                    console.log('Found event to delete:', {
-                      id: event.id,
-                      eventId: event.eventId,
-                      name: event.eventName
-                    });
-                  }
-                  return matches;
-                });
-                
-                console.log('Total events after deletion:', updatedEvents.length);
-                
-                // Save the updated events back to storage
-                await AsyncStorage.setItem(storageKey, JSON.stringify(updatedEvents));
-                
-                // Update the state based on whether it's a draft or submitted event
-                if (isDraft) {
-                  setDraftEvents(updatedEvents);
-                } else {
-                  setSubmittedEvents(updatedEvents);
+              // Filter out the event with the matching ID (check both eventId and id)
+              const updatedEvents = events.filter((event: Event) => {
+                const matches = event.id !== eventId && event.eventId !== eventId;
+                if (!matches) {
+                  console.log('Found event to delete:', {
+                    id: event.id,
+                    eventId: event.eventId,
+                    name: event.eventName
+                  });
                 }
+                return matches;
+              });
+              
+              console.log('Total events after deletion:', updatedEvents.length);
+              
+              // Save the updated events using the new chunking utility
+              await storeEventData(username, updatedEvents, isDraft);
+              
+              // Update the state based on whether it's a draft or submitted event
+              if (isDraft) {
+                setDraftEvents(updatedEvents);
+              } else {
+                setSubmittedEvents(updatedEvents);
               }
             } catch (error) {
               console.error('Error deleting event:', error);
@@ -656,7 +649,7 @@ const MyEventsScreen = () => {
   }
 
   // If not logged in, show login required screen
-  if (!isLoggedIn && !firebaseLoggedIn) {
+  if (!isLoggedIn) {
     return (
       <ImageBackground
         source={require('../ios/assets/blue.jpg')}
@@ -923,9 +916,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'navy',
-    zIndex: 10,
   },
   draftText: {
     color: 'navy',
