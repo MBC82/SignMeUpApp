@@ -830,7 +830,10 @@ const EventSignUpScreen: React.FC<{
                       styles.cancelButtonText, 
                       { 
                         color: currentModalFontColor,
-                        fontSize: currentModalFontSize - 2
+                        fontSize: currentModalFontSize - 2,
+                        textShadowColor: 'navy',
+                        textShadowOffset: { width: 0.5, height: 0.5 },
+                        textShadowRadius: 1,
                       }
                     ]}>
                       Remove Signup
@@ -843,7 +846,15 @@ const EventSignUpScreen: React.FC<{
                 style={[styles.signUpButton, { backgroundColor: 'gold' }]}
                 onPress={() => handleSlotPress(dateIndex, slotIndex)}
               >
-                <Text style={[styles.signUpButtonText, { color: currentModalFontColor }]}>Sign Me Up</Text>
+                <Text style={[
+                  styles.signUpButtonText, 
+                  { 
+                    color: currentModalFontColor,
+                    textShadowColor: 'navy',
+                    textShadowOffset: { width: 0.5, height: 0.5 },
+                    textShadowRadius: 1,
+                  }
+                ]}>Sign Me Up</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -2074,6 +2085,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
+    textShadowColor: 'navy',
+    textShadowOffset: { width: 0.5, height: 0.5 },
+    textShadowRadius: 1,
   },
   modalOverlay: {
     flex: 1,
