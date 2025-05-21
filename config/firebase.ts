@@ -1,18 +1,38 @@
-import { getAuth } from '@react-native-firebase/auth';
-import { getFirestore, FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
-import { getStorage } from '@react-native-firebase/storage';
-import { getMessaging, AuthorizationStatus } from '@react-native-firebase/messaging';
-import { Platform } from 'react-native';
+import { initializeApp, getApp } from '@react-native-firebase/app';
+import storage from '@react-native-firebase/storage';
 import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
+import messaging from '@react-native-firebase/messaging';
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyCQvzXJ-qc66HmYCxec6LJqGNvX2VNQHpg",
+  projectId: "signmeup-e5e0c",
+  storageBucket: "signmeup-e5e0c.firebasestorage.app",
+  messagingSenderId: "895428834263",
+  appId: "1:895428834263:ios:370a9db4cf3fbc98189192",
+  databaseURL: "https://signmeup-e5e0c.firebaseio.com"
+};
+
+// Initialize Firebase
+let app;
+try {
+  app = initializeApp(firebaseConfig);
+} catch (error) {
+  // If app is already initialized, get the existing app
+  app = getApp();
+}
 
 // Initialize Firebase services
-const authService = getAuth();
-const firestoreService = getFirestore();
-const storageService = getStorage();
-const messagingService = getMessaging();
+const storageService = storage();
+const firestoreService = firestore();
+const authService = auth();
+const messagingService = messaging();
 
 // Export services
-export { authService, firestoreService, storageService, messagingService };
+export { app, storageService, firestoreService, authService, messagingService };
 
 // Authentication functions
 export const createUser = async (email: string, password: string) => {
@@ -56,13 +76,56 @@ export const updateUserProfile = async (userId: string, profileData: any) => {
 
 export const uploadProfileImage = async (userId: string, imageUri: string) => {
   try {
-    const reference = storageService.ref(`profile_images/${userId}`);
+    // Create a unique filename with timestamp
+    const timestamp = new Date().getTime();
+    const filename = `profile_${userId}_${timestamp}.jpg`;
+    const reference = storageService.ref(`profile_images/${userId}/${filename}`);
+    
+    // Upload the file
     await reference.putFile(imageUri);
+    
+    // Get the download URL
     const downloadURL = await reference.getDownloadURL();
+    
+    // Cache the URL in AsyncStorage
+    await AsyncStorage.setItem(`profileImage_${userId}`, downloadURL);
+    await AsyncStorage.setItem('profileImage', downloadURL);
+    
     return downloadURL;
   } catch (error) {
     console.error('Error uploading profile image:', error);
     throw error;
+  }
+};
+
+export const getProfileImageUrl = async (userId: string) => {
+  try {
+    // First try to get from AsyncStorage
+    const cachedUrl = await AsyncStorage.getItem(`profileImage_${userId}`);
+    if (cachedUrl) {
+      return cachedUrl;
+    }
+    
+    // If not in cache, try to get from Firebase
+    const reference = storageService.ref(`profile_images/${userId}`);
+    const files = await reference.listAll();
+    
+    if (files.items.length > 0) {
+      // Get the most recent file
+      const latestFile = files.items[files.items.length - 1];
+      const downloadURL = await latestFile.getDownloadURL();
+      
+      // Cache the URL
+      await AsyncStorage.setItem(`profileImage_${userId}`, downloadURL);
+      await AsyncStorage.setItem('profileImage', downloadURL);
+      
+      return downloadURL;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error getting profile image URL:', error);
+    return null;
   }
 };
 
@@ -73,40 +136,7 @@ export const createEvent = async (eventData: any) => {
       ...eventData,
       createdAt: firestore.Timestamp.now(),
       participants: [eventData.username],
-      status: 'active',
-      // Preserve existing event structure
-      backgroundImage: eventData.backgroundImage,
-      bgColor: eventData.bgColor || 'transparent',
-      dates: eventData.dates || [],
-      editedTiles: eventData.editedTiles || {},
-      emailNotificationsEnabled: eventData.emailNotificationsEnabled || false,
-      eventTime: eventData.eventTime || '',
-      fontColor: eventData.fontColor || 'black',
-      fontSize: eventData.fontSize || 16,
-      fontType: eventData.fontType || 'Marker Felt',
-      globalNote: eventData.globalNote || '',
-      headerFontColor: eventData.headerFontColor || 'black',
-      headerTileColor: eventData.headerTileColor || 'lightpink',
-      isEditing: eventData.isEditing || false,
-      isNewEvent: eventData.isNewEvent || true,
-      isPreview: eventData.isPreview || false,
-      isTimeSlot: eventData.isTimeSlot || false,
-      location: eventData.location || '',
-      modalFontColor: eventData.modalFontColor || 'black',
-      modalFontSize: eventData.modalFontSize || 16,
-      modalFontType: eventData.modalFontType || 'Marker Felt',
-      modalTileColor: eventData.modalTileColor || 'lightpink',
-      neededItems: eventData.neededItems || [],
-      organizer: eventData.organizer || '',
-      organizerEmail: eventData.organizerEmail || '',
-      organizerPhone: eventData.organizerPhone || '',
-      screenBgColor: eventData.screenBgColor || 'transparent',
-      slotLabels: eventData.slotLabels || {},
-      textNotificationsEnabled: eventData.textNotificationsEnabled || false,
-      textShadowEnabled: eventData.textShadowEnabled || false,
-      tileColor: eventData.tileColor || 'lightpink',
-      tileNames: eventData.tileNames || [],
-      timeSlots: eventData.timeSlots || []
+      status: 'active'
     });
     return docRef.id;
   } catch (error) {
@@ -128,11 +158,7 @@ export const getEvent = async (eventId: string) => {
 // Chat functions
 export const sendMessage = async (eventId: string, messageData: any) => {
   try {
-    const messageRef = firestoreService
-      .collection('events')
-      .doc(eventId)
-      .collection('chat')
-      .doc();
+    const messageRef = firestoreService.collection('events').doc(eventId).collection('chat').doc();
     
     await messageRef.set({
       ...messageData,
@@ -152,9 +178,9 @@ export const getMessages = (eventId: string, callback: (messages: any[]) => void
     .doc(eventId)
     .collection('chat')
     .orderBy('timestamp', 'asc')
-    .onSnapshot((snapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
+    .onSnapshot((snapshot) => {
       const messages: any[] = [];
-      snapshot.forEach((doc: FirebaseFirestoreTypes.DocumentSnapshot) => {
+      snapshot.forEach((doc) => {
         messages.push({
           id: doc.id,
           ...doc.data(),
@@ -168,8 +194,8 @@ export const getMessages = (eventId: string, callback: (messages: any[]) => void
 export const requestNotificationPermission = async () => {
   try {
     const authStatus = await messagingService.requestPermission();
-    return authStatus === AuthorizationStatus.AUTHORIZED ||
-           authStatus === AuthorizationStatus.PROVISIONAL;
+    return authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+           authStatus === messaging.AuthorizationStatus.PROVISIONAL;
   } catch (error) {
     console.error('Error requesting notification permission:', error);
     return false;

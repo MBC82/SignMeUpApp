@@ -27,7 +27,7 @@ import EncryptedStorage from 'react-native-encrypted-storage';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Header from '../components/Header';
 import { uploadProfileImage, getProfileImageUrl } from '../utils/firebaseStorage';
-import { saveProfileImagePermanently, getProfileImage, isTemporaryFile } from '../utils/ImageUtils';
+import { saveProfileImagePermanently, getProfileImage, isTemporaryFile, preloadProfileImage } from '../utils/ImageUtils';
 import { clearLoginState } from '../utils/StorageUtils';
 import {
   safeGetItem,
@@ -400,14 +400,13 @@ const UserProfileScreen = () => {
           setNewEmail(parsedData.email || '');
           setNewPhoneNumber(parsedData.phone || '');
           
-          // Check for profile image in the parsed data
-          if (parsedData.profileImage) {
-            setProfileImage(parsedData.profileImage);
-          } else {
-            // Fallback to AsyncStorage if needed
-            const asyncProfileImage = await AsyncStorage.getItem('profileImage');
-            if (asyncProfileImage) {
-              setProfileImage(asyncProfileImage);
+          // Get profile image using the optimized function
+          if (parsedData.username) {
+            const profileImageUrl = await getProfileImage(parsedData.username);
+            if (profileImageUrl) {
+              setProfileImage(profileImageUrl);
+              // Preload the image for faster subsequent loads
+              preloadProfileImage(profileImageUrl);
             }
           }
         }
@@ -461,6 +460,8 @@ const UserProfileScreen = () => {
       const result = await launchImageLibrary({
         mediaType: 'photo',
         quality: 0.8,
+        maxWidth: 500,
+        maxHeight: 500,
       });
       
       if (result.didCancel || !result.assets || result.assets.length === 0) {
@@ -475,7 +476,7 @@ const UserProfileScreen = () => {
         // Set the image immediately for a responsive UI
         setProfileImage(selectedImage);
         
-        // Save to permanent storage
+        // Save to permanent storage with caching
         if (isTemporaryFile(selectedImage)) {
           console.log('Image is temporary, saving to permanent storage...');
           const permanentUri = await saveProfileImagePermanently(profile.username, selectedImage);
@@ -494,9 +495,9 @@ const UserProfileScreen = () => {
             
             // Save to EncryptedStorage as backup
             await EncryptedStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-          } else {
-            console.error('Failed to save image permanently');
-            Alert.alert('Warning', 'Profile image set but may not persist after app restart');
+            
+            // Preload the new image
+            preloadProfileImage(permanentUri);
           }
         } else {
           // Already a permanent file, just update the profile
@@ -507,24 +508,14 @@ const UserProfileScreen = () => {
           
           updateProfile(updatedProfile);
           await EncryptedStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-        }
-        
-        // Optional: Try to upload to Firebase for cloud storage if available
-        try {
-          const downloadUrl = await uploadProfileImage(selectedImage, profile.username);
-          if (downloadUrl) {
-            console.log('Uploaded image to Firebase:', downloadUrl);
-            // We don't update the UI with the Firebase URL since we're using the local file
-            // But we could store it as a backup
-            await AsyncStorage.setItem(`firebaseProfileImage_${profile.username.toLowerCase()}`, downloadUrl);
-          }
-        } catch (firebaseError) {
-          console.error('Failed to upload to Firebase (continuing with local image):', firebaseError);
+          
+          // Preload the image
+          preloadProfileImage(selectedImage);
         }
       }
     } catch (error) {
-      console.error('Error selecting image:', error);
-      Alert.alert('Error', 'There was a problem selecting the image.');
+      console.error('Error updating profile image:', error);
+      Alert.alert('Error', 'Failed to update profile image. Please try again.');
     }
   };
 

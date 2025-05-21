@@ -1,12 +1,13 @@
 // Import firebase storage integration
-import { firebase } from '@react-native-firebase/storage';
+import { getStorage, ref, uploadBytes, getDownloadURL, listAll } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import Image from 'react-native/Libraries/Image/Image';
 
-// Simple Firebase Storage reference
+// Get Firebase storage instance
 const getFirebaseStorage = () => {
   try {
-    return firebase.storage();
+    return getStorage();
   } catch (error) {
     return null;
   }
@@ -69,13 +70,17 @@ export const saveProfileImagePermanently = async (username, sourceUri) => {
       try {
         // Create a reference to Firebase Storage
         const timestamp = new Date().getTime();
-        const ref = storage.ref(`profileImages/${normalizedUsername}/${timestamp}.jpg`);
+        const storageRef = ref(storage, `profileImages/${normalizedUsername}/${timestamp}.jpg`);
         
-        // Upload the file
-        await ref.putFile(sourceUri);
+        // Convert URI to blob
+        const response = await fetch(sourceUri);
+        const blob = await response.blob();
+        
+        // Upload the blob
+        await uploadBytes(storageRef, blob);
         
         // Get the download URL
-        const downloadURL = await ref.getDownloadURL();
+        const downloadURL = await getDownloadURL(storageRef);
         
         // Store the URL in AsyncStorage
         await AsyncStorage.setItem(`profileImage_${normalizedUsername}`, downloadURL);
@@ -84,6 +89,7 @@ export const saveProfileImagePermanently = async (username, sourceUri) => {
         return downloadURL;
       } catch (firebaseError) {
         // Silent Firebase error, fallback to original URI
+        console.warn('Firebase storage error:', firebaseError);
       }
     }
     
@@ -97,8 +103,10 @@ export const saveProfileImagePermanently = async (username, sourceUri) => {
   }
 };
 
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
 /**
- * Gets a profile image URI from storage, ensuring it's valid
+ * Gets a profile image URI from storage, ensuring it's valid and cached
  * @param {string} username - The username to get the image for
  * @returns {Promise<string|null>} - The profile image URI or null
  */
@@ -108,17 +116,79 @@ export const getProfileImage = async (username) => {
   try {
     const normalizedUsername = username.toLowerCase().trim();
     
-    // Try user-specific key first
-    const imageUri = await AsyncStorage.getItem(`profileImage_${normalizedUsername}`);
+    // Try user-specific key first with cache check
+    const cachedData = await AsyncStorage.getItem(`profileImage_${normalizedUsername}`);
+    if (cachedData) {
+      try {
+        const { url, timestamp } = JSON.parse(cachedData);
+        // Check if cache is still valid
+        if (Date.now() - timestamp < CACHE_DURATION) {
+          return url;
+        }
+      } catch (e) {
+        // If parsing fails, use the value directly (backward compatibility)
+        return cachedData;
+      }
+    }
     
-    if (imageUri) {
-      return imageUri;
+    // If cache expired or not found, try Firebase Storage
+    const storage = getFirebaseStorage();
+    if (storage) {
+      try {
+        const storageRef = ref(storage, `profileImages/${normalizedUsername}`);
+        const files = await listAll(storageRef);
+        
+        if (files.items.length > 0) {
+          // Get the most recent file
+          const latestFile = files.items[files.items.length - 1];
+          const downloadURL = await getDownloadURL(latestFile);
+          
+          // Cache the new URL with timestamp
+          const cacheData = {
+            url: downloadURL,
+            timestamp: Date.now()
+          };
+          await AsyncStorage.setItem(`profileImage_${normalizedUsername}`, JSON.stringify(cacheData));
+          await AsyncStorage.setItem('profileImage', JSON.stringify(cacheData));
+          
+          return downloadURL;
+        }
+      } catch (firebaseError) {
+        console.warn('Firebase storage error:', firebaseError);
+      }
     }
     
     // Fallback to generic key
-    return await AsyncStorage.getItem('profileImage');
-  } catch (error) {
+    const genericImage = await AsyncStorage.getItem('profileImage');
+    if (genericImage) {
+      try {
+        const { url } = JSON.parse(genericImage);
+        return url;
+      } catch (e) {
+        return genericImage;
+      }
+    }
+    
     return null;
+  } catch (error) {
+    console.error('Error getting profile image:', error);
+    return null;
+  }
+};
+
+/**
+ * Preloads a profile image for faster subsequent loads
+ * @param {string} imageUrl - The URL of the image to preload
+ * @returns {Promise<void>}
+ */
+export const preloadProfileImage = async (imageUrl) => {
+  if (!imageUrl) return;
+  
+  try {
+    // Use React Native's Image.prefetch for preloading
+    await Image.prefetch(imageUrl);
+  } catch (error) {
+    console.warn('Error preloading image:', error);
   }
 };
 

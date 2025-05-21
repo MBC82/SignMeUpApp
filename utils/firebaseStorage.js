@@ -1,6 +1,10 @@
-import storage from '@react-native-firebase/storage';
+import { getStorage, ref, uploadBytes, getDownloadURL, listAll } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { initializeFirebase } from '../firebaseInit';
+
+// Cache duration in milliseconds (24 hours)
+const CACHE_DURATION = 24 * 60 * 60 * 1000;
 
 // Initialize Firebase if not already initialized
 const ensureFirebase = async () => {
@@ -14,127 +18,83 @@ const ensureFirebase = async () => {
 };
 
 /**
- * Upload an image to Firebase Storage and return the download URL
- * @param {string} imageUri - The local URI of the image to upload
- * @param {string|null|undefined} username - The username to use in the storage path (optional)
- * @returns {Promise<string|null>} - The download URL of the uploaded image, or null if upload failed
+ * Upload a profile image to Firebase Storage
+ * @param {string} username - The username to associate with the image
+ * @param {string} imageUri - The local URI of the image
+ * @returns {Promise<string|null>} - The download URL or null if failed
  */
-export const uploadProfileImage = async (imageUri, username) => {
+export const uploadProfileImage = async (username, imageUri) => {
   try {
-    // Validate parameters
-    if (!imageUri) {
-      console.warn('Missing imageUri for Firebase upload');
-      return null;
-    }
-
-    // Use a default username if not provided
-    const safeUsername = username || 'anonymous';
+    const storage = getStorage();
+    const timestamp = new Date().getTime();
+    const filename = `profile_${username}_${timestamp}.jpg`;
+    const storageRef = ref(storage, `profile_images/${username}/${filename}`);
     
-    // Ensure Firebase is initialized
-    const isInitialized = await ensureFirebase();
-    if (!isInitialized) {
-      console.warn('Firebase not initialized, falling back to AsyncStorage');
-      return saveToAsyncStorage(imageUri, safeUsername);
-    }
-
-    // Create a unique file name
-    const fileName = `profile_${safeUsername}_${Date.now()}.jpg`;
-    const storageRef = storage().ref(`profileImages/${safeUsername}/${fileName}`);
-
-    // Upload the file
-    await storageRef.putFile(imageUri);
-
+    // Convert URI to blob
+    const response = await fetch(imageUri);
+    const blob = await response.blob();
+    
+    // Upload the blob
+    await uploadBytes(storageRef, blob);
+    
     // Get the download URL
-    const downloadURL = await storageRef.getDownloadURL();
+    const downloadURL = await getDownloadURL(storageRef);
     
-    // Save the download URL to AsyncStorage as a backup
-    await AsyncStorage.setItem('profileImage', downloadURL);
-    await AsyncStorage.setItem(`profileImage_${safeUsername}`, downloadURL);
+    // Cache the URL with timestamp
+    const cacheData = {
+      url: downloadURL,
+      timestamp: Date.now()
+    };
+    await AsyncStorage.setItem(`profileImage_${username}`, JSON.stringify(cacheData));
+    await AsyncStorage.setItem('profileImage', JSON.stringify(cacheData));
     
-    console.log('Image uploaded to Firebase:', downloadURL);
     return downloadURL;
   } catch (error) {
-    console.error('Error uploading image to Firebase:', error);
-    
-    // Fall back to AsyncStorage if Firebase fails
-    const safeUsername = username || 'anonymous';
-    return saveToAsyncStorage(imageUri, safeUsername);
-  }
-};
-
-/**
- * Fallback: Save image URI to AsyncStorage (used when Firebase fails)
- */
-const saveToAsyncStorage = async (imageUri, username) => {
-  try {
-    if (!imageUri) return null;
-    
-    // Use a default value if username is undefined
-    const safeUsername = username || 'anonymous';
-    
-    // Force directory creation with a write-read-remove sequence
-    const tempKey = '_dir_init_' + Date.now();
-    await AsyncStorage.setItem(tempKey, 'temp');
-    await AsyncStorage.getItem(tempKey);
-    await AsyncStorage.removeItem(tempKey);
-    
-    // Save to multiple locations for redundancy
-    try { await AsyncStorage.setItem('profileImage', imageUri); } catch (e) {}
-    
-    try { await AsyncStorage.setItem(`profileImage_${safeUsername}`, imageUri); } catch (e) {}
-    
-    return imageUri;
-  } catch (error) {
-    console.error('Error saving to AsyncStorage:', error);
-    return null;
+    console.error('Error uploading profile image:', error);
+    throw error;
   }
 };
 
 /**
  * Get the profile image URL for a user
- * @param {string|null|undefined} username - The username of the user (optional)
+ * @param {string} username - The username to get the image for
  * @returns {Promise<string|null>} - The image URL or null if not found
  */
 export const getProfileImageUrl = async (username) => {
   try {
-    // First, try to get from AsyncStorage
-    const asyncImage = await AsyncStorage.getItem('profileImage');
-    if (asyncImage) {
-      return asyncImage;
+    // First try to get from cache
+    const cachedData = await AsyncStorage.getItem(`profileImage_${username}`);
+    if (cachedData) {
+      const { url, timestamp } = JSON.parse(cachedData);
+      // Check if cache is still valid
+      if (Date.now() - timestamp < CACHE_DURATION) {
+        return url;
+      }
     }
     
-    // Use a default username if needed
-    const safeUsername = username || 'anonymous';
+    // If not in cache or cache expired, try Firebase
+    const storage = getStorage();
+    const storageRef = ref(storage, `profile_images/${username}`);
     
-    // Then try username-specific AsyncStorage key
-    const userImage = await AsyncStorage.getItem(`profileImage_${safeUsername}`);
-    if (userImage) {
-      return userImage;
-    }
-    
-    // If not in AsyncStorage, try to fetch from Firebase
-    const isInitialized = await ensureFirebase();
-    if (!isInitialized) {
-      return null;
-    }
-    
-    // Find the most recent profile image in Firebase
-    const storageRef = storage().ref(`profileImages/${safeUsername}`);
     try {
-      const files = await storageRef.listAll();
+      const files = await listAll(storageRef);
       if (files.items.length > 0) {
-        // Get the last (most recent) file
+        // Get the most recent file
         const latestFile = files.items[files.items.length - 1];
-        const downloadURL = await latestFile.getDownloadURL();
+        const downloadURL = await getDownloadURL(latestFile);
         
-        // Cache the URL in AsyncStorage
-        await AsyncStorage.setItem('profileImage', downloadURL);
-        await AsyncStorage.setItem(`profileImage_${safeUsername}`, downloadURL);
+        // Cache the new URL
+        const cacheData = {
+          url: downloadURL,
+          timestamp: Date.now()
+        };
+        await AsyncStorage.setItem(`profileImage_${username}`, JSON.stringify(cacheData));
+        await AsyncStorage.setItem('profileImage', JSON.stringify(cacheData));
         
         return downloadURL;
       }
-    } catch (e) {
-      console.warn('Error listing Firebase files:', e);
+    } catch (error) {
+      console.error('Error listing Firebase files:', error);
     }
     
     return null;
