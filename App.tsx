@@ -24,6 +24,8 @@ import CreateChatScreen from './screens/CreateChatScreen';
 import TopNav from './components/TopNav';
 import BottomNavBar from './components/BottomNavBar';
 import ClearStorage from './ClearStorage';
+import LoginScreen from './screens/LoginScreen';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 // Import the ImageUtils module silently but don't use it directly
 import {} from './utils/ImageUtils';
 
@@ -109,7 +111,8 @@ type ScreenProps = {
   route: any;
 };
 
-const App = () => {
+const AppContent = () => {
+  const { isLoggedIn, loading: authLoading } = useAuth();
   const [isFirebaseInitialized, setIsFirebaseInitialized] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [isDesigner, setIsDesigner] = useState(false);
@@ -162,6 +165,18 @@ const App = () => {
         <Text style={styles.loadingText}>Initializing app...</Text>
       </View>
     );
+  }
+
+  if (authLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return <LoginScreen />;
   }
 
   return (
@@ -266,5 +281,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
 });
+const App = () => (
+  <AuthProvider>
+    <AppContent />
+  </AuthProvider>
+);
+
 export default App;
 
